@@ -137,6 +137,22 @@ ProfitZone/
         └── main.jsx      punto de entrada
 ```
 
+## Commits
+
+Se usa [Conventional Commits](https://www.conventionalcommits.org/) con scope obligatorio:
+
+```
+tipo(scope): descripción en minúscula, sin punto final
+```
+
+Por ejemplo: `feat(front): add sales page`, `fix(cors): allow preflight requests`,
+`docs(readme): document env vars`. Tipos válidos: `feat`, `fix`, `refactor`,
+`style`, `docs`, `test`, `perf`, `build`, `ci`, `chore`, `revert`.
+
+Es una convención recomendada, no se valida automáticamente. Claude Code la aplica
+siempre a través de la skill `commit`, y la guía completa de tipos y scopes está en
+`.claude/skills/commit/SKILL.md`.
+
 ## Problemas frecuentes
 
 **El front muestra "Sin conexión con la API"**
