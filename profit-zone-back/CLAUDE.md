@@ -38,7 +38,12 @@ No hay tests todavía. Para verificar un cambio se usa el smoke test (`scripts/s
 ```bash
 npm run smoke                                        # solo /api/health
 npm run smoke -- /api/ventas /api/ventas/99          # GET a cada ruta
-npm run smoke -- POST /api/ventas '{"monto":100}'    # método + body JSON
+npm run smoke -- POST /api/ventas '{"monto":100}'    # método + body JSON (Git Bash)
+npm run smoke -- POST /api/ventas @body.json         # body desde archivo (cualquier shell)
 ```
 
-Devuelve código de salida 1 si la API no arranca, y en ese caso muestra el error de arranque. Los códigos HTTP de cada ruta (200, 404, 400...) se imprimen para comparar con lo esperado. Es la única receta de validación del back: las skills y los agentes remiten a esta sección.
+- Devuelve código de salida 1 si la API no arranca (y muestra el error de arranque), si una ruta no responde en 5 s o si los argumentos son inválidos. Los códigos HTTP de cada ruta (200, 404, 400...) se imprimen para compararlos con lo esperado.
+- Si el puerto 8081 está ocupado, falla antes de levantar la API, para no probar otro proceso por error. Se puede usar otro puerto con `SMOKE_PORT=8090`.
+- En PowerShell 5.1 las comillas del JSON se pierden: hay que escaparlas (`'{\"monto\":100}'`) o usar `@archivo.json`.
+- Es la única receta de validación del back: las skills y los agentes remiten a esta sección.
+- `scripts/` son herramientas de desarrollo y no forman parte de la API: pueden leer `process.env` directamente.

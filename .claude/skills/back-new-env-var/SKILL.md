@@ -35,4 +35,5 @@ Argumento: nombre de la variable en MAYÚSCULAS (ej. `JWT_SECRET`) y para qué s
 
 7. **Verificar** desde `profit-zone-back/`:
    - Arranca con la variable definida: `npm run smoke` (ver "Validación" en `profit-zone-back/CLAUDE.md`).
-   - Si es obligatoria, sin ella el arranque tiene que fallar con el `message` del schema. Como `dotenv` no pisa una variable que ya existe en el entorno, se la vacía explícitamente para que `.env` no la aporte: `JWT_SECRET= npm run smoke`. Tiene que salir con código 1 y mostrar el mensaje.
+   - Si es obligatoria, sin ella el arranque tiene que fallar. Como `dotenv` no pisa una variable que ya existe en el entorno, se la vacía explícitamente para que `.env` no la aporte: `JWT_SECRET= npm run smoke`. Tiene que salir con código 1 y mostrar `- JWT_SECRET: es obligatoria y no está definida`.
+   - Si tiene `validate`, con un valor inválido (`JWT_SECRET=corto npm run smoke`) tiene que fallar mostrando el `message` del schema.

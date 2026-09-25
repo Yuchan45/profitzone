@@ -51,10 +51,10 @@ si dice **"API conectada"**, el front está hablando con el back correctamente.
 
 ### `profit-zone-back`
 
-| Script        | Descripción                          |
-| ------------- | ------------------------------------ |
-| `npm run dev` | Levanta la API con recarga (nodemon) |
-| `npm start`   | Levanta la API                       |
+| Script          | Descripción                          |
+| --------------- | ------------------------------------ |
+| `npm run dev`   | Levanta la API con recarga (nodemon) |
+| `npm start`     | Levanta la API                       |
 | `npm run smoke` | Smoke test de la API (puerto 8081)   |
 
 ### `profit-zone-front`
