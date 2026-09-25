@@ -55,6 +55,7 @@ si dice **"API conectada"**, el front está hablando con el back correctamente.
 | ------------- | ------------------------------------ |
 | `npm run dev` | Levanta la API con recarga (nodemon) |
 | `npm start`   | Levanta la API                       |
+| `npm run smoke` | Smoke test de la API (puerto 8081)   |
 
 ### `profit-zone-front`
 

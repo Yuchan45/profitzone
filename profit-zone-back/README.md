@@ -20,6 +20,7 @@ npm run dev            # http://localhost:8080/api
 | --------------- | ------------------------------------ |
 | `npm start`     | Levanta la API                       |
 | `npm run dev`   | Levanta la API con recarga (nodemon) |
+| `npm run smoke` | Smoke test: levanta la API en el 8081, prueba rutas y la apaga (`npm run smoke -- /api/x`) |
 
 ## Variables de entorno
 
