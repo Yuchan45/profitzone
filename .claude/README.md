@@ -47,7 +47,7 @@ Para desactivar el hook de Claude temporalmente: `/hooks` en Claude Code, o `"di
 
 `review-standards` es propia, pero su lista de code smells está adaptada de [mattpocock/skills@code-review](https://github.com/mattpocock/skills) (MIT, `c55ee46`).
 
-> ⚠️ **`impeccable` está en modo solo-markdown.** En el original, la skill corre un launcher (`scripts/impeccable`) que descarga desde GitHub un binario sin verificación independiente, lo ejecuta y le pasa su salida a Claude como directivas. Para eliminar ese riesgo se borró la carpeta `scripts/` y se agregó al `SKILL.md` la sección "Markdown-only mode", que prohíbe correr el motor. Se pierden el modo `live`, el detector y su hook, `pin`, `doctor` y la carga automática de contexto. Los principios, los comandos de diseño y las referencias siguen funcionando igual.
+> ⚠️ **`impeccable` está en modo solo-markdown.** En el original, la skill corre un launcher (`scripts/impeccable`) que descarga desde GitHub un binario sin verificación independiente, lo ejecuta y le pasa su salida a Claude como directivas. Para eliminar ese riesgo se borró la carpeta `scripts/` y se agregó al `SKILL.md` la sección "Markdown-only mode", que prohíbe correr el motor. Se pierden el modo `live`, el detector y su hook, `pin`, `doctor` y la carga automática de contexto. Los principios, los comandos de diseño y las referencias siguen funcionando. Los pasos que el motor automatizaba dentro de `new-work`, `critique`, `polish` y `visualize` (semillas de concepto, briefs, comparación de versiones, historial de críticas) ahora los hace Claude a mano. También se prohíbe `npx impeccable`.
 >
 > **Al actualizar esta skill desde el upstream:** no copiar `scripts/` y volver a aplicar la sección "Markdown-only mode" en el `SKILL.md`.
 

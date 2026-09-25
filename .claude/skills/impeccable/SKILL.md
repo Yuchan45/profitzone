@@ -1,6 +1,6 @@
 ---
 name: impeccable
-description: Use when the user wants to design, redesign, shape, critique, audit, polish, clarify, distill, harden, optimize, adapt, animate, colorize, extract, or otherwise improve a frontend interface. Covers websites, landing pages, dashboards, product UI, app shells, components, forms, settings, onboarding, and empty states. Handles UX review, visual hierarchy, information architecture, cognitive load, accessibility, performance, responsive behavior, theming, anti-patterns, typography, fonts, spacing, layout, alignment, color, motion, micro-interactions, UX copy, error states, edge cases, i18n, and reusable design systems or tokens. Also use for bland designs that need to become bolder or more delightful, loud designs that should become quieter, live browser iteration on UI elements, or ambitious visual effects that should feel technically extraordinary. Not for backend-only or non-UI tasks.
+description: Use when the user wants to design, redesign, shape, critique, audit, polish, clarify, distill, harden, optimize, adapt, animate, colorize, extract, or otherwise improve a frontend interface. Covers websites, landing pages, dashboards, product UI, app shells, components, forms, settings, onboarding, and empty states. Handles UX review, visual hierarchy, information architecture, cognitive load, accessibility, performance, responsive behavior, theming, anti-patterns, typography, fonts, spacing, layout, alignment, color, motion, micro-interactions, UX copy, error states, edge cases, i18n, and reusable design systems or tokens. Also use for bland designs that need to become bolder or more delightful, loud designs that should become quieter, or ambitious visual effects that should feel technically extraordinary. Not for backend-only or non-UI tasks.
 metadata:
   version: 4.3.1
 ---
@@ -16,9 +16,9 @@ Core principles:
 
 This copy of the skill ships **without** the `scripts/` engine (launcher, downloaded binary, detector, live browser mode). It was removed on purpose so the skill never downloads or executes code. Consequences, which override anything else in this skill or its references:
 
-- **Never run** `scripts/impeccable`, `impeccable.cmd`, `impeccable <verb>`, or any command that downloads the engine, and never set `IMPECCABLE_BIN`. Where a reference says to run the engine (context, detector, screenshots, live, pin, hooks, doctor), skip that step and do the equivalent by reading files and code directly.
+- **Never run** `scripts/impeccable`, `impeccable.cmd`, `impeccable <verb>`, `npx impeccable` (or any npm/npx/pnpm/bunx install of an impeccable package), or any command that downloads the engine, and never set `IMPECCABLE_BIN`. Where a reference says to run the engine (context, detector, screenshots, live, pin, hooks, doctor), skip that step and do the equivalent by reading files and code directly.
 - **Unavailable features:** `live` mode, the design detector and its hook, `pin`/`unpin`, `doctor`, and engine-generated directives (`CONTEXT_STALE`, etc.). If the user asks for one, say it is disabled in this project and offer the closest manual alternative.
-- Everything else (principles, commands table, references, craft floor) works as written.
+- Everything else (principles, commands table, references, craft floor) works as written, except that engine-assisted steps inside some references (concept seeds, surface briefs, comp diffs, critique history in new-work, critique, polish, visualize) are done manually.
 
 ## Setup
 
