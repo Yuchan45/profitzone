@@ -56,8 +56,9 @@ Argumento: nombre del recurso en plural y minúsculas, y opcionalmente las opera
    router.use('/ventas', ventasRoutes)
    ```
 
-6. **README.** Agregar las filas nuevas a la tabla "Endpoints" de `profit-zone-back/README.md`.
+6. **README.** Agregar las filas nuevas a la tabla "Endpoints" de **los dos** README: `profit-zone-back/README.md` y el `README.md` raíz.
 
-7. **Verificar** con curl, levantando la API en el puerto 8081 (ver "Validación" en `profit-zone-back/CLAUDE.md`). Probar el caso feliz, un 404 y, si aplica, un 400.
+7. **Verificar** con el smoke test (ver "Validación" en `profit-zone-back/CLAUDE.md`), probando el caso feliz, un 404 y, si aplica, un 400. Por ejemplo:
+   `npm run smoke -- /api/ventas /api/ventas/no-existe POST /api/ventas '{}'`
 
 8. Si el front va a consumir el endpoint, sugerir la skill `front-new-endpoint`.

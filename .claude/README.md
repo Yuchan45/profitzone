@@ -47,6 +47,8 @@ Para desactivar el hook de Claude temporalmente: `/hooks` en Claude Code, o `"di
 
 `review-standards` es propia, pero su lista de code smells está adaptada de [mattpocock/skills@code-review](https://github.com/mattpocock/skills) (MIT, `c55ee46`).
 
+> ⚠️ **`impeccable` descarga y ejecuta un binario.** Su `SKILL.md` indica correr `scripts/impeccable context` en cada sesión. Como el binario no viene en el repo, la primera vez el launcher lo baja de los releases de GitHub de `pbakaus/impeccable` (versión fijada en `scripts/VERSION`), lo guarda en caché y lo ejecuta con tu usuario. El `.sha256` que usa para verificarlo viene del mismo release, así que no protege si ese repo se compromete. Además, la salida del binario se le pasa a Claude como directivas. Se mantiene a conciencia por ser una skill muy difundida. Si preferís no ejecutarlo, rechazá el comando cuando Claude lo proponga: la skill sigue funcionando leyendo `PRODUCT.md`/`DESIGN.md` directamente. Otra opción es apuntar `IMPECCABLE_BIN` a un binario que hayas revisado.
+
 `security-and-hardening` se modificó: se copió `references/security-checklist.md` (del root de ese repo) dentro de la skill y se ajustaron sus links.
 
 Para actualizar una skill externa, volver a copiar su carpeta desde el repo de origen y actualizar el commit en esta tabla.

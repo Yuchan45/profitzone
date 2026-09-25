@@ -4,7 +4,8 @@ SPA en React 19 + Vite, React Router 7 y Axios. JavaScript (JSX), sin TypeScript
 
 ## Estructura y estilo de código
 
-- Componentes como `function Nombre() { ... }` con `export default Nombre` al final del archivo.
+- Componentes como `function Nombre() { ... }` con `export default Nombre` al final del archivo. Excepción: los providers de contexto usan export nombrado (`export function AuthProvider`), como en `src/context/AuthContext.jsx`.
+- Hooks con export nombrado (`export function useX`), un hook por archivo.
 - Imports relativos con extensión explícita: `./Navbar.jsx`, `../services/api.js`.
 - Textos de UI en español.
 
@@ -15,6 +16,7 @@ SPA en React 19 + Vite, React Router 7 y Axios. JavaScript (JSX), sin TypeScript
   - estado `{ status: 'loading' | 'ok' | 'error', data, error }`
   - flag `cancelled` en el cleanup del `useEffect`
   - mensaje de error `error.response?.data?.message ?? error.message`
+  - parámetros primitivos en las dependencias del `useEffect`, nunca objetos o arrays creados en el render (provocarían requests infinitos)
 
 ## Contextos
 

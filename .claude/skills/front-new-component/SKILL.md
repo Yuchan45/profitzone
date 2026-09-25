@@ -23,4 +23,4 @@ Argumento: nombre del componente en PascalCase (ej. `KpiCard`).
    - elementos: `.kpi-card-title`, `.kpi-card-value`
    - modificadores: `.kpi-card--positive`, `.kpi-card--negative`
 
-4. Correr `npm run lint` en `profit-zone-front/` y corregir cualquier error.
+4. Validar según "Validación" en `profit-zone-front/CLAUDE.md` (`npm run lint` y `npm run build`) y corregir cualquier error.

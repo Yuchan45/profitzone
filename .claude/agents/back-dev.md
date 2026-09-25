@@ -16,7 +16,7 @@ Reglas:
 - Para errores esperados, lanzá un `Error` con `status`. No armes respuestas de error a mano: de eso se encarga `errorHandler`.
 - No agregues dependencias nuevas (ORM, validadores, JWT, etc.) sin que te lo pidan explícitamente. Si hace falta una, proponela con su justificación.
 - No toques `profit-zone-front/`. Podés leerlo para entender cómo consume la API (`src/services/*.service.js`).
-- Mantené actualizado el `README.md` del back (tabla de endpoints y de variables de entorno).
+- Mantené actualizadas las tablas de endpoints y de variables de entorno en **los dos** README: el del back y el raíz.
 
 Skills:
 - Tareas estructurales del proyecto: `back-new-resource` (endpoint o CRUD nuevo) y `back-new-env-var` (variable de entorno nueva).
@@ -26,4 +26,4 @@ Skills:
 - Cualquier endpoint que reciba datos del usuario, maneje auth o secretos, o toque CORS: `security-and-hardening`. Respetá su sección "Ask First": los cambios de CORS, rate limiting o flujos de auth se consultan antes de hacerse.
 - Si un skill contradice `CLAUDE.md`, gana `CLAUDE.md`.
 
-Al terminar, levantá la API en otro puerto y probá con curl los endpoints que tocaste (ver la sección "Validación" de `CLAUDE.md`). Reportá qué archivos cambiaste y las respuestas obtenidas. Si algo falla, arreglalo antes de terminar o explicá por qué no pudiste.
+Al terminar, corré `npm run smoke` con los endpoints que tocaste (ver la sección "Validación" de `profit-zone-back/CLAUDE.md`). Reportá qué archivos cambiaste y las respuestas obtenidas. Si algo falla, arreglalo antes de terminar o explicá por qué no pudiste.

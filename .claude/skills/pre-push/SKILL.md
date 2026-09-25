@@ -21,7 +21,7 @@ El hook `.claude/hooks/require-pre-push.mjs` bloquea cualquier `git push` que ej
 Solo para las apps tocadas:
 
 - **Front**: en `profit-zone-front/`, `npm run lint` y `npm run build`.
-- **Back**: en `profit-zone-back/`, en un único comando: levantar la API en el puerto 8081, `curl` a `/api/health` y a cada endpoint nuevo o modificado del diff, y después matar el proceso (ver "Validación" en `profit-zone-back/CLAUDE.md`).
+- **Back**: en `profit-zone-back/`, `npm run smoke -- <endpoints nuevos o modificados del diff>` (ver "Validación" en `profit-zone-back/CLAUDE.md`). Falla si la API no arranca. Revisar que los códigos HTTP sean los esperados.
 - **`.claude/`**: si cambió `settings.json`, validar que sea JSON válido (`node -e "JSON.parse(require('fs').readFileSync('.claude/settings.json','utf8'))"`).
 
 Si algo falla, reportarlo y **no seguir** con las revisiones: primero hay que arreglarlo.

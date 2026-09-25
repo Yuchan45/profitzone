@@ -33,4 +33,4 @@ Argumento: nombre de la página en PascalCase (ej. `Reportes`). Si no se indica 
 
 4. Si la página necesita datos de la API, usar la skill `front-new-endpoint` para crear el servicio y el hook; no llamar a `api` directamente desde la página.
 
-5. Correr `npm run lint` en `profit-zone-front/` y corregir cualquier error.
+5. Validar según "Validación" en `profit-zone-front/CLAUDE.md` (`npm run lint` y `npm run build`) y corregir cualquier error.

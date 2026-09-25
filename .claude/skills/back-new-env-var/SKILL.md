@@ -31,8 +31,8 @@ Argumento: nombre de la variable en MAYÚSCULAS (ej. `JWT_SECRET`) y para qué s
 
 5. **`.env` local** — si existe, agregarle un valor de desarrollo para que la API siga arrancando. `.env` está en `.gitignore`: no se commitea.
 
-6. **README** — agregar la fila a la tabla "Variables de entorno" de `profit-zone-back/README.md` (Obligatoria / Default / Descripción).
+6. **README** — agregar la fila a la tabla "Variables de entorno" de **los dos** README: `profit-zone-back/README.md` y el `README.md` raíz (Obligatoria / Default / Descripción).
 
-7. **Verificar**:
-   - arranca con la variable definida: `PORT=8081 node src/server.js` y `curl http://localhost:8081/api/health`
-   - si es obligatoria, sin la variable el proceso tiene que fallar con el mensaje del schema.
+7. **Verificar** desde `profit-zone-back/`:
+   - Arranca con la variable definida: `npm run smoke` (ver "Validación" en `profit-zone-back/CLAUDE.md`).
+   - Si es obligatoria, sin ella el arranque tiene que fallar con el `message` del schema. Como `dotenv` no pisa una variable que ya existe en el entorno, se la vacía explícitamente para que `.env` no la aporte: `JWT_SECRET= npm run smoke`. Tiene que salir con código 1 y mostrar el mensaje.

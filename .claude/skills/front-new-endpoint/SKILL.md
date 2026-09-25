@@ -29,8 +29,8 @@ Argumento: método y ruta del endpoint (ej. `GET /ventas`).
    - estado inicial `{ status: 'loading', data: null, error: null }`
    - flag `cancelled` en el cleanup del `useEffect`
    - error: `error.response?.data?.message ?? error.message`
-   - si recibe parámetros, incluirlos en el array de dependencias del `useEffect`.
+   - si recibe parámetros, que sean **primitivos** (`useVentas(mes, anio)`, no `useVentas({ mes, anio })`) y van en el array de dependencias del `useEffect`. Un objeto o array creado en el render es nuevo en cada render: el efecto se volvería a ejecutar, actualizaría el estado y dispararía requests infinitos. Si el filtro tiene que ser un objeto, el componente lo memoiza con `useMemo`.
 
 4. **Uso en UI.** En el componente, renderizar los tres estados (`loading`, `ok`, `error`). Formatear montos y fechas con `formatCurrency` / `formatDate` de `src/utils/formatters.js`.
 
-5. Correr `npm run lint` en `profit-zone-front/` y corregir cualquier error.
+5. Validar según "Validación" en `profit-zone-front/CLAUDE.md` (`npm run lint` y `npm run build`) y corregir cualquier error.
