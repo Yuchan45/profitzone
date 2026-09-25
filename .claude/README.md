@@ -38,7 +38,7 @@ Para desactivar el hook de Claude temporalmente: `/hooks` en Claude Code, o `"di
 
 | Skill                          | Origen                                                | Commit    |
 | ------------------------------ | ----------------------------------------------------- | --------- |
-| `impeccable`                   | [pbakaus/impeccable](https://github.com/pbakaus/impeccable) | v4.3.1 |
+| `impeccable`                   | [pbakaus/impeccable](https://github.com/pbakaus/impeccable) | v4.3.1 (sin `scripts/`, ver abajo) |
 | `design-taste-frontend`        | [Leonxlnx/taste-skill](https://github.com/Leonxlnx/taste-skill) (`skills/taste-skill`) | — |
 | `nodejs-backend-patterns`      | [wshobson/agents](https://github.com/wshobson/agents) (`plugins/javascript-typescript/skills/`) | `4236bb9` |
 | `api-design-principles`        | [wshobson/agents](https://github.com/wshobson/agents) (`plugins/backend-development/skills/`) | `4236bb9` |
@@ -47,7 +47,9 @@ Para desactivar el hook de Claude temporalmente: `/hooks` en Claude Code, o `"di
 
 `review-standards` es propia, pero su lista de code smells está adaptada de [mattpocock/skills@code-review](https://github.com/mattpocock/skills) (MIT, `c55ee46`).
 
-> ⚠️ **`impeccable` descarga y ejecuta un binario.** Su `SKILL.md` indica correr `scripts/impeccable context` en cada sesión. Como el binario no viene en el repo, la primera vez el launcher lo baja de los releases de GitHub de `pbakaus/impeccable` (versión fijada en `scripts/VERSION`), lo guarda en caché y lo ejecuta con tu usuario. El `.sha256` que usa para verificarlo viene del mismo release, así que no protege si ese repo se compromete. Además, la salida del binario se le pasa a Claude como directivas. Se mantiene a conciencia por ser una skill muy difundida. Si preferís no ejecutarlo, rechazá el comando cuando Claude lo proponga: la skill sigue funcionando leyendo `PRODUCT.md`/`DESIGN.md` directamente. Otra opción es apuntar `IMPECCABLE_BIN` a un binario que hayas revisado.
+> ⚠️ **`impeccable` está en modo solo-markdown.** En el original, la skill corre un launcher (`scripts/impeccable`) que descarga desde GitHub un binario sin verificación independiente, lo ejecuta y le pasa su salida a Claude como directivas. Para eliminar ese riesgo se borró la carpeta `scripts/` y se agregó al `SKILL.md` la sección "Markdown-only mode", que prohíbe correr el motor. Se pierden el modo `live`, el detector y su hook, `pin`, `doctor` y la carga automática de contexto. Los principios, los comandos de diseño y las referencias siguen funcionando igual.
+>
+> **Al actualizar esta skill desde el upstream:** no copiar `scripts/` y volver a aplicar la sección "Markdown-only mode" en el `SKILL.md`.
 
 `security-and-hardening` se modificó: se copió `references/security-checklist.md` (del root de ese repo) dentro de la skill y se ajustaron sus links.
 
