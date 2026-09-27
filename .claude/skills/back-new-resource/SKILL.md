@@ -14,12 +14,14 @@ Argumento: nombre del recurso en plural y minúsculas, y opcionalmente las opera
 2. **Service** — `profit-zone-back/src/services/<recurso>.service.js`:
 
    ```js
+   import { Venta } from '../models/index.js'
+
    export async function listVentas() {
-     // acceso a datos / lógica de negocio
+     return Venta.findAll({ where: { isActive: true }, order: [['createdAt', 'DESC']] })
    }
 
    export async function getVenta(id) {
-     const venta = /* ... */ null
+     const venta = await Venta.findByPk(id)
      if (!venta) {
        const error = new Error(`Venta ${id} no encontrada`)
        error.status = 404
@@ -29,7 +31,9 @@ Argumento: nombre del recurso en plural y minúsculas, y opcionalmente las opera
    }
    ```
 
-   Si todavía no hay base de datos, usar un array en memoria dentro del service y avisarlo en el reporte final.
+   - El acceso a datos va con los modelos de Sequelize, **importados siempre desde `src/models/index.js`** (ahí se registran las asociaciones). Nunca crear otra instancia de Sequelize ni usar `sync()`.
+   - Si la tabla no existe todavía: crear primero la migración T-SQL en `src/db/migrations/` y el modelo en `src/models/<schema>/`, registrarlo en `src/models/index.js` y correr `npm run db:migrate` (ver "Base de datos" en `profit-zone-back/CLAUDE.md`).
+   - Escrituras de varias tablas: usar `sequelize.transaction(...)`.
 
 3. **Controller** — `profit-zone-back/src/controllers/<recurso>.controller.js`, siguiendo `health.controller.js`:
 

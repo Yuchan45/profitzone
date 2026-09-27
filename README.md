@@ -7,7 +7,8 @@ El repositorio contiene dos aplicaciones independientes: el cliente web y la API
 | Carpeta                                  | Qué es           | Stack                       | Puerto |
 | ---------------------------------------- | ---------------- | --------------------------- | ------ |
 | [`profit-zone-front`](./profit-zone-front) | Cliente web (SPA) | React 19 + Vite, React Router, Axios | `5173` |
-| [`profit-zone-back`](./profit-zone-back)   | API REST          | Node.js + Express 5 (ESM)   | `8080` |
+| [`profit-zone-back`](./profit-zone-back)   | API REST          | Node.js + Express 5 (ESM), Sequelize | `8080` |
+| [`docker-compose.yml`](./docker-compose.yml) | Base de datos   | SQL Server 2022 (Docker)    | `1433` |
 
 Cada carpeta tiene su propio `package.json`, sus dependencias y su README con el
 detalle específico. No hay workspaces de npm: se instala y se corre cada una por separado.
@@ -16,16 +17,20 @@ detalle específico. No hay workspaces de npm: se instala y se corre cada una po
 
 - Node.js 20 o superior
 - npm 10 o superior
+- Docker Desktop (para SQL Server)
 
 ## Puesta en marcha
 
 Cloná el repo y preparás cada aplicación una sola vez:
 
 ```bash
-# Backend
+# Backend + base de datos
 cd profit-zone-back
 npm install
-cp .env.example .env        # Windows: copy .env.example .env
+cp .env.example .env        # Windows: copy .env.example .env  → cambiá DB_PASSWORD
+npm run db:up               # levanta SQL Server en Docker
+npm run db:migrate          # crea la base y las tablas
+npm run db:seed:catalog     # carga el catálogo base (roles, categorías, preguntas)
 
 # Frontend
 cd ../profit-zone-front
@@ -34,7 +39,8 @@ cp .env.example .env        # Windows: copy .env.example .env
 ```
 
 Después, para trabajar hacen falta **dos terminales** (el front necesita el back
-levantado para traer los datos):
+levantado para traer los datos, y el back necesita la DB: si el contenedor está
+detenido, `npm run db:up`):
 
 ```bash
 # Terminal 1 — API en http://localhost:8080/api
@@ -56,6 +62,11 @@ si dice **"API conectada"**, el front está hablando con el back correctamente.
 | `npm run dev`   | Levanta la API con recarga (nodemon) |
 | `npm start`     | Levanta la API                       |
 | `npm run smoke` | Smoke test de la API (puerto 8081)   |
+| `npm run db:up` / `db:down` | Levanta / detiene SQL Server en Docker |
+| `npm run db:migrate` | Crea la base y aplica migraciones pendientes |
+| `npm run db:migrate:undo` / `db:migrate:status` | Revierte la última / lista el estado |
+| `npm run db:seed:catalog` | Carga/actualiza el catálogo base (idempotente) |
+| `npm run db:seed:catalog:verify` | Verifica el seed (conteos, idempotencia) |
 
 ### `profit-zone-front`
 
@@ -78,6 +89,15 @@ de su carpeta.
 | `NODE_ENV`     | No          | `development` | `development` \| `test` \| `production`            |
 | `PORT`         | No          | `8080`        | Puerto de escucha                                  |
 | `CORS_ORIGINS` | Sí          | —             | URLs permitidas, separadas por coma                |
+| `DB_HOST`      | No          | `localhost`   | Host de SQL Server                                 |
+| `DB_PORT`      | No          | `1433`        | Puerto de SQL Server (el que publica Docker)       |
+| `DB_NAME`      | No          | `ProfitZone`  | Base de datos                                      |
+| `DB_USER`      | No          | `sa`          | Usuario (admin del contenedor, solo desarrollo)    |
+| `DB_PASSWORD`  | Sí          | —             | 8+ caracteres, 3 de 4 tipos (A-Z, a-z, 0-9, símbolo), sin `$` |
+| `DB_LOGGING`   | No          | `false`       | `true` loguea el SQL de Sequelize                  |
+
+`docker-compose.yml` lee `DB_PASSWORD` y `DB_PORT` de `profit-zone-back/.env`
+(los scripts `npm run db:*` le pasan ese archivo), así hay una sola fuente.
 
 **`profit-zone-front/.env`**
 
@@ -108,17 +128,21 @@ acepta únicamente los orígenes de `CORS_ORIGINS`; cualquier otro recibe **403*
 
 | Método | Ruta          | Descripción         |
 | ------ | ------------- | ------------------- |
-| `GET`  | `/api/health` | Estado del servicio |
+| `GET`  | `/api/health` | Estado del servicio y de la DB (503 si la DB no responde) |
 
 ## Estructura
 
 ```
 ProfitZone/
+├── docker-compose.yml    SQL Server para desarrollo
 ├── profit-zone-back/
+│   ├── scripts/          smoke.js, migrate.js, seed-catalog.js, verify-catalog-seed.js
 │   └── src/
 │       ├── config/       env.js (validación de entorno), cors.js
 │       ├── controllers/  lógica de cada endpoint
+│       ├── db/           sequelize.js (conexión singleton), runSql.js, migrations/, seeders/ (+ data/), queries/
 │       ├── middlewares/  notFound, errorHandler
+│       ├── models/       modelos Sequelize por schema (users, catalog, analysis)
 │       ├── routes/       index.js + routers por recurso
 │       ├── services/     acceso a datos / lógica de negocio
 │       ├── utils/        helpers
@@ -155,6 +179,20 @@ siempre a través de la skill `commit`, y la guía completa de tipos y scopes es
 `.claude/skills/commit/SKILL.md`.
 
 ## Problemas frecuentes
+
+**La API sale con "No se pudo conectar a SQL Server"**
+El contenedor no está corriendo o todavía está arrancando. Desde `profit-zone-back`:
+`npm run db:up` (espera a que esté listo). Si es la primera vez, después `npm run db:migrate`.
+
+**`npm run db:up` falla o el contenedor se reinicia en loop**
+Casi siempre es `DB_PASSWORD`: SQL Server rechaza claves que no cumplen su política
+(8+ caracteres, 3 de 4 tipos). Mirá `npm run db:logs`. Ojo: la clave de `sa` se fija
+la **primera** vez que se crea el volumen; si la cambiás después, borrá el volumen
+(`docker compose -f ../docker-compose.yml --env-file .env down -v`, **borra los datos**).
+
+**El puerto 1433 ya está en uso**
+Hay otro SQL Server local. Cambiá `DB_PORT` en `profit-zone-back/.env` (por ejemplo
+`1434`) y volvé a correr `npm run db:up`.
 
 **El front muestra "Sin conexión con la API"**
 Revisá que el back esté levantado, que `VITE_API_URL` apunte al puerto correcto y
