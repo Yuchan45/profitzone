@@ -7,7 +7,13 @@
   "scripts": {
     "start": "node src/server.js",
     "dev": "nodemon src/server.js",
-    "smoke": "node scripts/smoke.js"
+    "smoke": "node scripts/smoke.js",
+    "db:up": "docker compose -f ../docker-compose.yml --env-file .env up -d --wait",
+    "db:down": "docker compose -f ../docker-compose.yml --env-file .env down",
+    "db:logs": "docker compose -f ../docker-compose.yml --env-file .env logs -f sqlserver",
+    "db:migrate": "node scripts/migrate.js up",
+    "db:migrate:undo": "node scripts/migrate.js down",
+    "db:migrate:status": "node scripts/migrate.js status"
   },
   "keywords": [],
   "author": "",
@@ -16,7 +22,10 @@
     "cors": "^2.8.6",
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
-    "morgan": "^1.12.1"
+    "morgan": "^1.12.1",
+    "sequelize": "^6.37.8",
+    "tedious": "^20.0.0",
+    "umzug": "^3.8.3"
   },
   "devDependencies": {
     "nodemon": "^3.1.14"
