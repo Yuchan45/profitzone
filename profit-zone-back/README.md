@@ -14,6 +14,7 @@ npm install
 cp .env.example .env   # en Windows: copy .env.example .env  → cambiá DB_PASSWORD
 npm run db:up          # levanta SQL Server (docker-compose.yml de la raíz) y espera a que esté listo
 npm run db:migrate     # crea la base ProfitZone y aplica las migraciones
+npm run db:seed:catalog  # carga el catálogo base (roles, categorías, preguntas)
 npm run dev            # http://localhost:8080/api
 ```
 
@@ -33,6 +34,8 @@ con un error que indica cómo levantarlo.
 | `npm run db:migrate` | Crea la base si no existe y aplica las migraciones pendientes |
 | `npm run db:migrate:undo` | Revierte la última migración (`-- all` revierte todas) |
 | `npm run db:migrate:status` | Lista migraciones aplicadas y pendientes |
+| `npm run db:seed:catalog` | Carga/actualiza el catálogo base. Idempotente: se puede correr N veces |
+| `npm run db:seed:catalog:verify` | Corre el seed y verifica conteos, idempotencia y preguntas por subcategoría |
 
 ## Variables de entorno
 
@@ -75,14 +78,23 @@ nunca las crean (`sync()` no se usa).
 La conexión es un singleton (`src/db/sequelize.js`) que se verifica al arrancar
 con reintentos y se cierra al apagar la API.
 
+### Catálogo base (seed)
+
+`npm run db:seed:catalog` carga roles, categorías, subcategorías, términos de
+búsqueda, preguntas, opciones y asignaciones. Los datos están en
+`src/db/seeders/data/catalog.js`; para cambiar un texto se edita ahí y se vuelve
+a correr el seed, que actualiza la fila existente (mismo id). El seed nunca
+borra: lo que se saca del archivo queda en la DB (el catálogo usado se
+desactiva con `is_active = 0`). Corre todo en una transacción.
+
 ## Estructura
 
 ```
-scripts/        smoke.js (smoke test), migrate.js (migraciones)
+scripts/        smoke.js, migrate.js, seed-catalog.js, verify-catalog-seed.js
 src/
   config/       env.js (validación), cors.js
   controllers/  lógica de cada endpoint
-  db/           sequelize.js (conexión singleton), migrations/, runSql.js
+  db/           sequelize.js (conexión singleton), migrations/, seeders/ (lógica + data/), runSql.js
   middlewares/  notFound, errorHandler
   models/       modelos Sequelize por schema (users/, catalog/, analysis/) + index.js (asociaciones)
   routes/       index.js + routers por recurso

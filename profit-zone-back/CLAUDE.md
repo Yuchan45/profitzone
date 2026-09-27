@@ -22,7 +22,14 @@ SQL Server (Docker, `docker-compose.yml` en la raíz) + Sequelize.
 - PK `uniqueidentifier` con default `NEWSEQUENTIALID()` en la DB → usar `sequentialUuidPk` de `src/models/shared.js`. Sin default en la DB → `DataTypes.UUIDV4`.
 - Los `CHECK ... IN (...)` de la DB se reflejan en el modelo con `validate: { isIn: [...] }` y una constante exportada (ej. `ANALYSIS_STATUSES`).
 - La conexión es el singleton `sequelize` de `src/db/sequelize.js`: nunca crear otra instancia en el código de la API.
-- Comandos: `npm run db:up`, `db:migrate`, `db:migrate:undo`, `db:migrate:status` (ver README).
+- **Seeds** en `src/db/seeders/`: los datos van separados en `data/` y la lógica solo los recorre. Reglas:
+  - idempotentes (clave natural + `upsertBy`, nunca ids hardcodeados),
+  - FKs resueltas por código,
+  - todo en una transacción,
+  - **nunca DELETE**: el catálogo usado se desactiva con `is_active = 0`.
+
+  `bulkCreate` con `updateOnDuplicate` no funciona en MSSQL.
+- Comandos: `npm run db:up`, `db:migrate`, `db:migrate:undo`, `db:migrate:status`, `db:seed:catalog`, `db:seed:catalog:verify` (ver README).
 
 ## Errores
 

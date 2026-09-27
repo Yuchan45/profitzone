@@ -30,6 +30,7 @@ npm install
 cp .env.example .env        # Windows: copy .env.example .env  → cambiá DB_PASSWORD
 npm run db:up               # levanta SQL Server en Docker
 npm run db:migrate          # crea la base y las tablas
+npm run db:seed:catalog     # carga el catálogo base (roles, categorías, preguntas)
 
 # Frontend
 cd ../profit-zone-front
@@ -64,6 +65,8 @@ si dice **"API conectada"**, el front está hablando con el back correctamente.
 | `npm run db:up` / `db:down` | Levanta / detiene SQL Server en Docker |
 | `npm run db:migrate` | Crea la base y aplica migraciones pendientes |
 | `npm run db:migrate:undo` / `db:migrate:status` | Revierte la última / lista el estado |
+| `npm run db:seed:catalog` | Carga/actualiza el catálogo base (idempotente) |
+| `npm run db:seed:catalog:verify` | Verifica el seed (conteos, idempotencia) |
 
 ### `profit-zone-front`
 
