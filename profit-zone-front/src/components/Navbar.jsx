@@ -8,6 +8,10 @@ function Navbar() {
         <NavLink to="/">Inicio</NavLink>
         <NavLink to="/dashboard">Dashboard</NavLink>
       </nav>
+      <NavLink to="/perfil" className="navbar-profile-btn">
+        <span className="navbar-avatar">CM</span>
+        <span>Mi perfil</span>
+      </NavLink>
     </header>
   )
 }

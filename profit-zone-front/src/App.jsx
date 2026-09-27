@@ -2,6 +2,7 @@ import { Routes, Route } from 'react-router-dom'
 import MainLayout from './layouts/MainLayout.jsx'
 import Home from './pages/Home.jsx'
 import Dashboard from './pages/Dashboard.jsx'
+import Perfil from './pages/Perfil/Perfil.jsx'
 import NotFound from './pages/NotFound.jsx'
 
 function App() {
@@ -10,6 +11,7 @@ function App() {
       <Route element={<MainLayout />}>
         <Route path="/" element={<Home />} />
         <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/perfil" element={<Perfil />} />
         <Route path="*" element={<NotFound />} />
       </Route>
     </Routes>
