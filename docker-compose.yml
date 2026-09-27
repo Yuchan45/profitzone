@@ -17,7 +17,8 @@ services:
       MSSQL_PID: Developer
       MSSQL_SA_PASSWORD: ${DB_PASSWORD:?Definí DB_PASSWORD en profit-zone-back/.env}
     ports:
-      - '${DB_PORT:-1433}:1433'
+      # Solo en 127.0.0.1: SQL Server (usuario sa) no queda expuesto a la red local.
+      - '127.0.0.1:${DB_PORT:-1433}:1433'
     volumes:
       - mssql-data:/var/opt/mssql
     healthcheck:

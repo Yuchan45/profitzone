@@ -23,3 +23,10 @@ export const User = sequelize.define(
     scopes: { withPassword: { attributes: { include: ['passwordHash'] } } },
   },
 )
+
+// El defaultScope solo cubre las búsquedas: create(), save() y reload() devuelven
+// la instancia con el hash. toJSON lo quita siempre (res.json usa toJSON).
+User.prototype.toJSON = function toJSON() {
+  const { passwordHash, ...values } = this.get()
+  return values
+}

@@ -20,3 +20,9 @@ export const AuthToken = sequelize.define(
   },
   { schema: 'users', tableName: 'auth_tokens', timestamps: true, updatedAt: false },
 )
+
+// Nunca serializar el hash del token (res.json usa toJSON).
+AuthToken.prototype.toJSON = function toJSON() {
+  const { tokenHash, ...values } = this.get()
+  return values
+}
