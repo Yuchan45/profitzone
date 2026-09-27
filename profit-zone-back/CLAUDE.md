@@ -7,10 +7,22 @@ API REST en Node.js 20+ con Express 5, ESM (`"type": "module"`). JavaScript, sin
 Flujo de una request: `routes/` → `controllers/` → `services/`.
 
 - **routes/**: `src/routes/<recurso>.routes.js` crea un `Router`, mapea verbos a controllers y hace `export default router`. Se monta en `src/routes/index.js` con `router.use('/<recurso>', <recurso>Routes)`. Todo cuelga de `/api` (ver `src/app.js`).
-- **controllers/**: `src/controllers/<recurso>.controller.js` con funciones nombradas exportadas (`export function getX(req, res)`). Leen `req`, llaman al service y responden con `res.json(...)` o `res.status(201).json(...)`. Sin lógica de negocio. (`health.controller.js` es una excepción: responde datos de configuración sin service. El patrón completo está en la skill `back-new-resource`.)
+- **controllers/**: `src/controllers/<recurso>.controller.js` con funciones nombradas exportadas (`export function getX(req, res)`). Leen `req`, llaman al service y responden con `res.json(...)` o `res.status(201).json(...)`. Sin lógica de negocio. Ejemplo: `health.controller.js` → `health.service.js`.
 - **services/**: `src/services/<recurso>.service.js` con la lógica de negocio y el acceso a datos.
 - **utils/**: helpers sin estado.
 - Imports relativos con extensión `.js` explícita.
+
+## Base de datos
+
+SQL Server (Docker, `docker-compose.yml` en la raíz) + Sequelize.
+
+- **Esquema solo por migraciones.** Todo cambio de tablas es una migración nueva en `src/db/migrations/NNNN-descripcion.js` que exporta `up` y `down`, escritas en T-SQL con `runSql` (`src/db/runSql.js`, transaccional). Nunca editar una migración ya aplicada ni usar `sequelize.sync()`.
+- Convenciones T-SQL: tipos exactos (`datetime2`, `varchar`/`nvarchar`, `uniqueidentifier`), defaults `SYSUTCDATETIME()`, constraints con nombre (`PK_`, `FK_`, `UQ_`, `IX_`, `CK_`, `DF_`), y un `down` que revierta exactamente el `up`.
+- **Modelos** en `src/models/<schema>/<Modelo>.js` con `sequelize.define(name, attrs, { schema, tableName, timestamps })`, atributos en camelCase (`underscored: true` los mapea a snake_case). Las asociaciones van solo en `src/models/index.js`: los services importan los modelos **desde ahí**.
+- PK `uniqueidentifier` con default `NEWSEQUENTIALID()` en la DB → usar `sequentialUuidPk` de `src/models/shared.js`. Sin default en la DB → `DataTypes.UUIDV4`.
+- Los `CHECK ... IN (...)` de la DB se reflejan en el modelo con `validate: { isIn: [...] }` y una constante exportada (ej. `ANALYSIS_STATUSES`).
+- La conexión es el singleton `sequelize` de `src/db/sequelize.js`: nunca crear otra instancia en el código de la API.
+- Comandos: `npm run db:up`, `db:migrate`, `db:migrate:undo`, `db:migrate:status` (ver README).
 
 ## Errores
 
@@ -33,7 +45,7 @@ Flujo de una request: `routes/` → `controllers/` → `services/`.
 
 ## Validación
 
-No hay tests todavía. Para verificar un cambio se usa el smoke test (`scripts/smoke.js`), desde `profit-zone-back/`. Levanta la API en el puerto 8081, espera a que responda `/api/health`, prueba las rutas pedidas y la apaga. Funciona en Windows y no deja procesos colgados.
+No hay tests todavía. Para verificar un cambio se usa el smoke test (`scripts/smoke.js`), desde `profit-zone-back/`. Levanta la API en el puerto 8081, espera a que responda `/api/health`, prueba las rutas pedidas y la apaga. Funciona en Windows y no deja procesos colgados. **Requiere la DB levantada y migrada** (`npm run db:up && npm run db:migrate`): la API no arranca sin ella.
 
 ```bash
 npm run smoke                                        # solo /api/health
