@@ -1,6 +1,6 @@
 # profit-zone-back — convenciones
 
-API REST en Node.js 20+ con Express 5, ESM (`"type": "module"`). JavaScript, sin TypeScript. Sin base de datos, linter ni tests por ahora.
+API REST en Node.js 20+ con Express 5, ESM (`"type": "module"`). JavaScript, sin TypeScript. SQL Server + Sequelize (ver "Base de datos"). Sin linter ni tests por ahora.
 
 ## Estructura y capas
 
@@ -21,6 +21,8 @@ SQL Server (Docker, `docker-compose.yml` en la raíz) + Sequelize.
 - **Modelos** en `src/models/<schema>/<Modelo>.js` con `sequelize.define(name, attrs, { schema, tableName, timestamps })`, atributos en camelCase (`underscored: true` los mapea a snake_case). Las asociaciones van solo en `src/models/index.js`: los services importan los modelos **desde ahí**.
 - PK `uniqueidentifier` con default `NEWSEQUENTIALID()` en la DB → usar `sequentialUuidPk` de `src/models/shared.js`. Sin default en la DB → `DataTypes.UUIDV4`.
 - Los `CHECK ... IN (...)` de la DB se reflejan en el modelo con `validate: { isIn: [...] }` y una constante exportada (ej. `ANALYSIS_STATUSES`).
+- Fechas: las columnas son `datetime2` (UTC) y los modelos usan `DataTypes.DATE`, que Sequelize asocia a `datetimeoffset` en MSSQL. Es una decisión aceptada: con `timezone: '+00:00'` la ida y vuelta es exacta en UTC (probado a nivel de milisegundos). No cambiar los tipos de las migraciones a `datetimeoffset`.
+- Datos sensibles: `User.passwordHash` y `AuthToken.tokenHash` se excluyen del JSON con `toJSON` (y `User` además por `defaultScope`). Nunca devolver hashes en una respuesta; si un nuevo modelo tiene secretos, aplicar lo mismo.
 - La conexión es el singleton `sequelize` de `src/db/sequelize.js`: nunca crear otra instancia en el código de la API.
 - **Seeds** en `src/db/seeders/`: los datos van separados en `data/` y la lógica solo los recorre. Reglas:
   - idempotentes (clave natural + `upsertBy`, nunca ids hardcodeados),

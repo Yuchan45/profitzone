@@ -136,11 +136,11 @@ acepta únicamente los orígenes de `CORS_ORIGINS`; cualquier otro recibe **403*
 ProfitZone/
 ├── docker-compose.yml    SQL Server para desarrollo
 ├── profit-zone-back/
-│   ├── scripts/          smoke.js, migrate.js
+│   ├── scripts/          smoke.js, migrate.js, seed-catalog.js, verify-catalog-seed.js
 │   └── src/
 │       ├── config/       env.js (validación de entorno), cors.js
 │       ├── controllers/  lógica de cada endpoint
-│       ├── db/           conexión singleton (sequelize.js) y migrations/
+│       ├── db/           sequelize.js (conexión singleton), runSql.js, migrations/, seeders/ (+ data/), queries/
 │       ├── middlewares/  notFound, errorHandler
 │       ├── models/       modelos Sequelize por schema (users, catalog, analysis)
 │       ├── routes/       index.js + routers por recurso
