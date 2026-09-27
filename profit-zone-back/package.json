@@ -13,7 +13,9 @@
     "db:logs": "docker compose -f ../docker-compose.yml --env-file .env logs -f sqlserver",
     "db:migrate": "node scripts/migrate.js up",
     "db:migrate:undo": "node scripts/migrate.js down",
-    "db:migrate:status": "node scripts/migrate.js status"
+    "db:migrate:status": "node scripts/migrate.js status",
+    "db:seed:catalog": "node scripts/seed-catalog.js",
+    "db:seed:catalog:verify": "node scripts/verify-catalog-seed.js"
   },
   "keywords": [],
   "author": "",
