@@ -63,6 +63,38 @@ a.active {
   color: var(--color-accent);
 }
 
+.navbar-profile-btn {
+  background: #ffffff;
+  color: #1e293b;
+  border-radius: 30px;
+  padding: 6px 14px 6px 7px;
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  font-weight: 600;
+  font-size: 13px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+  transition: all 0.2s ease;
+}
+
+.navbar-profile-btn:hover,
+.navbar-profile-btn.active {
+  color: #0fa59a;
+  transform: translateY(-1px);
+}
+
+.navbar-avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  color: #ffffff;
+  background: linear-gradient(145deg, #00c598, #0fa59a);
+  font-weight: 700;
+  font-size: 11px;
+}
+
 .footer {
   padding: 1rem 1.5rem;
   text-align: center;
