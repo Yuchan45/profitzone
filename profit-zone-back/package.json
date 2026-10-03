@@ -15,7 +15,8 @@
     "db:migrate:undo": "node scripts/migrate.js down",
     "db:migrate:status": "node scripts/migrate.js status",
     "db:seed:catalog": "node scripts/seed-catalog.js",
-    "db:seed:catalog:verify": "node scripts/verify-catalog-seed.js"
+    "db:seed:catalog:verify": "node scripts/verify-catalog-seed.js",
+    "db:seed:census": "node scripts/seed-census.js"
   },
   "keywords": [],
   "author": "",

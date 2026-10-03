@@ -87,6 +87,22 @@ a correr el seed, que actualiza la fila existente (mismo id). El seed nunca
 borra: lo que se saca del archivo queda en la DB (el catálogo usado se
 desactiva con `is_active = 0`). Corre todo en una transacción.
 
+### Densidad Base (seed)
+`npm run db:seed:census` carga en la base datos iniciales radiales para calcular la densidad poblacional. Los datos lo carga desde `src\db\seeders\data\caba_census_radios.geojson` que fue descargado desde `https://cdn.buenosaires.gob.ar/datosabiertos/datasets/informacion-censal-por-radio/CABA_rc.geojson` 
+
+|Variable|Tipo|Significado|
+|--------|----|-----------|
+RADIO_ID|	Código oficial|	Clave jerárquica del INDEC: Comuna_Fracción_Radio (ej: 14_3_12).|
+BARRIO|	Nombre|	Uno de los 48 barrios oficiales de CABA.|
+COMUNA|	1 a 15|	Comuna política a la que pertenece el radio.|
+POBLACION|	Conteo real|	Cantidad exacta de personas censadas en esas manzanas.|
+VIVIENDAS|	Conteo real|	Total de unidades habitacionales particulares y colectivas.|
+HOGARES|	Conteo real|	Total de hogares censados en el radio.|
+HOGARES_NBI|	Indicador| INDEC	Hogares con Necesidades Básicas Insatisfechas (mide hacinamiento, calidad de vivienda, saneamiento y escolaridad).|
+AREA_KM2|	Geometría|Superficie real del polígono calculada por la cartografía oficial.|
+geometry|	MultiPolygon|	Coordenadas vectoriales exactas de los límites de las manzanas en WGS84.|
+
+
 ## Estructura
 
 ```
