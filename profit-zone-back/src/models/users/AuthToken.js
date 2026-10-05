@@ -17,6 +17,11 @@ export const AuthToken = sequelize.define(
     usedAt: { type: DataTypes.DATE, allowNull: true },
     // Logout o rotación de refresh token
     revokedAt: { type: DataTypes.DATE, allowNull: true },
+    // Rotación: refresh token que reemplazó a este
+    replacedById: { type: DataTypes.UUID, allowNull: true },
+    // Sesión (dispositivo) que pidió el token
+    userAgent: { type: DataTypes.STRING(300), allowNull: true },
+    ip: { type: DataTypes.STRING(45), allowNull: true },
   },
   { schema: 'users', tableName: 'auth_tokens', timestamps: true, updatedAt: false },
 )

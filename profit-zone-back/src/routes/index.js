@@ -5,6 +5,7 @@ import competitionRoutes from './competition.routes.js'
 import trafficRoutes from './traffic.routes.js'
 import categoriesRoutes from './categories.routes.js'
 import questionsRoutes from './questions.routes.js'
+import authRoutes from './auth.routes.js'
 
 const router = Router()
 
@@ -14,5 +15,6 @@ router.use('/competition', competitionRoutes)
 router.use('/traffic', trafficRoutes)
 router.use('/categories', categoriesRoutes)
 router.use('/questions', questionsRoutes)
+router.use('/auth', authRoutes)
 
 export default router
