@@ -1,12 +1,16 @@
-import ApiStatus from '../components/ApiStatus.jsx'
+import HeroSection from '../components/home/HeroSection.jsx'
+import HowItWorksSection from '../components/home/HowItWorksSection.jsx'
+import FaqSection from '../components/home/FaqSection.jsx'
+import CtaSection from '../components/home/CtaSection.jsx'
 
 function Home() {
   return (
-    <section>
-      <h1>Bienvenido a ProfitZone</h1>
-      <p>Estructura base del proyecto lista para empezar a desarrollar.</p>
-      <ApiStatus />
-    </section>
+    <>
+      <HeroSection />
+      <HowItWorksSection />
+      <FaqSection />
+      <CtaSection />
+    </>
   )
 }
 

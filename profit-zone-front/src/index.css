@@ -1,82 +1,87 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+@import "@fontsource-variable/geist";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --font-sans: "Plus Jakarta Sans Variable", ui-sans-serif, system-ui, sans-serif;
+  --font-heading: "Outfit Variable", ui-sans-serif, system-ui, sans-serif;
+
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  --color-navy: #1b2a4e;
+  --color-brand-text: #0a8f7a;
+
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+}
+
 :root {
-  --color-bg: #0f172a;
-  --color-surface: #1e293b;
-  --color-text: #e2e8f0;
-  --color-accent: #22c55e;
+  --radius: 0.75rem;
 
-  font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
-  color-scheme: dark;
+  --background: #fbfbf9;
+  --foreground: #1b2a4e;
+  --card: #ffffff;
+  --card-foreground: #1b2a4e;
+  --popover: #ffffff;
+  --popover-foreground: #1b2a4e;
+  --primary: #00c9a7;
+  --primary-foreground: #14213d;
+  --secondary: #f4f4f1;
+  --secondary-foreground: #1b2a4e;
+  --muted: #f4f4f1;
+  --muted-foreground: #64708a;
+  --accent: #f4f4f1;
+  --accent-foreground: #1b2a4e;
+  --destructive: #e5484d;
+  --border: #e8e8e3;
+  --input: #e8e8e3;
+  --ring: #00c9a7;
 }
 
-* {
-  box-sizing: border-box;
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply bg-background font-sans text-foreground antialiased;
+  }
 }
 
-body {
-  margin: 0;
-  min-height: 100vh;
-  background-color: var(--color-bg);
-  color: var(--color-text);
-}
-
-.app-shell {
-  display: flex;
-  flex-direction: column;
-  min-height: 100vh;
-}
-
-.app-content {
-  flex: 1;
-  padding: 2rem 1.5rem;
-  max-width: 1100px;
-  width: 100%;
-  margin: 0 auto;
-}
-
-.navbar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-  flex-wrap: wrap;
-  padding: 1rem 1.5rem;
-  background-color: var(--color-surface);
-}
-
-.navbar-brand {
-  font-weight: 700;
-  color: var(--color-accent);
-}
-
-.navbar-links {
-  display: flex;
-  gap: 1rem;
-}
-
-a {
-  color: var(--color-text);
-  text-decoration: none;
-}
-
-a:hover,
-a.active {
-  color: var(--color-accent);
-}
-
-.footer {
-  padding: 1rem 1.5rem;
-  text-align: center;
-  background-color: var(--color-surface);
-}
-
+/* Estado de la API (componente ApiStatus) */
 .api-status {
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
-  margin-top: 1.5rem;
   padding: 0.5rem 0.9rem;
   border-radius: 999px;
-  background-color: var(--color-surface);
+  background-color: var(--secondary);
   font-size: 0.9rem;
 }
 
@@ -88,9 +93,9 @@ a.active {
 }
 
 .api-status--ok .api-status-dot {
-  background-color: var(--color-accent);
+  background-color: var(--primary);
 }
 
 .api-status--error .api-status-dot {
-  background-color: #ef4444;
+  background-color: var(--destructive);
 }
