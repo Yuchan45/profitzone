@@ -8,6 +8,7 @@ import {
   QuestionOption,
 } from '../models/index.js'
 import { getSubcategorySurvey } from './questions.service.js'
+import { findAvailableNeighborhood } from './neighborhoods.service.js'
 import { httpError } from '../utils/httpErrors.js'
 
 // Rango del radio de análisis en metros (PZ-16: rango acotado, ej. 200–600 m)
@@ -55,7 +56,17 @@ function toAnalysisDto(analysis) {
   }
 }
 
-async function findAnalysis(id, { transaction } = {}) {
+function sameId(a, b) {
+  // SQL Server devuelve los uniqueidentifier en mayúsculas
+  return String(a).toLowerCase() === String(b).toLowerCase()
+}
+
+/**
+ * Busca el análisis y verifica el acceso: un análisis con dueño solo lo ve su
+ * dueño. Para cualquier otro (o sin sesión) responde 404, sin revelar que existe.
+ * `userId` es el usuario de la sesión o null.
+ */
+async function findAnalysis(id, userId, { transaction } = {}) {
   // Un id con otro formato haría fallar la conversión a uniqueidentifier en SQL Server
   if (!UUID_PATTERN.test(id)) throw notFound(id)
 
@@ -80,6 +91,7 @@ async function findAnalysis(id, { transaction } = {}) {
   })
 
   if (!analysis) throw notFound(id)
+  if (analysis.userId && !(userId && sameId(analysis.userId, userId))) throw notFound(id)
   return analysis
 }
 
@@ -131,12 +143,15 @@ async function buildAnswerRows(categoryCode, subcategoryCode, answers) {
 }
 
 /** Devuelve un análisis con su rubro, ubicación y respuestas. Lanza 404 si no existe. */
-export async function getAnalysis(id) {
-  return toAnalysisDto(await findAnalysis(id))
+export async function getAnalysis(id, userId) {
+  return toAnalysisDto(await findAnalysis(id, userId))
 }
 
-/** Crea un análisis en borrador con el rubro y las respuestas del paso 2. */
-export async function createAnalysis({ categoryCode, subcategoryCode, answers }) {
+/**
+ * Crea un análisis en borrador con el rubro y las respuestas del paso 2.
+ * Con sesión queda a nombre del usuario; sin sesión se asigna al guardar la ubicación.
+ */
+export async function createAnalysis({ categoryCode, subcategoryCode, answers }, userId) {
   const answerRows = await buildAnswerRows(categoryCode, subcategoryCode, answers)
   // buildAnswerRows ya validó que el rubro exista y esté activo
   const subcategory = await Subcategory.findOne({
@@ -145,7 +160,10 @@ export async function createAnalysis({ categoryCode, subcategoryCode, answers })
   })
 
   const id = await sequelize.transaction(async (transaction) => {
-    const analysis = await Analysis.create({ subcategoryId: subcategory.id }, { transaction })
+    const analysis = await Analysis.create(
+      { subcategoryId: subcategory.id, userId: userId ?? null },
+      { transaction },
+    )
     await AnalysisAnswer.bulkCreate(
       answerRows.map((row) => ({ ...row, analysisId: analysis.id })),
       { transaction },
@@ -153,12 +171,12 @@ export async function createAnalysis({ categoryCode, subcategoryCode, answers })
     return analysis.id
   })
 
-  return getAnalysis(id)
+  return getAnalysis(id, userId)
 }
 
 /** Reemplaza todas las respuestas de un análisis (el usuario volvió al paso 2 y las cambió). */
-export async function replaceAnalysisAnswers(id, answers) {
-  const analysis = await findAnalysis(id)
+export async function replaceAnalysisAnswers(id, answers, userId) {
+  const analysis = await findAnalysis(id, userId)
   const answerRows = await buildAnswerRows(
     analysis.subcategory.category.code,
     analysis.subcategory.code,
@@ -176,15 +194,26 @@ export async function replaceAnalysisAnswers(id, answers) {
     await analysis.save({ transaction })
   })
 
-  return getAnalysis(id)
+  return getAnalysis(id, userId)
 }
 
-/** Guarda el punto y el radio elegidos en el paso 3. */
-export async function updateAnalysisLocation(id, { lat, lng, radius }) {
+/**
+ * Guarda el punto y el radio elegidos en el paso 3 ("Analizar zona"). Requiere
+ * sesión: si el análisis todavía no tiene dueño, queda a nombre del usuario.
+ */
+export async function updateAnalysisLocation(id, { lat, lng, radius }, userId) {
   if (!Number.isInteger(radius) || radius < RADIUS_MIN_M || radius > RADIUS_MAX_M) {
     throw badRequest(`El radio debe ser un número entero entre ${RADIUS_MIN_M} y ${RADIUS_MAX_M} metros.`)
   }
-  const analysis = await findAnalysis(id)
-  await analysis.update({ centerLat: lat, centerLng: lng, radiusM: radius })
-  return getAnalysis(id)
+  const analysis = await findAnalysis(id, userId)
+  if (!(await findAvailableNeighborhood(lat, lng))) {
+    throw httpError(422, 'Elegí un punto dentro de Palermo.')
+  }
+  await analysis.update({
+    centerLat: lat,
+    centerLng: lng,
+    radiusM: radius,
+    userId: analysis.userId ?? userId,
+  })
+  return getAnalysis(id, userId)
 }

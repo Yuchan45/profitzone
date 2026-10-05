@@ -103,8 +103,8 @@ function buildSources({ competition, traffic, density }) {
  * cuadro de fortalezas y debilidades cruzado con las respuestas, y un resumen.
  * Si un indicador falla, sus criterios quedan "no evaluados" y el resto sigue.
  */
-export async function buildAnalysisReport(id) {
-  const analysis = await getAnalysis(id)
+export async function buildAnalysisReport(id, userId) {
+  const analysis = await getAnalysis(id, userId)
   if (!analysis.location) {
     throw httpError(409, 'Elegí la ubicación en el mapa antes de generar el reporte.')
   }

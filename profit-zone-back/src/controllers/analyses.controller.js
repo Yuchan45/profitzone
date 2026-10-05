@@ -43,11 +43,11 @@ function parseCoordinate(value, name, limit) {
 }
 
 export async function getAnalysisById(req, res) {
-  res.json(await getAnalysis(req.params.id))
+  res.json(await getAnalysis(req.params.id, req.user?.id))
 }
 
 export async function getAnalysisReport(req, res) {
-  res.json(await buildAnalysisReport(req.params.id))
+  res.json(await buildAnalysisReport(req.params.id, req.user?.id))
 }
 
 export async function postAnalysis(req, res) {
@@ -56,13 +56,13 @@ export async function postAnalysis(req, res) {
     categoryCode: parseCode(body.categoryCode, 'categoryCode'),
     subcategoryCode: parseCode(body.subcategoryCode, 'subcategoryCode'),
     answers: parseAnswers(body.answers),
-  })
+  }, req.user?.id)
   res.status(201).json(analysis)
 }
 
 export async function putAnalysisAnswers(req, res) {
   const body = req.body ?? {}
-  res.json(await replaceAnalysisAnswers(req.params.id, parseAnswers(body.answers)))
+  res.json(await replaceAnalysisAnswers(req.params.id, parseAnswers(body.answers), req.user?.id))
 }
 
 export async function patchAnalysisLocation(req, res) {
@@ -72,6 +72,6 @@ export async function patchAnalysisLocation(req, res) {
     lat: parseCoordinate(body.lat, 'lat', 90),
     lng: parseCoordinate(body.lng, 'lng', 180),
     radius: body.radius,
-  })
+  }, req.user.id)
   res.json(analysis)
 }
