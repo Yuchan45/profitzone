@@ -12,6 +12,7 @@ import { QuestionAssignment } from './catalog/QuestionAssignment.js'
 import { ImplicitRule } from './catalog/ImplicitRule.js'
 import { Analysis } from './analysis/Analysis.js'
 import { AnalysisAnswer } from './analysis/AnalysisAnswer.js'
+import { CensusRadio } from './census/CensusRadio.js'
 
 // users
 Role.hasMany(User, { foreignKey: 'roleId', as: 'users' })
@@ -64,4 +65,6 @@ export {
   ImplicitRule,
   Analysis,
   AnalysisAnswer,
+  CensusRadio,
 }
+

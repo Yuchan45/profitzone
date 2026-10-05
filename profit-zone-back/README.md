@@ -15,6 +15,7 @@ cp .env.example .env   # en Windows: copy .env.example .env  → cambiá DB_PASS
 npm run db:up          # levanta SQL Server (docker-compose.yml de la raíz) y espera a que esté listo
 npm run db:migrate     # crea la base ProfitZone y aplica las migraciones
 npm run db:seed:catalog  # carga el catálogo base (roles, categorías, preguntas)
+npm run db:seed:census   # carga los datos censales de CABA con índice espacial
 npm run dev            # http://localhost:8080/api
 ```
 
@@ -36,6 +37,7 @@ con un error que indica cómo levantarlo.
 | `npm run db:migrate:status` | Lista migraciones aplicadas y pendientes |
 | `npm run db:seed:catalog` | Carga/actualiza el catálogo base. Idempotente: se puede correr N veces |
 | `npm run db:seed:catalog:verify` | Corre el seed y verifica conteos, idempotencia y preguntas por subcategoría |
+| `npm run db:seed:census` | Carga los 3.554 radios censales de CABA en `census_data.census_radios` con geometrías e índice espacial |
 
 ## Variables de entorno
 
@@ -53,6 +55,8 @@ un formato inválido, el proceso falla con un mensaje explicando qué corregir.
 | `DB_USER`      | No          | `sa`          | Usuario (en desarrollo, el admin del contenedor)       |
 | `DB_PASSWORD`  | Sí          | —             | Clave: 8+ caracteres, 3 de 4 tipos (A-Z, a-z, 0-9, símbolo). Sin `$`. Docker la usa para crear `sa` |
 | `DB_LOGGING`   | No          | `false`       | `true` muestra en consola el SQL de Sequelize          |
+| `GOOGLE_PLACES_API_KEY` | No | —             | Clave de API de Google Places (New) para competidores en el radio |
+| `BESTTIME_API_KEY`      | No | —             | Clave de API opcional para afluencia BestTime (fallback a modelo estimado) |
 
 ## CORS
 
@@ -66,6 +70,127 @@ headers `Content-Type` y `Authorization`, y cachea el preflight 24 h.
 | Método | Ruta          | Descripción                  |
 | ------ | ------------- | ---------------------------- |
 | `GET`  | `/api/health` | Estado del servicio y de la DB (`database: up/down`; 503 si la DB no responde) |
+| `GET`  | `/api/density` | Densidad poblacional y demografía en un punto con radio en CABA (query: `lat`, `lng`, `radius`) |
+| `GET`  | `/api/competition` | Análisis de competidores directos e indirectos en un radio con Google Places |
+| `GET`  | `/api/traffic` | Estimación de afluencia horaria (7h a 23h) y score por franja horaria |
+
+### `GET /api/density`
+
+Calcula la densidad poblacional, viviendas, hogares y nivel socioeconómico (% NBI) para un círculo definido por un punto central y un radio de influencia sobre la Ciudad Autónoma de Buenos Aires (CABA).
+
+#### Parámetros de consulta (Query Params)
+
+| Parámetro | Tipo     | Requerido | Default | Descripción / Restricciones |
+| --------- | -------- | :-------: | :-----: | --------------------------- |
+| `lat`     | `number` | Sí        | —       | Latitud en grados decimales (rango: `-90` a `90`). Ej: `-34.5880`. |
+| `lng`     | `number` | Sí        | —       | Longitud en grados decimales (rango: `-180` a `180`). Ej: `-58.4300`. |
+| `radius`  | `number` | No        | `500`   | Radio de búsqueda en metros (entero entre `10` y `20000`). Ej: `1000`. |
+
+#### Ejemplo de solicitud
+
+```http
+GET /api/density?lat=-34.5880&lng=-58.4300&radius=1000 HTTP/1.1
+Host: localhost:8080
+```
+
+#### Metodología de cálculo (Ponderación Areal)
+
+El cálculo se ejecuta en el motor espacial nativo de SQL Server 2022 (`geography` con índice espacial `IX_census_radios_geom`):
+1. Se genera un buffer circular con `geography::Point(@lat, @lng, 4326).STBuffer(@radius)`.
+2. Se detectan los radios censales intersectados con `geom.STIntersects(@buffer) = 1`.
+3. Para cada radio censal, se calcula la fracción de área contenida dentro del círculo con `geom.STIntersection(@buffer).STArea() / geom.STArea()`.
+4. Los habitantes, viviendas y hogares se ponderan proporcionalmente a dicha fracción, garantizando precisión sin sobreestimar radios censales parcialmente intersectados.
+
+### `GET /api/competition`
+
+Obtiene el análisis de competidores directos e indirectos en un radio alrededor de unas coordenadas usando la API de Google Places (New).
+
+#### Parámetros de consulta (Query Params)
+
+| Parámetro     | Tipo     | Requerido | Default       | Descripción / Restricciones |
+| ------------- | -------- | :-------: | :-----------: | --------------------------- |
+| `lat`         | `number` | Sí        | —             | Latitud en grados decimales (`-90` a `90`). Ej: `-34.5880`. |
+| `lng`         | `number` | Sí        | —             | Longitud en grados decimales (`-180` a `180`). Ej: `-58.4300`. |
+| `radius`      | `number` | No        | `1000`        | Radio en metros (`10` a `20000`). Ej: `1000`. |
+| `subcategory` | `string` | No        | `restaurante` | Código del rubro (`restaurante`, `cafeteria`, `gimnasio`, `pilates`). |
+
+#### Ejemplo de solicitud y respuesta
+
+```http
+GET /api/competition?lat=-34.5880&lng=-58.4300&radius=1000&subcategory=cafeteria HTTP/1.1
+Host: localhost:8080
+```
+
+```json
+{
+  "total": 20,
+  "directCount": 18,
+  "indirectCount": 2,
+  "averageRating": 4.5,
+  "subcategory": "cafeteria",
+  "subcategoryName": "cafeterías",
+  "callout": "Hay bastante competencia directa y bien valorada cerca del punto.",
+  "source": "Google Places",
+  "places": [
+    {
+      "id": "ChIJcc8jgsy1vJUR7iCGeBH0ynk",
+      "name": "Local Support",
+      "rating": 4.4,
+      "userRatingCount": 1177,
+      "distanceMeters": 179,
+      "distanceText": "179 m",
+      "type": "Directa",
+      "location": {
+        "lat": -34.58899,
+        "lng": -58.43153
+      }
+    }
+  ]
+}
+```
+
+### `GET /api/traffic`
+
+Provee la estimación de afluencia horaria (curva de 7 h a 23 h) y el score de actividad (0 a 100) para una franja horaria objetivo.
+
+#### Parámetros de consulta (Query Params)
+
+| Parámetro     | Tipo     | Requerido | Default       | Descripción / Restricciones |
+| ------------- | -------- | :-------: | :-----------: | --------------------------- |
+| `lat`         | `number` | Sí        | —             | Latitud en grados decimales (`-90` a `90`). Ej: `-34.5880`. |
+| `lng`         | `number` | Sí        | —             | Longitud en grados decimales (`-180` a `180`). Ej: `-58.4300`. |
+| `radius`      | `number` | No        | `1000`        | Radio en metros (`10` a `20000`). Ej: `1000`. |
+| `subcategory` | `string` | No        | `restaurante` | Código del rubro (`restaurante`, `cafeteria`, `gimnasio`, `pilates`). |
+| `schedule`    | `string` | No        | `morning`     | Preset horario: `morning` (8-11h), `lunch` (12-15h), `afternoon` (16-19h), `dinner` (20-23h), `night` (21-23h), `day` (8-20h). |
+| `startHour`   | `number` | No        | —             | Hora de inicio personalizada (0 a 23). |
+| `endHour`     | `number` | No        | —             | Hora de fin personalizada (0 a 23). |
+
+#### Ejemplo de solicitud y respuesta
+
+```http
+GET /api/traffic?lat=-34.5880&lng=-58.4300&radius=1000&subcategory=cafeteria&schedule=morning HTTP/1.1
+Host: localhost:8080
+```
+
+```json
+{
+  "score": 77,
+  "scoreMax": 100,
+  "timeSlot": "mañana, 8 a 11 h",
+  "startHour": 8,
+  "endHour": 11,
+  "hourlyActivity": [
+    { "hour": 7, "label": "7 h", "value": 15, "isHighlighted": false },
+    { "hour": 8, "label": "8 h", "value": 48, "isHighlighted": true },
+    { "hour": 9, "label": "9 h", "value": 82, "isHighlighted": true },
+    { "hour": 10, "label": "10 h", "value": 94, "isHighlighted": true },
+    { "hour": 11, "label": "11 h", "value": 85, "isHighlighted": true }
+  ],
+  "callout": "La actividad sube fuerte a la mañana, en línea con tu franja de desayuno.",
+  "badge": "Estimado",
+  "source": "BestTime (popular times de locales del radio) · forecast 2026 · mide entradas a locales, no peatones"
+}
+```
 
 ## Base de datos
 
@@ -86,6 +211,22 @@ búsqueda, preguntas, opciones y asignaciones. Los datos están en
 a correr el seed, que actualiza la fila existente (mismo id). El seed nunca
 borra: lo que se saca del archivo queda en la DB (el catálogo usado se
 desactiva con `is_active = 0`). Corre todo en una transacción.
+
+### Densidad Base (seed)
+`npm run db:seed:census` carga en la base datos iniciales radiales para calcular la densidad poblacional. Los datos lo carga desde `src\db\seeders\data\caba_census_radios.geojson` que fue descargado desde `https://cdn.buenosaires.gob.ar/datosabiertos/datasets/informacion-censal-por-radio/CABA_rc.geojson` 
+
+|Variable|Tipo|Significado|
+|--------|----|-----------|
+RADIO_ID|	Código oficial|	Clave jerárquica del INDEC: Comuna_Fracción_Radio (ej: 14_3_12).|
+BARRIO|	Nombre|	Uno de los 48 barrios oficiales de CABA.|
+COMUNA|	1 a 15|	Comuna política a la que pertenece el radio.|
+POBLACION|	Conteo real|	Cantidad exacta de personas censadas en esas manzanas.|
+VIVIENDAS|	Conteo real|	Total de unidades habitacionales particulares y colectivas.|
+HOGARES|	Conteo real|	Total de hogares censados en el radio.|
+HOGARES_NBI|	Indicador| INDEC	Hogares con Necesidades Básicas Insatisfechas (mide hacinamiento, calidad de vivienda, saneamiento y escolaridad).|
+AREA_KM2|	Geometría|Superficie real del polígono calculada por la cartografía oficial.|
+geometry|	MultiPolygon|	Coordenadas vectoriales exactas de los límites de las manzanas en WGS84.|
+
 
 ## Estructura
 
