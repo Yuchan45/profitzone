@@ -10,9 +10,7 @@
 }
 
 .navbar-brand {
-  font-family: var(--font-heading);
-  font-weight: 800;
-  color: var(--color-text);
+  display: inline-flex;
 }
 
 .navbar-links {
@@ -31,7 +29,14 @@
   color: var(--color-primary-dark);
 }
 
+.navbar-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-8);
+}
+
 .navbar-profile-btn {
+  margin-left: var(--space-8);
   display: inline-flex;
   align-items: center;
   gap: 9px;

@@ -1,0 +1,42 @@
+/* Estilos compartidos por RegisterForm y LoginForm (organisms) */
+
+.auth-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-20);
+}
+
+.auth-form-terms {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-8);
+}
+
+.auth-form-error {
+  margin: 0;
+  color: var(--color-error-dark);
+  font-size: var(--text-12);
+  line-height: 1.4;
+}
+
+.auth-form-submit,
+.auth-form-google {
+  width: 100%;
+  min-height: 48px;
+}
+
+.auth-form-switch {
+  margin: 0;
+  color: var(--color-text-secondary);
+  font-size: var(--text-14);
+  text-align: center;
+}
+
+.auth-form-switch a {
+  color: var(--color-primary-dark);
+  font-weight: 600;
+}
+
+.auth-form-switch a:hover {
+  color: var(--color-text);
+}

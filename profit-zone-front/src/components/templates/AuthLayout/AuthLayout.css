@@ -1,0 +1,45 @@
+.auth-shell {
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
+  min-height: 100vh;
+  background-color: var(--color-surface);
+}
+
+.auth-main {
+  display: flex;
+  justify-content: center;
+  padding: var(--space-48) var(--space-40);
+}
+
+.auth-main-inner {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-28);
+  width: 100%;
+  max-width: 420px;
+  margin: auto 0;
+}
+
+.auth-main-brand {
+  align-self: flex-start;
+  margin-bottom: var(--space-12);
+}
+
+/* En pantallas chicas se oculta el panel de marca y queda solo el formulario */
+@media (max-width: 900px) {
+  .auth-shell {
+    grid-template-columns: 1fr;
+  }
+
+  .auth-shell > .auth-brand {
+    display: none;
+  }
+
+  .auth-main {
+    padding: var(--space-32) var(--space-16) var(--space-48);
+  }
+
+  .auth-main-inner {
+    margin: 0 auto;
+  }
+}

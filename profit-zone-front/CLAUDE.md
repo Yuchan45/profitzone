@@ -15,10 +15,10 @@ Los componentes viven en `src/components/` organizados por nivel. **Una carpeta 
 
 ```
 src/components/
-  atoms/       piezas mínimas sin lógica de negocio: Button, Chip, Icon, IconTile, Logo
-  molecules/   combinación chica de atoms con un propósito: CategoryCard, ApiStatus
-  organisms/   secciones completas de la UI: Header, Navbar, Footer, Stepper
-  templates/   layouts de página con <Outlet />: MainLayout, FlowLayout
+  atoms/       piezas mínimas sin lógica de negocio: Button, Chip, Checkbox, Divider, Icon, Input, Logo…
+  molecules/   combinación chica de atoms con un propósito: CategoryCard, FormField, PasswordInput, QuestionField…
+  organisms/   secciones completas de la UI: Header, Navbar, Stepper, QuestionList, RegisterForm…
+  templates/   layouts de página con <Outlet />: MainLayout, FlowLayout, AuthLayout
 src/pages/     vistas ruteadas; arman la pantalla con organisms/molecules/atoms
 ```
 
