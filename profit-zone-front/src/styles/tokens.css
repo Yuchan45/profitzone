@@ -1,0 +1,94 @@
+/* ==========================================================================
+   ProfitZone — Tokens de diseño (fuente: Figma "v3 - Layout" › Fundamentos)
+   Único lugar del front donde se escriben colores en hex.
+   ========================================================================== */
+
+:root {
+  /* Marca */
+  --color-primary: #00c9a7;
+  --color-primary-dark: #009e83;
+  --color-primary-10: #00c9a71a;
+  --color-primary-12: #00c9a71f;
+  --color-navy-700: #2d3e64;
+
+  /* Texto */
+  --color-text: #1b2a4a;
+  --color-text-secondary: #5e6c84;
+  --color-text-tertiary: #8a99ad;
+  --color-text-on-dark: #aeb9cc;
+
+  /* Superficies */
+  --color-bg: #f7f8f4;
+  --color-surface: #ffffff;
+  --color-surface-soft: #fbfbf9;
+  --color-surface-subtle: #f4f4f0;
+
+  /* Bordes */
+  --color-border: #ebebe5;
+  --color-border-strong: #d3dae3;
+
+  /* Estados */
+  --color-success: #10b981;
+  --color-success-12: #10b9811f;
+  --color-warning: #f59e0b;
+  --color-warning-12: #f59e0b1f;
+  --color-warning-dark: #8a5a00;
+  --color-error: #ef4444;
+  --color-error-12: #ef44441f;
+  --color-error-dark: #b42318;
+  --color-info: #6366f1;
+  --color-notice-bg: #fff2c2;
+  --color-notice-text: #8a7a3d;
+
+  /* Base */
+  --color-black: #000000;
+  --color-white: #ffffff;
+  --shadow-sm: 0 1px 3px rgb(27 42 74 / 0.06);
+  --shadow-md: 0 10px 25px rgb(27 42 74 / 0.15);
+  --focus-ring: 0 0 0 3px var(--color-primary-12);
+
+  /* Radios */
+  --radius-xs: 4px;
+  --radius-sm: 8px;
+  --radius-md: 10px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  --radius-2xl: 24px;
+  --radius-full: 999px;
+
+  /* Espaciado */
+  --space-4: 4px;
+  --space-8: 8px;
+  --space-10: 10px;
+  --space-12: 12px;
+  --space-14: 14px;
+  --space-16: 16px;
+  --space-20: 20px;
+  --space-24: 24px;
+  --space-28: 28px;
+  --space-32: 32px;
+  --space-40: 40px;
+  --space-48: 48px;
+  --space-64: 64px;
+  --space-80: 80px;
+
+  /* Tipografía */
+  --font-heading: 'Outfit', system-ui, sans-serif;
+  --font-body: 'Geist', system-ui, sans-serif;
+
+  --text-11: 0.6875rem;
+  --text-12: 0.75rem;
+  --text-13: 0.8125rem;
+  --text-14: 0.875rem;
+  --text-15: 0.9375rem;
+  --text-16: 1rem;
+  --text-18: 1.125rem;
+  --text-20: 1.25rem;
+  --text-22: 1.375rem;
+  --text-24: 1.5rem;
+  --text-28: 1.75rem;
+  --text-32: 2rem;
+  --text-36: 2.25rem;
+  --text-40: 2.5rem;
+  --text-56: 3.5rem;
+}

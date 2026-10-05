@@ -1,0 +1,41 @@
+.icon-tile {
+  display: inline-grid;
+  place-items: center;
+  flex-shrink: 0;
+  transition:
+    background-color 0.15s ease,
+    color 0.15s ease;
+}
+
+.icon-tile--m {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-sm);
+}
+
+.icon-tile--l {
+  width: 48px;
+  height: 48px;
+  border-radius: var(--radius-md);
+}
+
+.icon-tile--tint {
+  background-color: var(--color-primary-12);
+  color: var(--color-primary-dark);
+}
+
+.icon-tile--solid {
+  background-color: var(--color-primary);
+  color: var(--color-white);
+}
+
+.icon-tile--neutral {
+  background-color: var(--color-surface-subtle);
+  color: var(--color-text);
+}
+
+.icon-tile--circular {
+  border-radius: var(--radius-full);
+  background-color: var(--color-primary);
+  color: var(--color-white);
+}

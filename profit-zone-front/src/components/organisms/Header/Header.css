@@ -1,0 +1,27 @@
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-16);
+  min-height: 77px;
+  padding: 0 var(--space-80);
+  background-color: var(--color-surface);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.header-brand {
+  display: inline-flex;
+}
+
+@media (max-width: 1024px) {
+  .header {
+    padding: 0 var(--space-24);
+  }
+}
+
+@media (max-width: 720px) {
+  .header {
+    min-height: 64px;
+    padding: 0 var(--space-16);
+  }
+}
