@@ -134,6 +134,11 @@ acepta únicamente los orígenes de `CORS_ORIGINS`; cualquier otro recibe **403*
 | `GET`  | `/api/density`     | Densidad censal y demografía en un radio de CABA (query: `lat`, `lng`, `radius`) |
 | `GET`  | `/api/competition` | Competidores directos/indirectos en el radio con Google Places  |
 | `GET`  | `/api/traffic`     | Afluencia horaria (7h-23h) y score por franja horaria           |
+| `GET`  | `/api/categories`  | Categorías (rubros) con subcategorías y términos de búsqueda (query: `active`) |
+| `GET`  | `/api/categories/:code` | Una categoría con sus subcategorías (404 si no existe)     |
+| `GET`  | `/api/categories/:categoryCode/subcategories/:subcategoryCode/questions` | Encuesta completa de un rubro (`business` y `details`) |
+| `GET`  | `/api/questions`   | Banco de preguntas con opciones y asignaciones (query: `scope`, `active`) |
+| `GET`  | `/api/questions/:code` | Una pregunta con sus opciones en orden (404 si no existe)   |
 
 ## Estructura
 
@@ -155,12 +160,12 @@ ProfitZone/
 │       └── server.js     punto de entrada
 └── profit-zone-front/
     └── src/
-        ├── assets/       recursos estáticos y estilos
-        ├── components/   componentes reutilizables
+        ├── assets/       recursos estáticos
+        ├── components/   atomic design: atoms/, molecules/, organisms/, templates/
         ├── context/      contextos de React
         ├── hooks/        custom hooks
-        ├── layouts/      layouts de página
         ├── pages/        vistas ruteadas
+        ├── styles/       tokens de diseño (paleta del Figma)
         ├── services/     cliente HTTP y llamadas a la API
         ├── utils/        helpers
         ├── App.jsx       definición de rutas

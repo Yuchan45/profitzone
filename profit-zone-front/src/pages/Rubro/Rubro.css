@@ -1,0 +1,129 @@
+.rubro {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-32);
+}
+
+.rubro-heading {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-8);
+}
+
+.rubro-title {
+  margin: 0;
+  font-size: var(--text-32);
+  font-weight: 800;
+  line-height: 1.1;
+}
+
+.rubro-subtitle {
+  margin: 0;
+  color: var(--color-text-secondary);
+  font-size: var(--text-16);
+  line-height: 1.5;
+}
+
+.rubro-categories {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-24);
+}
+
+.rubro-subcategories {
+  padding: var(--space-24);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background-color: var(--color-surface);
+}
+
+.rubro-subcategories-title {
+  margin: 0 0 var(--space-14);
+  font-size: var(--text-15);
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.rubro-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-8);
+}
+
+.rubro-empty {
+  margin: 0;
+  color: var(--color-text-secondary);
+  font-size: var(--text-14);
+}
+
+.rubro-message {
+  margin: 0;
+  padding: var(--space-16) var(--space-20);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background-color: var(--color-surface);
+  color: var(--color-text-secondary);
+  font-size: var(--text-14);
+}
+
+.rubro-message--error {
+  border-color: var(--color-error);
+  background-color: var(--color-error-12);
+  color: var(--color-error-dark);
+}
+
+/* Placeholder de las cards mientras cargan los rubros */
+.rubro-skeleton {
+  height: 178px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background: linear-gradient(
+    90deg,
+    var(--color-surface) 0%,
+    var(--color-surface-subtle) 50%,
+    var(--color-surface) 100%
+  );
+  background-size: 200% 100%;
+  animation: rubro-skeleton-shimmer 1.4s ease-in-out infinite;
+}
+
+@keyframes rubro-skeleton-shimmer {
+  from {
+    background-position: 100% 0;
+  }
+  to {
+    background-position: -100% 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rubro-skeleton {
+    animation: none;
+  }
+}
+
+.rubro-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-16);
+}
+
+@media (max-width: 720px) {
+  .rubro {
+    gap: var(--space-24);
+  }
+
+  .rubro-title {
+    font-size: var(--text-28);
+  }
+
+  .rubro-categories {
+    grid-template-columns: 1fr;
+    gap: var(--space-16);
+  }
+
+  .rubro-subcategories {
+    padding: var(--space-20);
+  }
+}

@@ -158,7 +158,7 @@ function Perfil() {
       <div className="profile-page-wrapper">
         <h1 className="profile-page-title">Perfil</h1>
         <div className="profile-card">
-          <p style={{ color: '#ef4444' }}>
+          <p style={{ color: 'var(--color-error)' }}>
             Ocurrió un error al cargar el perfil: {error}
           </p>
         </div>

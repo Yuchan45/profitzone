@@ -28,12 +28,16 @@ Copiar `.env.example` a `.env` y ajustar:
 
 ```
 src/
-  assets/      recursos estáticos y estilos
-  components/  componentes reutilizables (Navbar, Footer, ...)
+  assets/      recursos estáticos
+  components/  componentes reutilizables con atomic design
+    atoms/       piezas mínimas (Button, Chip, Icon, IconTile, Logo)
+    molecules/   combinaciones de atoms (CategoryCard, ApiStatus)
+    organisms/   secciones de UI (Header, Navbar, Footer, Stepper)
+    templates/   layouts de página (MainLayout, FlowLayout)
   context/     contextos de React (AuthContext)
   hooks/       custom hooks (useAuth)
-  layouts/     layouts de página (MainLayout)
-  pages/       vistas ruteadas (Home, Dashboard, NotFound)
+  pages/       vistas ruteadas (Home, Dashboard, Perfil, Rubro, NotFound)
+  styles/      tokens.css: paleta, radios, espaciados y fuentes del Figma
   services/    cliente HTTP y llamadas a la API (api.js)
   utils/       helpers (formatters)
   App.jsx      definición de rutas
