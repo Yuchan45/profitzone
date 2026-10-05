@@ -1,4 +1,4 @@
-import { searchAddresses } from '../services/geocode.service.js'
+import { suggestLocations } from '../services/geocode.service.js'
 import { httpError } from '../utils/httpErrors.js'
 
 const MIN_QUERY_LENGTH = 3
@@ -9,5 +9,5 @@ export async function getGeocode(req, res) {
   if (query.length < MIN_QUERY_LENGTH || query.length > MAX_QUERY_LENGTH) {
     throw httpError(400, `Escribí una dirección de entre ${MIN_QUERY_LENGTH} y ${MAX_QUERY_LENGTH} caracteres.`)
   }
-  res.json(await searchAddresses(query))
+  res.json(await suggestLocations(query))
 }

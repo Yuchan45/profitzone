@@ -148,8 +148,8 @@ acepta únicamente los orígenes de `CORS_ORIGINS`; cualquier otro recibe **403*
 | `GET`  | `/api/analyses/:id/report` | Reporte de zona: indicadores del punto y radio, cuadro de fortalezas y debilidades cruzado con las respuestas y resumen (409 si el análisis no tiene ubicación) |
 | `PUT`  | `/api/analyses/:id/answers` | Reemplaza todas las respuestas (`{ answers }`), con las mismas validaciones que el alta |
 | `PATCH` | `/api/analyses/:id/location` | Guarda el punto y el radio (`{ lat, lng, radius }`, radio entero entre 200 y 600 m, dentro de Palermo; 422 si cae afuera). **Requiere sesión**: el análisis queda a nombre del usuario |
-| `GET`  | `/api/neighborhoods` | Barrios donde se puede analizar (MVP: Palermo) con su contorno `[lat, lng]` y centro, calculados desde el censo |
-| `GET`  | `/api/geocode?q=` | Busca direcciones de CABA con el normalizador del GCBA (USIG): `[{ label, lat, lng }]`. 422 si falta la altura |
+| `GET`  | `/api/neighborhoods` | Barrios donde se puede analizar (MVP: Palermo) con su contorno `[lat, lng]`, sus límites (`bounds`) y un centro ponderado por población, calculados desde el censo |
+| `GET`  | `/api/geocode?q=` | Autocompletado de direcciones dentro de Palermo: `[{ type, label, lat?, lng?, detail? }]`. Sin número sugiere calles (`street`, sin coordenadas) y lugares (`place`); con número ("gurruchaga 16") completa la altura (`address`: Gurruchaga 1600). Combina Photon (OSM) y el normalizador del GCBA (USIG) |
 | `POST` | `/api/auth/register` | Crea la cuenta (`firstName`, `lastName`, `email`, `password`). 201 `{ user, accessToken }` + cookie de refresh; 409 si el correo existe |
 | `POST` | `/api/auth/login` | Inicia sesión. 200 `{ user, accessToken }` + cookie de refresh; 401 genérico si falla |
 | `POST` | `/api/auth/refresh` | Renueva la sesión con la cookie `pz_refresh` (rotación). 200 `{ user, accessToken }`; 401 si venció o fue revocada |
