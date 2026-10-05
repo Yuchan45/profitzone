@@ -99,3 +99,137 @@
 .api-status--error .api-status-dot {
   background-color: var(--destructive);
 }
+
+/* Hero: figuras flotantes (componente HeroFigures) */
+.hero-float {
+  animation: hero-float var(--float-duration, 7s) ease-in-out var(--float-delay, 0s) infinite
+    alternate;
+}
+
+@keyframes hero-float {
+  from {
+    translate: 0 0;
+  }
+  to {
+    translate: var(--float-x, 0px) var(--float-y, -12px);
+  }
+}
+
+.hero-dash {
+  animation: hero-dash 1.6s linear infinite;
+}
+
+@keyframes hero-dash {
+  to {
+    stroke-dashoffset: -13;
+  }
+}
+
+.hero-pulse {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: hero-pulse 3s ease-out infinite;
+}
+
+@keyframes hero-pulse {
+  0% {
+    opacity: 0.7;
+    transform: scale(0.7);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.35);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-float,
+  .hero-dash,
+  .hero-pulse,
+  .hero-donut-main,
+  .hero-donut-accent,
+  .hero-bar,
+  .hero-breathe {
+    animation: none;
+  }
+}
+
+/* Hero: cambios de valores "de vez en cuando" */
+.hero-donut-main {
+  animation: hero-donut-main 9s ease-in-out infinite;
+}
+
+.hero-donut-accent {
+  animation: hero-donut-accent 9s ease-in-out infinite;
+}
+
+@keyframes hero-donut-main {
+  0%,
+  35% {
+    stroke-dasharray: 132 188.5;
+  }
+  50%,
+  85% {
+    stroke-dasharray: 96 188.5;
+  }
+  100% {
+    stroke-dasharray: 132 188.5;
+  }
+}
+
+@keyframes hero-donut-accent {
+  0%,
+  35% {
+    stroke-dasharray: 41 188.5;
+    stroke-dashoffset: -138;
+  }
+  50%,
+  85% {
+    stroke-dasharray: 62 188.5;
+    stroke-dashoffset: -102;
+  }
+  100% {
+    stroke-dasharray: 41 188.5;
+    stroke-dashoffset: -138;
+  }
+}
+
+.hero-bar {
+  transform-box: fill-box;
+  transform-origin: bottom;
+  animation: hero-bar 8s ease-in-out infinite;
+}
+
+@keyframes hero-bar {
+  0%,
+  40% {
+    transform: scaleY(1);
+  }
+  55%,
+  85% {
+    transform: scaleY(var(--loop-scale, 1.4));
+  }
+  100% {
+    transform: scaleY(1);
+  }
+}
+
+.hero-breathe {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: hero-breathe 8s ease-in-out infinite;
+}
+
+@keyframes hero-breathe {
+  0%,
+  40% {
+    transform: scale(1);
+  }
+  55%,
+  85% {
+    transform: scale(var(--loop-scale, 1.5));
+  }
+  100% {
+    transform: scale(1);
+  }
+}
