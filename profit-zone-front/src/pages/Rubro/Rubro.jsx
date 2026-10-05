@@ -1,12 +1,14 @@
-import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useCategories } from '../../hooks/useCategories.js'
+import { useAnalysisFlow } from '../../hooks/useAnalysisFlow.js'
+import { useFlowSteps } from '../../hooks/useFlowSteps.js'
 import Stepper from '../../components/organisms/Stepper/Stepper.jsx'
+import StepHeading from '../../components/molecules/StepHeading/StepHeading.jsx'
+import StatusMessage from '../../components/molecules/StatusMessage/StatusMessage.jsx'
 import CategoryCard from '../../components/molecules/CategoryCard/CategoryCard.jsx'
 import Chip from '../../components/atoms/Chip/Chip.jsx'
 import Button from '../../components/atoms/Button/Button.jsx'
 import './Rubro.css'
-
-const PASOS = ['Rubro', 'Tu negocio', 'Ubicación', 'Análisis', 'Reporte']
 
 // La API no trae íconos: se asignan por code de categoría.
 const CATEGORY_ICONS = {
@@ -16,47 +18,46 @@ const CATEGORY_ICONS = {
 const DEFAULT_CATEGORY_ICON = 'store'
 
 function Rubro() {
+  const navigate = useNavigate()
+  // La selección vive en el contexto del flujo: así el Stepper sabe si este paso
+  // está completo y, al volver desde otro paso, queda marcado lo que se eligió.
+  const { categoryCode, subcategoryCode, setRubro } = useAnalysisFlow()
+  const steps = useFlowSteps()
   const { status, data: categories, error } = useCategories()
-  const [selectedCategoryCode, setSelectedCategoryCode] = useState(null)
-  const [selectedSubcategoryCode, setSelectedSubcategoryCode] = useState(null)
 
   // Hasta que el usuario elija, queda seleccionada la primera categoría
-  const category =
-    categories?.find((c) => c.code === selectedCategoryCode) ?? categories?.[0] ?? null
+  const category = categories?.find((c) => c.code === categoryCode) ?? categories?.[0] ?? null
+  // Solo vale si pertenece a la categoría mostrada (puede haberse desactivado)
+  const subcategory = category?.subcategories.find((s) => s.code === subcategoryCode) ?? null
 
   const handleSelectCategory = (code) => {
     if (code === category?.code) return
-    setSelectedCategoryCode(code)
-    setSelectedSubcategoryCode(null)
+    // Cambiar de rubro invalida la subcategoría y las respuestas de los pasos siguientes
+    setRubro(code, null)
   }
 
   return (
-    <div className="rubro">
-      <Stepper steps={PASOS} current={1} />
+    <div className="flow-step">
+      <Stepper steps={steps} current={1} />
 
-      <header className="rubro-heading">
-        <h1 className="rubro-title">¿Qué querés abrir?</h1>
-        <p className="rubro-subtitle">
-          Elegí el rubro y la subcategoría. Con eso definimos qué locales cuentan como
-          competencia en la zona.
-        </p>
-      </header>
+      <StepHeading
+        title="¿Qué querés abrir?"
+        subtitle="Elegí el rubro y la subcategoría. Con eso definimos qué locales cuentan como competencia en la zona."
+      />
 
       {status === 'loading' && (
         <div className="rubro-categories" aria-busy="true" aria-label="Cargando rubros">
-          <div className="rubro-skeleton" />
-          <div className="rubro-skeleton" />
+          <div className="flow-skeleton" />
+          <div className="flow-skeleton" />
         </div>
       )}
 
       {status === 'error' && (
-        <p className="rubro-message rubro-message--error" role="alert">
-          No pudimos cargar los rubros: {error}
-        </p>
+        <StatusMessage variant="error">No pudimos cargar los rubros: {error}</StatusMessage>
       )}
 
       {status === 'ok' && categories.length === 0 && (
-        <p className="rubro-message">Todavía no hay rubros disponibles.</p>
+        <StatusMessage>Todavía no hay rubros disponibles.</StatusMessage>
       )}
 
       {status === 'ok' && category && (
@@ -83,8 +84,8 @@ function Rubro() {
                 {category.subcategories.map((s) => (
                   <Chip
                     key={s.code}
-                    selected={s.code === selectedSubcategoryCode}
-                    onClick={() => setSelectedSubcategoryCode(s.code)}
+                    selected={s.code === subcategory?.code}
+                    onClick={() => setRubro(category.code, s.code)}
                   >
                     {s.name}
                   </Chip>
@@ -97,11 +98,15 @@ function Rubro() {
         </>
       )}
 
-      <div className="rubro-actions">
+      <div className="flow-step-actions">
         <Button variant="text" to="/">
           Volver al inicio
         </Button>
-        <Button variant="primary" disabled={!selectedSubcategoryCode}>
+        <Button
+          variant="primary"
+          disabled={!subcategory}
+          onClick={() => navigate('/analizar/negocio')}
+        >
           Siguiente
         </Button>
       </div>

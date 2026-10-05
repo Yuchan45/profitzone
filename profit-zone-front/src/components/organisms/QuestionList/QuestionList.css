@@ -1,0 +1,23 @@
+.question-list {
+  padding: var(--space-32);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background-color: var(--color-surface);
+}
+
+.question-list-item + .question-list-item {
+  margin-top: var(--space-28);
+  padding-top: var(--space-28);
+  border-top: 1px solid var(--color-border);
+}
+
+@media (max-width: 720px) {
+  .question-list {
+    padding: var(--space-20);
+  }
+
+  .question-list-item + .question-list-item {
+    margin-top: var(--space-20);
+    padding-top: var(--space-20);
+  }
+}

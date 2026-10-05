@@ -38,6 +38,27 @@
   background-color: var(--color-border-strong);
 }
 
+.stepper-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-8);
+  flex-shrink: 0;
+  color: inherit;
+}
+
+/* Paso navegable (anterior, o siguiente ya alcanzable) */
+.stepper-item--link {
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: color 0.15s ease;
+}
+
+/* Hover mínimo: solo cambia el tono del texto.
+   Con .stepper-step delante para ganarle al color de los estados (done/pending). */
+.stepper-step .stepper-item--link:hover {
+  color: var(--color-primary-dark);
+}
+
 .stepper-number {
   display: grid;
   place-items: center;
@@ -65,13 +86,28 @@
   color: var(--color-text);
 }
 
+/* Paso siguiente ya alcanzable: un poco más marcado que los bloqueados */
+.stepper-step--pending .stepper-item--link {
+  color: var(--color-text-secondary);
+}
+
 .stepper-step--done .stepper-number {
   background-color: var(--color-primary);
   color: var(--color-white);
 }
 
-.stepper-step--done::after {
+.stepper-step--done:not(:last-child)::after {
   background-color: var(--color-primary);
+}
+
+/* Texto solo para lectores de pantalla */
+.stepper-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
 }
 
 @media (max-width: 720px) {

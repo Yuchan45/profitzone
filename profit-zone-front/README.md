@@ -31,12 +31,12 @@ src/
   assets/      recursos estáticos
   components/  componentes reutilizables con atomic design
     atoms/       piezas mínimas (Button, Chip, Icon, IconTile, Logo)
-    molecules/   combinaciones de atoms (CategoryCard, ApiStatus)
-    organisms/   secciones de UI (Header, Navbar, Footer, Stepper)
+    molecules/   combinaciones de atoms (CategoryCard, QuestionField, StepHeading, StatusMessage, ApiStatus)
+    organisms/   secciones de UI (Header, Navbar, Footer, Stepper, QuestionList)
     templates/   layouts de página (MainLayout, FlowLayout)
-  context/     contextos de React (AuthContext)
+  context/     contextos de React (AuthContext, AnalysisFlowContext: estado del flujo de análisis)
   hooks/       custom hooks (useAuth)
-  pages/       vistas ruteadas (Home, Dashboard, Perfil, Rubro, NotFound)
+  pages/       vistas ruteadas (Home, Dashboard, Perfil, Rubro, Negocio, NotFound)
   styles/      tokens.css: paleta, radios, espaciados y fuentes del Figma
   services/    cliente HTTP y llamadas a la API (api.js)
   utils/       helpers (formatters)

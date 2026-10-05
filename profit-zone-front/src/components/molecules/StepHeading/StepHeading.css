@@ -1,0 +1,33 @@
+.step-heading {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-8);
+}
+
+.step-heading-eyebrow {
+  margin: 0 0 var(--space-4);
+  color: var(--color-primary-dark);
+  font-size: var(--text-13);
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.step-heading-title {
+  margin: 0;
+  font-size: var(--text-32);
+  font-weight: 800;
+  line-height: 1.1;
+}
+
+.step-heading-subtitle {
+  margin: 0;
+  color: var(--color-text-secondary);
+  font-size: var(--text-16);
+  line-height: 1.5;
+}
+
+@media (max-width: 720px) {
+  .step-heading-title {
+    font-size: var(--text-28);
+  }
+}
