@@ -1,0 +1,26 @@
+.selection-summary {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-12);
+  align-self: flex-start;
+  margin: 0;
+  padding: var(--space-8) var(--space-16);
+  border-radius: var(--radius-sm);
+  background-color: var(--color-surface-subtle);
+  font-size: var(--text-13);
+  line-height: 1.4;
+}
+
+.selection-summary-label {
+  color: var(--color-text);
+}
+
+.selection-summary-action {
+  color: var(--color-primary-dark);
+  font-weight: 600;
+  transition: color 0.15s ease;
+}
+
+.selection-summary-action:hover {
+  color: var(--color-text);
+}
