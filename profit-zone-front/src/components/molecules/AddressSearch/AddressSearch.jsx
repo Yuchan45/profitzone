@@ -7,7 +7,7 @@ import './AddressSearch.css'
  * Buscador de direcciones: se busca al enviar (Enter o la lupa) y los resultados
  * se eligen de una lista. status: 'idle' | 'loading' | 'ok' | 'error'.
  */
-function AddressSearch({ value, onChange, onSearch, onSelect, status, results, error }) {
+function AddressSearch({ value, onChange, onSearch, onSelect, status, results, error, areaName }) {
   const inputRef = useRef(null)
 
   // Al elegir una calle (sin altura) el usuario sigue escribiendo el número:
@@ -55,7 +55,7 @@ function AddressSearch({ value, onChange, onSearch, onSelect, status, results, e
         </p>
       )}
       {status === 'ok' && results.length === 0 && (
-        <p className="address-search-message">No encontramos esa dirección en Palermo.</p>
+        <p className="address-search-message">No encontramos esa dirección en {areaName}.</p>
       )}
       {status === 'ok' && results.length > 0 && (
         <ul className="address-search-results" aria-label="Resultados de la búsqueda">

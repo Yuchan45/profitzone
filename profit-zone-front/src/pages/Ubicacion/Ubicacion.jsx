@@ -107,6 +107,8 @@ function Ubicacion() {
     if (result.type === 'street') {
       setQuery(`${result.label} `)
       addressSearch.clear()
+      // No se vuelve a sugerir la misma calle: se busca de nuevo cuando escriba la altura
+      setSuggestionsEnabled(false)
       return
     }
     setSuggestionsEnabled(false)
@@ -187,6 +189,7 @@ function Ubicacion() {
               status={addressSearch.status}
               results={addressSearch.results}
               error={addressSearch.error}
+              areaName={neighborhood.name}
             />
 
             <div className="ubicacion-radius">

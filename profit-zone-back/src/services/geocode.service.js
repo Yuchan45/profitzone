@@ -1,5 +1,6 @@
 import { listNeighborhoods } from './neighborhoods.service.js'
 import { isPointInPolygons } from '../utils/geo.js'
+import { httpError } from '../utils/httpErrors.js'
 
 // Dos servicios gratis y sin clave, que se complementan:
 // - Photon (OpenStreetMap) completa nombres de calles y lugares mientras se
@@ -110,18 +111,28 @@ async function geocodeInNeighborhood(address, neighborhood) {
 /**
  * Resuelve con la primera lista no vacía (sin esperar a las demás) o con [] si
  * ninguna trae resultados. USIG tarda hasta 2 s con alturas que no existen.
+ * Si fallan todas (servicio caído o timeout) rechaza: no es lo mismo que "no existe".
  */
 function firstNonEmpty(promises) {
-  return new Promise((resolve) => {
+  return new Promise((resolve, reject) => {
     let pending = promises.length
+    let succeeded = 0
+    let lastError = null
     if (pending === 0) resolve([])
     for (const promise of promises) {
       promise
-        .then((list) => list.length > 0 && resolve(list))
-        .catch(() => {})
+        .then((list) => {
+          succeeded += 1
+          if (list.length > 0) resolve(list)
+        })
+        .catch((error) => {
+          lastError = error
+        })
         .finally(() => {
           pending -= 1
-          if (pending === 0) resolve([])
+          if (pending > 0) return
+          if (succeeded > 0) resolve([])
+          else reject(lastError)
         })
     }
   })
@@ -155,7 +166,7 @@ async function suggestAddresses(streetPart, number, neighborhood) {
  * - sin número: calles (`type: 'street'`, para que el usuario agregue la altura)
  *   y lugares con coordenadas (`type: 'place'`, ej. "Plaza Serrano");
  * - con número ("gurruchaga 16"): direcciones con coordenadas (`type: 'address'`).
- * Si los servicios externos fallan devuelve una lista vacía: el mapa sigue usable.
+ * Si los servicios externos fallan responde 502: el mapa sigue usable con clicks.
  */
 export async function suggestLocations(query) {
   const [neighborhood] = await listNeighborhoods()
@@ -172,11 +183,15 @@ export async function suggestLocations(query) {
       : await suggestStreetsAndPlaces(query, neighborhood)
   } catch (error) {
     console.warn(`[ProfitZone] No se pudieron buscar sugerencias de direcciones: ${error.message}`)
-    return []
+    throw httpError(502, 'No pudimos buscar direcciones en este momento. Probá de nuevo en un rato.')
   }
 
   const result = suggestions.slice(0, MAX_SUGGESTIONS)
-  if (cache.size >= CACHE_MAX_ENTRIES) cache.delete(cache.keys().next().value)
-  cache.set(key, result)
+  // Solo se guardan los resultados no vacíos: un vacío puede venir de un servicio
+  // lento o caído (algunos pedidos fallaron) y no tiene que quedar fijo
+  if (result.length > 0) {
+    if (cache.size >= CACHE_MAX_ENTRIES) cache.delete(cache.keys().next().value)
+    cache.set(key, result)
+  }
   return result
 }
