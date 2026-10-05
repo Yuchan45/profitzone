@@ -1,3 +1,4 @@
+import { useRef } from 'react'
 import Icon from '../../atoms/Icon/Icon.jsx'
 import Input from '../../atoms/Input/Input.jsx'
 import './AddressSearch.css'
@@ -7,6 +8,20 @@ import './AddressSearch.css'
  * se eligen de una lista. status: 'idle' | 'loading' | 'ok' | 'error'.
  */
 function AddressSearch({ value, onChange, onSearch, onSelect, status, results, error }) {
+  const inputRef = useRef(null)
+
+  // Al elegir una calle (sin altura) el usuario sigue escribiendo el número:
+  // el foco vuelve al buscador con el cursor al final del texto
+  const handleSelect = (result) => {
+    onSelect(result)
+    if (result.type !== 'street') return
+    requestAnimationFrame(() => {
+      const input = inputRef.current
+      input.focus()
+      input.setSelectionRange(input.value.length, input.value.length)
+    })
+  }
+
   const handleSubmit = (event) => {
     event.preventDefault()
     if (value.trim()) onSearch(value.trim())
@@ -19,6 +34,7 @@ function AddressSearch({ value, onChange, onSearch, onSelect, status, results, e
       </label>
       <div className="address-search-field">
         <Input
+          ref={inputRef}
           id="address-search-input"
           type="search"
           className="address-search-input"
@@ -39,14 +55,22 @@ function AddressSearch({ value, onChange, onSearch, onSelect, status, results, e
         </p>
       )}
       {status === 'ok' && results.length === 0 && (
-        <p className="address-search-message">No encontramos esa dirección en la Ciudad.</p>
+        <p className="address-search-message">No encontramos esa dirección en Palermo.</p>
       )}
       {status === 'ok' && results.length > 0 && (
         <ul className="address-search-results" aria-label="Resultados de la búsqueda">
           {results.map((result) => (
-            <li key={`${result.lat},${result.lng}`}>
-              <button type="button" className="address-search-result" onClick={() => onSelect(result)}>
+            <li key={`${result.type}-${result.label}-${result.lat ?? ''}`}>
+              <button
+                type="button"
+                className="address-search-result"
+                // El foco se queda en el buscador para seguir escribiendo
+                onMouseDown={(event) => event.preventDefault()}
+                onClick={() => handleSelect(result)}
+              >
                 {result.label}
+                {result.type === 'street' && <span className="address-search-hint"> · agregá la altura</span>}
+                {result.detail && <span className="address-search-hint"> · {result.detail}</span>}
               </button>
             </li>
           ))}

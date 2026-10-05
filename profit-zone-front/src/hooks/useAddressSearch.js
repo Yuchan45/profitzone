@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useCallback, useRef, useState } from 'react'
 import { searchAddresses } from '../services/geo.service.js'
 
 /**
@@ -10,7 +10,8 @@ export function useAddressSearch() {
   const [state, setState] = useState({ status: 'idle', results: [], error: null })
   const lastRequest = useRef(0)
 
-  const search = async (query) => {
+  // useCallback: el autocompletado lo usa como dependencia de un efecto
+  const search = useCallback(async (query) => {
     const request = ++lastRequest.current
     setState({ status: 'loading', results: [], error: null })
     try {
@@ -25,7 +26,7 @@ export function useAddressSearch() {
         })
       }
     }
-  }
+  }, [])
 
   const clear = () => {
     lastRequest.current += 1

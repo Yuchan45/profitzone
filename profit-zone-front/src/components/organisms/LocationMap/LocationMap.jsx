@@ -17,7 +17,17 @@ import './LocationMap.css'
 // muestran en grises con CSS para acercarlos al mapa del Figma.
 const TILES_URL = 'https://tile.openstreetmap.org/{z}/{x}/{y}.png'
 const TILES_ATTRIBUTION = '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-const DEFAULT_ZOOM = 14
+const DEFAULT_ZOOM = 15
+// Margen alrededor del barrio hasta donde se puede mover el mapa
+const BOUNDS_PADDING = 0.15
+
+// Anillo que cubre todo el mundo: con el barrio como hueco, oscurece lo de afuera
+const WORLD_RING = [
+  [-90, -180],
+  [-90, 180],
+  [90, 180],
+  [90, -180],
+]
 
 // Marcador con HTML y CSS propio: los íconos por defecto de Leaflet no cargan con Vite
 const markerIcon = L.divIcon({
@@ -51,7 +61,10 @@ function FollowPoint({ point, focusKey }) {
  * del radio. Un click o arrastrar el marcador cambia el punto (`onPointChange`).
  * `focusKey` cambia cuando el punto viene del buscador, para centrar el mapa ahí.
  */
-function LocationMap({ center, boundary, point, radius, onPointChange, focusKey, outside = false }) {
+function LocationMap({ center, bounds, boundary, point, radius, onPointChange, focusKey, outside = false }) {
+  const maxBounds = bounds
+    ? L.latLngBounds([bounds.south, bounds.west], [bounds.north, bounds.east]).pad(BOUNDS_PADDING)
+    : undefined
   return (
     <div className={`location-map${outside ? ' location-map--outside' : ''}`}>
       <MapContainer
@@ -60,11 +73,21 @@ function LocationMap({ center, boundary, point, radius, onPointChange, focusKey,
         className="location-map-canvas"
         scrollWheelZoom
         zoomControl={false}
+        maxBounds={maxBounds}
+        maxBoundsViscosity={0.8}
+        minZoom={13}
       >
         <ZoomControl position="topright" />
         <TileLayer url={TILES_URL} attribution={TILES_ATTRIBUTION} maxZoom={19} />
         {boundary && (
-          <Polygon positions={boundary} pathOptions={{ className: 'location-map-boundary' }} interactive={false} />
+          <>
+            <Polygon
+              positions={[WORLD_RING, ...boundary.map(([outer]) => outer)]}
+              pathOptions={{ className: 'location-map-outside' }}
+              interactive={false}
+            />
+            <Polygon positions={boundary} pathOptions={{ className: 'location-map-boundary' }} interactive={false} />
+          </>
         )}
         {point && (
           <>

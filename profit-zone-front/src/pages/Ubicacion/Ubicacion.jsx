@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Navigate, useNavigate } from 'react-router-dom'
 import { useAnalysisFlow } from '../../hooks/useAnalysisFlow.js'
 import { useAuth } from '../../hooks/useAuth.js'
@@ -72,6 +72,15 @@ function Ubicacion() {
   const [query, setQuery] = useState('')
   const [focusKey, setFocusKey] = useState(0)
   const [authModal, setAuthModal] = useState({ open: false, tab: 'register' })
+  const [suggestionsEnabled, setSuggestionsEnabled] = useState(false)
+
+  // Autocompletado: busca sugerencias de Palermo 300 ms después de dejar de escribir
+  const { search: searchSuggestions } = addressSearch
+  useEffect(() => {
+    if (!suggestionsEnabled || query.trim().length < 3) return
+    const timer = setTimeout(() => searchSuggestions(query.trim()), 300)
+    return () => clearTimeout(timer)
+  }, [query, suggestionsEnabled, searchSuggestions])
 
   // Sin análisis guardado (paso 2 sin terminar) no se puede elegir la zona
   if (!analysisId) {
@@ -87,7 +96,20 @@ function Ubicacion() {
   const handlePointChange = (nextPoint) => setLocation({ ...nextPoint, radius })
   const handleRadiusChange = (nextRadius) => point && setLocation({ ...point, radius: nextRadius })
 
+  const handleQueryChange = (value) => {
+    setQuery(value)
+    setSuggestionsEnabled(true)
+    if (value.trim().length < 3) addressSearch.clear()
+  }
+
   const handleSelectAddress = (result) => {
+    // Una calle sin altura no tiene punto: se completa el texto para que agregue el número
+    if (result.type === 'street') {
+      setQuery(`${result.label} `)
+      addressSearch.clear()
+      return
+    }
+    setSuggestionsEnabled(false)
     setLocation({ lat: result.lat, lng: result.lng, radius })
     setQuery(result.label)
     addressSearch.clear()
@@ -147,6 +169,7 @@ function Ubicacion() {
         <div className="ubicacion-layout">
           <LocationMap
             center={neighborhood.center}
+            bounds={neighborhood.bounds}
             boundary={neighborhood.boundary}
             point={point}
             radius={radius}
@@ -158,7 +181,7 @@ function Ubicacion() {
           <aside className="ubicacion-panel">
             <AddressSearch
               value={query}
-              onChange={setQuery}
+              onChange={handleQueryChange}
               onSearch={addressSearch.search}
               onSelect={handleSelectAddress}
               status={addressSearch.status}

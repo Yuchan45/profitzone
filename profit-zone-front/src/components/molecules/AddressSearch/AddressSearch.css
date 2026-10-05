@@ -78,3 +78,8 @@
 .address-search-result:focus-visible {
   background-color: var(--color-surface-subtle);
 }
+
+.address-search-hint {
+  color: var(--color-text-tertiary);
+  font-size: var(--text-13);
+}
