@@ -6,26 +6,42 @@ import api from './api.js'
  */
 export const USE_MOCK = true
 
-const MOCK_STORAGE_KEY = 'profitzone_profile_mock_v1'
+// Mock por usuario: cada cuenta tiene su propio perfil en localStorage, así una
+// cuenta nueva arranca vacía (sin foto ni actividad) y no hereda datos de otra.
+// Nombre, correo y fecha de alta salen de la sesión real (useAuth), no de acá.
+const MOCK_STORAGE_PREFIX = 'profitzone_profile_mock_v2'
+let mockOwnerId = 'anonymous'
+
+// Limpia el mock anterior (v1, compartido y con foto de template)
+try {
+  localStorage.removeItem('profitzone_profile_mock_v1')
+} catch {
+  // localStorage bloqueado: no hay nada que limpiar
+}
+
+/** Indica de qué usuario es el perfil mock (lo llama useProfile con el id de la sesión). */
+export function setProfileMockOwner(userId) {
+  mockOwnerId = userId ?? 'anonymous'
+}
+
+function mockStorageKey() {
+  return `${MOCK_STORAGE_PREFIX}:${mockOwnerId}`
+}
 
 const initialMockProfile = {
-  id: 'usr_carlos_mendoza',
-  firstName: 'Carlos',
-  lastName: 'Mendoza',
-  email: 'carlos@correo.com',
-  avatarUrl:
-    'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=300&h=300&fit=crop&crop=faces&auto=format&q=80',
-  memberSince: 'septiembre 2026',
+  // Sin foto: la UI muestra el avatar vacío por defecto
+  avatarUrl: null,
   googleLinked: false,
-  savedReportsCount: 5,
-  lastAnalysisDate: '27/09/2026',
+  savedReportsCount: 0,
+  lastAnalysisDate: null,
 }
 
 function getStoredMock() {
+  const key = mockStorageKey()
   try {
-    const raw = localStorage.getItem(MOCK_STORAGE_KEY)
+    const raw = localStorage.getItem(key)
     if (!raw) {
-      localStorage.setItem(MOCK_STORAGE_KEY, JSON.stringify(initialMockProfile))
+      localStorage.setItem(key, JSON.stringify(initialMockProfile))
       return initialMockProfile
     }
     return JSON.parse(raw)
@@ -36,7 +52,7 @@ function getStoredMock() {
 
 function setStoredMock(data) {
   try {
-    localStorage.setItem(MOCK_STORAGE_KEY, JSON.stringify(data))
+    localStorage.setItem(mockStorageKey(), JSON.stringify(data))
   } catch {
     // ignorar error de cuota o localStorage
   }
@@ -124,7 +140,7 @@ export async function toggleGoogleAccount() {
 export async function deleteAccount() {
   if (USE_MOCK) {
     await new Promise((resolve) => setTimeout(resolve, 120))
-    localStorage.removeItem(MOCK_STORAGE_KEY)
+    localStorage.removeItem(mockStorageKey())
     return { success: true }
   }
 

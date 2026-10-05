@@ -1,15 +1,16 @@
 import { useState, useRef } from 'react'
 import { Link } from 'react-router-dom'
 import { useProfile } from '../../hooks/useProfile.js'
+import { useAuth } from '../../hooks/useAuth.js'
+import Icon from '../../components/atoms/Icon/Icon.jsx'
 import './Perfil.css'
 
-function getInitials(firstName, lastName) {
-  const f = firstName ? firstName.trim()[0] : 'C'
-  const l = lastName ? lastName.trim()[0] : 'M'
-  return `${f}${l}`.toUpperCase()
-}
+const MEMBER_SINCE_FORMAT = new Intl.DateTimeFormat('es-AR', { month: 'long', year: 'numeric' })
 
 function Perfil() {
+  // Nombre, correo y fecha de alta salen de la sesión real; el resto del perfil
+  // (foto, Google, actividad) sigue siendo mock por usuario hasta tener /api/users/me.
+  const { user: authUser } = useAuth()
   const {
     status,
     profile,
@@ -21,14 +22,17 @@ function Perfil() {
     setAvatar,
     removeAvatar,
     deleteProfile,
-  } = useProfile()
+  } = useProfile(authUser?.id)
 
   // Modificaciones locales sobre los datos personales
   const [personalForm, setPersonalForm] = useState({})
 
-  const currentFirstName = personalForm.firstName ?? profile?.firstName ?? ''
-  const currentLastName = personalForm.lastName ?? profile?.lastName ?? ''
-  const currentEmail = personalForm.email ?? profile?.email ?? ''
+  const currentFirstName = personalForm.firstName ?? authUser?.firstName ?? profile?.firstName ?? ''
+  const currentLastName = personalForm.lastName ?? authUser?.lastName ?? profile?.lastName ?? ''
+  const currentEmail = personalForm.email ?? authUser?.email ?? profile?.email ?? ''
+  const memberSince = authUser?.createdAt
+    ? MEMBER_SINCE_FORMAT.format(new Date(authUser.createdAt))
+    : profile?.memberSince
 
   // Estado del formulario de contraseña
   const [passwordData, setPasswordData] = useState({
@@ -166,7 +170,6 @@ function Perfil() {
     )
   }
 
-  const initials = getInitials(currentFirstName, currentLastName)
   const fullName = `${currentFirstName} ${currentLastName}`.trim() || 'Usuario'
 
   return (
@@ -197,7 +200,9 @@ function Perfil() {
                 className="profile-avatar-img"
               />
             ) : (
-              <div className="profile-avatar-fallback">{initials}</div>
+              <div className="profile-avatar-fallback" role="img" aria-label="Sin foto de perfil">
+                <Icon name="user-round" size={36} strokeWidth={1.75} />
+              </div>
             )}
             <button
               type="button"
@@ -225,9 +230,9 @@ function Perfil() {
           <div className="profile-header-info">
             <h2 className="profile-user-name">{fullName}</h2>
             <p className="profile-user-meta">
-              <span>{profile?.email ?? 'carlos@correo.com'}</span>
+              <span>{authUser?.email ?? profile?.email}</span>
               <span className="profile-user-meta-dot">·</span>
-              <span>Miembro desde {profile?.memberSince ?? 'septiembre 2026'}</span>
+              <span>Miembro desde {memberSince}</span>
             </p>
           </div>
         </div>
@@ -470,13 +475,13 @@ function Perfil() {
               <div className="profile-activity-row">
                 <span className="profile-activity-label">Reportes guardados</span>
                 <strong className="profile-activity-value">
-                  {profile?.savedReportsCount ?? 5}
+                  {profile?.savedReportsCount ?? 0}
                 </strong>
               </div>
               <div className="profile-activity-row">
                 <span className="profile-activity-label">Último análisis</span>
                 <strong className="profile-activity-value">
-                  {profile?.lastAnalysisDate ?? '27/09/2026'}
+                  {profile?.lastAnalysisDate ?? 'Sin análisis todavía'}
                 </strong>
               </div>
             </div>
