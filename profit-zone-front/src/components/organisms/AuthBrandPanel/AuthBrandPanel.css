@@ -33,10 +33,20 @@
   position: relative;
 }
 
-/* Sin esto la imagen se estira al ancho de la columna (flex en columna).
-   El isotipo es azul marino: sobre el fondo oscuro se pasa a blanco. */
-.auth-brand > .logo {
+/* Link al inicio con el isotipo. Sin align-self se estira al ancho de la
+   columna (flex en columna). */
+.auth-brand-home {
   align-self: flex-start;
+  border-radius: var(--radius-sm);
+  transition: opacity 0.15s ease;
+}
+
+.auth-brand-home:hover {
+  opacity: 0.8;
+}
+
+/* El isotipo es azul marino: sobre el fondo oscuro se pasa a blanco */
+.auth-brand-home .logo {
   filter: brightness(0) invert(1);
 }
 

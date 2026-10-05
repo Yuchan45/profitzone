@@ -1,6 +1,12 @@
 // Paths de lucide (https://lucide.dev, licencia ISC) copiados inline para no
 // sumar dependencias. Para agregar un ícono, copiar los hijos del <svg> de lucide.
 const PATHS = {
+  'arrow-left': (
+    <>
+      <path d="m12 19-7-7 7-7" />
+      <path d="M19 12H5" />
+    </>
+  ),
   'arrow-right': (
     <>
       <path d="M5 12h14" />

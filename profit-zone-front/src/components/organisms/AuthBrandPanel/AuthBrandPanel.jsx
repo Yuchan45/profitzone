@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom'
 import Logo from '../../atoms/Logo/Logo.jsx'
 import MapBackdrop from '../../atoms/MapBackdrop/MapBackdrop.jsx'
 import './AuthBrandPanel.css'
@@ -12,7 +13,9 @@ function AuthBrandPanel() {
       </div>
       <div className="auth-brand-overlay" />
 
-      <Logo variant="mark" size="l" />
+      <Link to="/" className="auth-brand-home" aria-label="ProfitZone, ir al inicio">
+        <Logo variant="mark" size="l" />
+      </Link>
 
       <div className="auth-brand-content">
         <h2 className="auth-brand-title">Evaluá una ubicación antes de abrir tu negocio</h2>
