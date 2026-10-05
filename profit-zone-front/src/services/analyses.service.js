@@ -11,3 +11,9 @@ export async function replaceAnalysisAnswers(analysisId, answers) {
   const { data } = await api.put(`/analyses/${analysisId}/answers`, { answers })
   return data
 }
+
+/** Reporte de zona de un análisis con ubicación: resumen, criterios e indicadores. */
+export async function fetchAnalysisReport(analysisId) {
+  const { data } = await api.get(`/analyses/${analysisId}/report`)
+  return data
+}
