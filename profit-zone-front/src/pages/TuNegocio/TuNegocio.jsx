@@ -31,6 +31,9 @@ function TuNegocio() {
         <Button variant="secondary" to="/analizar/rubro">
           Anterior
         </Button>
+        <Button variant="primary" to="/analizar/detalles">
+          Siguiente
+        </Button>
       </div>
     </div>
   )

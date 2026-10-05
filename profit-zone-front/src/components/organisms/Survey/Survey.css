@@ -1,0 +1,25 @@
+.survey {
+  display: flex;
+  flex-direction: column;
+  padding: var(--space-32);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-xl);
+  background-color: var(--color-surface);
+}
+
+.survey > * + * {
+  margin-top: var(--space-28);
+  padding-top: var(--space-28);
+  border-top: 1px solid var(--color-border);
+}
+
+@media (max-width: 720px) {
+  .survey {
+    padding: var(--space-20);
+  }
+
+  .survey > * + * {
+    margin-top: var(--space-20);
+    padding-top: var(--space-20);
+  }
+}

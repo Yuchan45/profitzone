@@ -5,7 +5,8 @@ import { AnalysisContext } from './analysisContextValue.js'
 // a un refresh, pero no queda entre pestañas ni sesiones.
 const STORAGE_KEY = 'profitzone:analysis'
 
-const EMPTY_ANALYSIS = { category: null, subcategory: null }
+// answers: { [questionCode]: optionCode[] } (las de opción única tienen un solo elemento)
+const EMPTY_ANALYSIS = { category: null, subcategory: null, answers: {} }
 
 function readStoredAnalysis() {
   try {
@@ -30,8 +31,23 @@ export function AnalysisProvider({ children }) {
   const value = useMemo(
     () => ({
       analysis,
-      // category y subcategory: { code, name }
-      setRubro: (category, subcategory) => setAnalysis((prev) => ({ ...prev, category, subcategory })),
+      // category y subcategory: { code, name }. Si cambia el rubro, las
+      // respuestas anteriores dejan de aplicar.
+      setRubro: (category, subcategory) =>
+        setAnalysis((prev) => ({
+          ...prev,
+          category,
+          subcategory,
+          answers:
+            prev.category?.code === category.code && prev.subcategory?.code === subcategory.code
+              ? prev.answers
+              : {},
+        })),
+      setAnswer: (questionCode, optionCodes) =>
+        setAnalysis((prev) => ({
+          ...prev,
+          answers: { ...prev.answers, [questionCode]: optionCodes },
+        })),
       resetAnalysis: () => setAnalysis(EMPTY_ANALYSIS),
     }),
     [analysis],
