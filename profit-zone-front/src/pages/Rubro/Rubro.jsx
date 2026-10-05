@@ -6,7 +6,7 @@ import Stepper from '../../components/organisms/Stepper/Stepper.jsx'
 import CategoryCard from '../../components/molecules/CategoryCard/CategoryCard.jsx'
 import Chip from '../../components/atoms/Chip/Chip.jsx'
 import Button from '../../components/atoms/Button/Button.jsx'
-import { ANALYSIS_STEPS } from '../../utils/analysisSteps.js'
+import { ANALYSIS_PATHS, ANALYSIS_STEPS } from '../../utils/analysisSteps.js'
 import './Rubro.css'
 
 // La API no trae íconos: se asignan por code de categoría.
@@ -44,7 +44,7 @@ function Rubro() {
       { code: category.code, name: category.name },
       { code: subcategory.code, name: subcategory.name },
     )
-    navigate('/analizar/negocio')
+    navigate(ANALYSIS_PATHS.negocio)
   }
 
   return (

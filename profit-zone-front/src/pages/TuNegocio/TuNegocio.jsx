@@ -1,18 +1,12 @@
-import { Navigate } from 'react-router-dom'
 import { useAnalysis } from '../../hooks/useAnalysis.js'
 import Stepper from '../../components/organisms/Stepper/Stepper.jsx'
 import Button from '../../components/atoms/Button/Button.jsx'
-import { ANALYSIS_STEPS } from '../../utils/analysisSteps.js'
+import { ANALYSIS_PATHS, ANALYSIS_STEPS } from '../../utils/analysisSteps.js'
 import './TuNegocio.css'
 
 // Placeholder del paso 2: la encuesta se implementa en PZ-14.
 function TuNegocio() {
   const { analysis } = useAnalysis()
-
-  // Sin rubro elegido no se puede estar en este paso
-  if (!analysis.subcategory) {
-    return <Navigate to="/analizar/rubro" replace />
-  }
 
   return (
     <div className="tu-negocio">
@@ -28,10 +22,10 @@ function TuNegocio() {
       <p className="tu-negocio-message">Las preguntas de este paso todavía están en desarrollo.</p>
 
       <div className="tu-negocio-actions">
-        <Button variant="secondary" to="/analizar/rubro">
+        <Button variant="secondary" to={ANALYSIS_PATHS.rubro}>
           Anterior
         </Button>
-        <Button variant="primary" to="/analizar/detalles">
+        <Button variant="primary" to={ANALYSIS_PATHS.detalles}>
           Siguiente
         </Button>
       </div>
