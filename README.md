@@ -95,6 +95,8 @@ de su carpeta.
 | `DB_USER`      | No          | `sa`          | Usuario (admin del contenedor, solo desarrollo)    |
 | `DB_PASSWORD`  | Sí          | —             | 8+ caracteres, 3 de 4 tipos (A-Z, a-z, 0-9, símbolo), sin `$` |
 | `DB_LOGGING`   | No          | `false`       | `true` loguea el SQL de Sequelize                  |
+| `GOOGLE_PLACES_API_KEY` | No | —             | Clave de API de Google Places (New) para competidores en el radio |
+| `BESTTIME_API_KEY`      | No | —             | Clave de API opcional de BestTime para afluencia estimada |
 
 `docker-compose.yml` lee `DB_PASSWORD` y `DB_PORT` de `profit-zone-back/.env`
 (los scripts `npm run db:*` le pasan ese archivo), así hay una sola fuente.
@@ -126,9 +128,12 @@ acepta únicamente los orígenes de `CORS_ORIGINS`; cualquier otro recibe **403*
 
 ### Endpoints
 
-| Método | Ruta          | Descripción         |
-| ------ | ------------- | ------------------- |
-| `GET`  | `/api/health` | Estado del servicio y de la DB (503 si la DB no responde) |
+| Método | Ruta               | Descripción                                                     |
+| ------ | ------------------ | --------------------------------------------------------------- |
+| `GET`  | `/api/health`      | Estado del servicio y de la DB (503 si la DB no responde)       |
+| `GET`  | `/api/density`     | Densidad censal y demografía en un radio de CABA (query: `lat`, `lng`, `radius`) |
+| `GET`  | `/api/competition` | Competidores directos/indirectos en el radio con Google Places  |
+| `GET`  | `/api/traffic`     | Afluencia horaria (7h-23h) y score por franja horaria           |
 
 ## Estructura
 
