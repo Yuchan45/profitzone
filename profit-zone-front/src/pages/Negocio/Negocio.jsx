@@ -1,8 +1,10 @@
 import { useEffect } from 'react'
-import { Navigate, useSearchParams } from 'react-router-dom'
+import { Navigate, useNavigate, useSearchParams } from 'react-router-dom'
 import { useAnalysisFlow } from '../../hooks/useAnalysisFlow.js'
 import { useFlowSteps } from '../../hooks/useFlowSteps.js'
 import { useSubcategorySurvey } from '../../hooks/useSubcategorySurvey.js'
+import { useSaveAnalysis } from '../../hooks/useSaveAnalysis.js'
+import { FLOW_STEPS } from '../../utils/flowSteps.js'
 import Stepper from '../../components/organisms/Stepper/Stepper.jsx'
 import StepHeading from '../../components/molecules/StepHeading/StepHeading.jsx'
 import StatusMessage from '../../components/molecules/StatusMessage/StatusMessage.jsx'
@@ -29,6 +31,8 @@ function isAnswered(answers, questions) {
 function Negocio() {
   const { categoryCode, subcategoryCode, answers, setAnswer, setRequiredQuestions } =
     useAnalysisFlow()
+  const navigate = useNavigate()
+  const saveAnalysis = useSaveAnalysis()
   const steps = useFlowSteps()
   const [searchParams, setSearchParams] = useSearchParams()
   const { status, data, error } = useSubcategorySurvey(categoryCode, subcategoryCode)
@@ -67,6 +71,16 @@ function Negocio() {
   }
 
   const showDetails = wantsDetails && status === 'ok'
+
+  // Al terminar el paso se guarda el análisis en la API y se avanza al paso 3
+  const handleFinish = async () => {
+    const saved = await saveAnalysis.save(allQuestions.map((q) => q.code))
+    // El paso 3 (Ubicación) todavía no tiene vista: se avanza cuando tenga ruta
+    const nextPath = FLOW_STEPS.find((step) => step.id === 'ubicacion').path
+    if (saved && nextPath) navigate(nextPath)
+  }
+  const isSaving = saveAnalysis.status === 'saving'
+  const nextLabel = isSaving ? 'Guardando…' : 'Siguiente'
 
   const goToSection = (section) => {
     setSearchParams(section ? { seccion: section } : {})
@@ -123,6 +137,10 @@ function Negocio() {
         <QuestionList questions={generalQuestions} answers={answers} onAnswer={setAnswer} />
       )}
 
+      {saveAnalysis.status === 'error' && (
+        <StatusMessage variant="error">No pudimos guardar tus respuestas: {saveAnalysis.error}</StatusMessage>
+      )}
+
       <div className="flow-step-actions">
         {showDetails ? (
           <Button variant="secondary" onClick={() => goToSection(null)}>
@@ -135,18 +153,17 @@ function Negocio() {
         )}
 
         {showDetails ? (
-          // Todavía no existe el paso 3 (Ubicación): las respuestas ya quedan guardadas en el flujo
-          <Button variant="primary" disabled={!detailsComplete}>
-            Siguiente
+          <Button variant="primary" disabled={!detailsComplete || isSaving} onClick={handleFinish}>
+            {nextLabel}
           </Button>
         ) : (
           <Button
             variant="primary"
-            disabled={status !== 'ok' || !generalComplete}
-            // Sin preguntas específicas no hay sección de detalles: queda para el paso 3
-            onClick={detailQuestions.length > 0 ? () => goToSection(DETAILS_SECTION) : undefined}
+            disabled={status !== 'ok' || !generalComplete || isSaving}
+            // Sin preguntas específicas no hay sección de detalles: el paso termina acá
+            onClick={detailQuestions.length > 0 ? () => goToSection(DETAILS_SECTION) : handleFinish}
           >
-            Siguiente
+            {nextLabel}
           </Button>
         )}
       </div>

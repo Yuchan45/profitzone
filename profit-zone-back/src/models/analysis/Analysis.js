@@ -4,7 +4,7 @@ import { sequentialUuidPk } from '../shared.js'
 
 export const ANALYSIS_STATUSES = ['draft', 'saved']
 
-/** Versión parcial: faltan zona, punto, radio, indicadores y conclusiones. */
+/** Versión parcial: faltan zona, indicadores y conclusiones. */
 export const Analysis = sequelize.define(
   'Analysis',
   {
@@ -19,6 +19,11 @@ export const Analysis = sequelize.define(
       defaultValue: 'draft',
       validate: { isIn: [ANALYSIS_STATUSES] },
     },
+    // Ubicación elegida en el paso 3: NULL hasta entonces, y van los tres juntos
+    // (CK_analyses_location). decimal: Sequelize los devuelve como string.
+    centerLat: { type: DataTypes.DECIMAL(9, 6), allowNull: true },
+    centerLng: { type: DataTypes.DECIMAL(9, 6), allowNull: true },
+    radiusM: { type: DataTypes.INTEGER, allowNull: true },
   },
   { schema: 'analysis', tableName: 'analyses', timestamps: true },
 )
