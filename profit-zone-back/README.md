@@ -15,6 +15,7 @@ cp .env.example .env   # en Windows: copy .env.example .env  → cambiá DB_PASS
 npm run db:up          # levanta SQL Server (docker-compose.yml de la raíz) y espera a que esté listo
 npm run db:migrate     # crea la base ProfitZone y aplica las migraciones
 npm run db:seed:catalog  # carga el catálogo base (roles, categorías, preguntas)
+npm run db:seed:census   # carga los datos censales de CABA con índice espacial
 npm run dev            # http://localhost:8080/api
 ```
 
@@ -36,6 +37,7 @@ con un error que indica cómo levantarlo.
 | `npm run db:migrate:status` | Lista migraciones aplicadas y pendientes |
 | `npm run db:seed:catalog` | Carga/actualiza el catálogo base. Idempotente: se puede correr N veces |
 | `npm run db:seed:catalog:verify` | Corre el seed y verifica conteos, idempotencia y preguntas por subcategoría |
+| `npm run db:seed:census` | Carga los 3.554 radios censales de CABA en `census_data.census_radios` con geometrías e índice espacial |
 
 ## Variables de entorno
 
@@ -66,6 +68,34 @@ headers `Content-Type` y `Authorization`, y cachea el preflight 24 h.
 | Método | Ruta          | Descripción                  |
 | ------ | ------------- | ---------------------------- |
 | `GET`  | `/api/health` | Estado del servicio y de la DB (`database: up/down`; 503 si la DB no responde) |
+| `GET`  | `/api/density` | Densidad poblacional y demografía en un punto con radio en CABA (query: `lat`, `lng`, `radius`) |
+
+### `GET /api/density`
+
+Calcula la densidad poblacional, viviendas, hogares y nivel socioeconómico (% NBI) para un círculo definido por un punto central y un radio de influencia sobre la Ciudad Autónoma de Buenos Aires (CABA).
+
+#### Parámetros de consulta (Query Params)
+
+| Parámetro | Tipo     | Requerido | Default | Descripción / Restricciones |
+| --------- | -------- | :-------: | :-----: | --------------------------- |
+| `lat`     | `number` | Sí        | —       | Latitud en grados decimales (rango: `-90` a `90`). Ej: `-34.5880`. |
+| `lng`     | `number` | Sí        | —       | Longitud en grados decimales (rango: `-180` a `180`). Ej: `-58.4300`. |
+| `radius`  | `number` | No        | `500`   | Radio de búsqueda en metros (entero entre `10` y `20000`). Ej: `1000`. |
+
+#### Ejemplo de solicitud
+
+```http
+GET /api/density?lat=-34.5880&lng=-58.4300&radius=1000 HTTP/1.1
+Host: localhost:8080
+```
+
+#### Metodología de cálculo (Ponderación Areal)
+
+El cálculo se ejecuta en el motor espacial nativo de SQL Server 2022 (`geography` con índice espacial `IX_census_radios_geom`):
+1. Se genera un buffer circular con `geography::Point(@lat, @lng, 4326).STBuffer(@radius)`.
+2. Se detectan los radios censales intersectados con `geom.STIntersects(@buffer) = 1`.
+3. Para cada radio censal, se calcula la fracción de área contenida dentro del círculo con `geom.STIntersection(@buffer).STArea() / geom.STArea()`.
+4. Los habitantes, viviendas y hogares se ponderan proporcionalmente a dicha fracción, garantizando precisión sin sobreestimar radios censales parcialmente intersectados.
 
 ## Base de datos
 
