@@ -11,6 +11,7 @@ import Rubro from './pages/Rubro/Rubro.jsx'
 import Negocio from './pages/Negocio/Negocio.jsx'
 import Registro from './pages/Registro/Registro.jsx'
 import Login from './pages/Login/Login.jsx'
+import Reporte from './pages/Reporte/Reporte.jsx'
 import NotFound from './pages/NotFound.jsx'
 
 function App() {
@@ -25,6 +26,7 @@ function App() {
       >
         <Route path="/analizar/rubro" element={<Rubro />} />
         <Route path="/analizar/negocio" element={<Negocio />} />
+        <Route path="/analizar/reporte/:id" element={<Reporte />} />
       </Route>
       <Route element={<AuthLayout />}>
         <Route path="/registro" element={<Registro />} />
