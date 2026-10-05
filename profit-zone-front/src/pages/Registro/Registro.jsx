@@ -4,7 +4,7 @@ import StepHeading from '../../components/molecules/StepHeading/StepHeading.jsx'
 import SegmentedNav from '../../components/molecules/SegmentedNav/SegmentedNav.jsx'
 import RegisterForm from '../../components/organisms/RegisterForm/RegisterForm.jsx'
 import { AUTH_TABS } from '../../utils/authTabs.js'
-import { getApiErrorMessage } from '../../utils/apiErrors.js'
+import { toAuthFormError } from '../../utils/apiErrors.js'
 
 function Registro() {
   const { status, register } = useAuth()
@@ -23,12 +23,7 @@ function Registro() {
       navigate(from, { replace: true })
     } catch (error) {
       // Correo ya registrado: se marca en el campo
-      if (error.response?.status === 409) {
-        throw Object.assign(new Error(getApiErrorMessage(error)), {
-          fieldErrors: { email: getApiErrorMessage(error) },
-        })
-      }
-      throw new Error(getApiErrorMessage(error))
+      throw toAuthFormError(error)
     }
   }
 

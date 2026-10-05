@@ -11,6 +11,8 @@ const INITIAL_STATE = {
   subcategoryCode: null,
   // { [questionCode]: string[] } con los codes de las opciones elegidas
   answers: {},
+  // Punto y radio del paso 3: { lat, lng, radius }
+  location: null,
   // { [stepId]: string[] } codes de las preguntas obligatorias de cada paso con encuesta.
   // Lo registra cada paso al cargar sus preguntas y sirve para saber si está completo.
   requiredQuestions: {},
@@ -53,6 +55,8 @@ export function AnalysisFlowProvider({ children }) {
             subcategoryCode,
             answers: sameRubro ? prev.answers : {},
             requiredQuestions: sameRubro ? prev.requiredQuestions : {},
+            // El punto no depende del rubro: se mantiene para no volver a marcarlo
+            location: prev.location,
           }
         })
       },
@@ -61,6 +65,9 @@ export function AnalysisFlowProvider({ children }) {
           ...prev,
           answers: { ...prev.answers, [questionCode]: optionCodes },
         }))
+      },
+      setLocation: (location) => {
+        setState((prev) => ({ ...prev, location }))
       },
       setAnalysisId: (analysisId) => {
         setState((prev) => ({ ...prev, analysisId }))

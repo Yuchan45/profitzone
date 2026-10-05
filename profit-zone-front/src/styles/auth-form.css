@@ -46,11 +46,23 @@
   text-align: center;
 }
 
-.auth-form-switch a {
+.auth-form-switch a,
+.auth-form-switch-button {
   color: var(--color-primary-dark);
   font-weight: 600;
 }
 
-.auth-form-switch a:hover {
+/* Botón con aspecto de link (para cambiar de pestaña dentro de un modal) */
+.auth-form-switch-button {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  font-family: inherit;
+  font-size: inherit;
+  cursor: pointer;
+}
+
+.auth-form-switch a:hover,
+.auth-form-switch-button:hover {
   color: var(--color-text);
 }

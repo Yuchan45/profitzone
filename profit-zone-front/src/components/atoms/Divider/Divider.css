@@ -13,3 +13,8 @@
   height: 1px;
   background-color: var(--color-border);
 }
+
+/* Sin texto al medio no queda hueco entre las dos líneas */
+.divider:not(:has(.divider-label)) {
+  gap: 0;
+}

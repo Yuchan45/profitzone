@@ -24,6 +24,14 @@ Copiar `.env.example` a `.env` y ajustar:
 | -------------- | ---------------------------- |
 | `VITE_API_URL` | URL base de la API backend   |
 
+## Mapa
+
+El paso 3 (`/analizar/ubicacion`) usa [Leaflet](https://leafletjs.com) con `react-leaflet` y los tiles
+estándar de OpenStreetMap (gratis, sin clave, con atribución), mostrados en grises con CSS. La página se
+carga de forma diferida para no sumar Leaflet al bundle inicial. El buscador autocompleta direcciones
+de Palermo mientras se escribe con `GET /api/geocode`, que combina Photon (OpenStreetMap) y el
+normalizador del GCBA (USIG).
+
 ## Estructura
 
 ```

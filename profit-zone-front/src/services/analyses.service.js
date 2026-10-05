@@ -17,3 +17,9 @@ export async function fetchAnalysisReport(analysisId) {
   const { data } = await api.get(`/analyses/${analysisId}/report`)
   return data
 }
+
+/** Guarda el punto y el radio del análisis (requiere sesión: el análisis queda a su nombre). */
+export async function saveAnalysisLocation(analysisId, { lat, lng, radius }) {
+  const { data } = await api.patch(`/analyses/${analysisId}/location`, { lat, lng, radius })
+  return data
+}

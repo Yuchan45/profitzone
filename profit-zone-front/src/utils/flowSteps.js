@@ -18,7 +18,12 @@ export const FLOW_STEPS = [
       return Boolean(required) && required.every((code) => flow.answers[code]?.length > 0)
     },
   },
-  { id: 'ubicacion', label: 'Ubicación', path: null, isComplete: () => false },
+  {
+    id: 'ubicacion',
+    label: 'Ubicación',
+    path: '/analizar/ubicacion',
+    isComplete: (flow) => Boolean(flow.analysisId && flow.location),
+  },
   { id: 'analisis', label: 'Análisis', path: null, isComplete: () => false },
   { id: 'reporte', label: 'Reporte', path: null, isComplete: () => false },
 ]
