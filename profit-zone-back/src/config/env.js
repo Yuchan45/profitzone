@@ -63,6 +63,14 @@ const schema = {
     default: 'false',
     parse: (value) => value === 'true',
   },
+  GOOGLE_PLACES_API_KEY: {
+    required: false,
+    default: '',
+  },
+  BESTTIME_API_KEY: {
+    required: false,
+    default: '',
+  },
 }
 
 function loadEnv() {
@@ -100,6 +108,8 @@ function loadEnv() {
     port: config.PORT,
     corsOrigins: config.CORS_ORIGINS,
     isProduction: config.NODE_ENV === 'production',
+    googlePlacesApiKey: config.GOOGLE_PLACES_API_KEY ?? '',
+    bestTimeApiKey: config.BESTTIME_API_KEY ?? '',
     db: Object.freeze({
       host: config.DB_HOST,
       port: config.DB_PORT,
