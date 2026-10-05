@@ -4,6 +4,7 @@ import {
   replaceAnalysisAnswers,
   updateAnalysisLocation,
 } from '../services/analyses.service.js'
+import { buildAnalysisReport } from '../services/report.service.js'
 import { httpError } from '../utils/httpErrors.js'
 
 function badRequest(message) {
@@ -43,6 +44,10 @@ function parseCoordinate(value, name, limit) {
 
 export async function getAnalysisById(req, res) {
   res.json(await getAnalysis(req.params.id))
+}
+
+export async function getAnalysisReport(req, res) {
+  res.json(await buildAnalysisReport(req.params.id))
 }
 
 export async function postAnalysis(req, res) {

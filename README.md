@@ -145,6 +145,7 @@ acepta únicamente los orígenes de `CORS_ORIGINS`; cualquier otro recibe **403*
 | `GET`  | `/api/questions/:code` | Una pregunta con sus opciones en orden (404 si no existe)   |
 | `POST` | `/api/analyses` | Crea un análisis en borrador con el rubro y las respuestas (`{ categoryCode, subcategoryCode, answers }`). 201; 400 si faltan obligatorias o hay respuestas inválidas |
 | `GET`  | `/api/analyses/:id` | Un análisis con su rubro, ubicación y respuestas (404 si no existe) |
+| `GET`  | `/api/analyses/:id/report` | Reporte de zona: indicadores del punto y radio, cuadro de fortalezas y debilidades cruzado con las respuestas y resumen (409 si el análisis no tiene ubicación) |
 | `PUT`  | `/api/analyses/:id/answers` | Reemplaza todas las respuestas (`{ answers }`), con las mismas validaciones que el alta |
 | `PATCH` | `/api/analyses/:id/location` | Guarda el punto y el radio (`{ lat, lng, radius }`, radio entero entre 200 y 600 m) |
 | `POST` | `/api/auth/register` | Crea la cuenta (`firstName`, `lastName`, `email`, `password`). 201 `{ user, accessToken }` + cookie de refresh; 409 si el correo existe |
