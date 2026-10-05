@@ -7,17 +7,13 @@ import StepHeading from '../../components/molecules/StepHeading/StepHeading.jsx'
 import StatusMessage from '../../components/molecules/StatusMessage/StatusMessage.jsx'
 import StatTile from '../../components/molecules/StatTile/StatTile.jsx'
 import Button from '../../components/atoms/Button/Button.jsx'
-import { formatDate } from '../../utils/formatters.js'
+import { formatDate, formatNumber } from '../../utils/formatters.js'
 import './Reporte.css'
 
 // Google Places devuelve como máximo 20 locales por consulta
 const COMPETITION_MAX_RESULTS = 20
 
 const PENDING_CAPTION = 'Dato pendiente'
-
-function formatNumber(value) {
-  return new Intl.NumberFormat('es-AR').format(value)
-}
 
 // Cada dato de la zona según el estado de su indicador: ok, error, sin cobertura o no aplica
 function competitionTile({ status, data }) {

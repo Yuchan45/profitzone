@@ -3,7 +3,7 @@ import { getSubcategorySurvey } from './questions.service.js'
 import { getCompetitionAnalysis } from './competition.service.js'
 import { getTrafficAnalysis } from './traffic.service.js'
 import { getDensityInRadius } from './density.service.js'
-import { CRITERIA, buildSummary } from './reportCriteria.js'
+import { CRITERIA, buildSummary } from './reportCriteria.service.js'
 import { httpError } from '../utils/httpErrors.js'
 
 // Franja horaria que se le pide al servicio de afluencia según las respuestas.
@@ -21,7 +21,8 @@ const TRAFFIC_WINDOWS = {
   },
   schedule: {
     day: { schedule: 'day' },
-    night: { schedule: 'night' },
+    // "Nocturno (20 a 2 h)": el perfil horario llega hasta las 23 h (franja "noche, 20 a 23 h")
+    night: { schedule: 'dinner' },
     both: { startHour: 8, endHour: 23 },
   },
 }
@@ -33,7 +34,7 @@ const NOTICES = [
 ]
 
 /** Ejecuta la consulta de un indicador sin que su error tumbe el reporte entero. */
-async function settle(name, query) {
+async function settleIndicator(name, query) {
   try {
     return { status: 'ok', data: await query() }
   } catch (error) {
@@ -42,12 +43,26 @@ async function settle(name, query) {
   }
 }
 
+/** Franja para pedir la afluencia y la pregunta de la que salió (para mostrarla en el reporte). */
 function resolveTrafficWindow(answerCode) {
   for (const [questionCode, windows] of Object.entries(TRAFFIC_WINDOWS)) {
     const window = windows[answerCode(questionCode)]
-    if (window) return window
+    if (window) return { window, questionCode }
   }
-  return { schedule: 'day' }
+  return { window: { schedule: 'day' }, questionCode: null }
+}
+
+/**
+ * La encuesta solo da los textos de las opciones. Si el rubro se desactivó
+ * después de crear el análisis, el reporte se arma igual mostrando los codes.
+ */
+async function getSurveyOrEmpty(categoryCode, subcategoryCode) {
+  try {
+    return await getSubcategorySurvey(categoryCode, subcategoryCode)
+  } catch (error) {
+    if (error.status !== 404) throw error
+    return { business: [], details: [] }
+  }
 }
 
 /** Arma los helpers para leer las respuestas del análisis con los textos de la encuesta. */
@@ -94,8 +109,9 @@ export async function buildAnalysisReport(id) {
     throw httpError(409, 'Elegí la ubicación en el mapa antes de generar el reporte.')
   }
 
-  const survey = await getSubcategorySurvey(analysis.category.code, analysis.subcategory.code)
+  const survey = await getSurveyOrEmpty(analysis.category.code, analysis.subcategory.code)
   const { answerCode, answerLabel } = buildAnswerReaders(analysis.answers, survey)
+  const trafficWindow = resolveTrafficWindow(answerCode)
   const noPublic = answerCode('service_mode') === 'no_public'
 
   const { lat, lng, radius } = analysis.location
@@ -105,13 +121,13 @@ export async function buildAnalysisReport(id) {
 
   // Sin atención al público no se muestran competencia ni afluencia (estados-y-variantes)
   const [competition, traffic, density] = await Promise.all([
-    noPublic ? notApplicable : settle('competencia', () => getCompetitionAnalysis({ ...point, subcategory })),
+    noPublic ? notApplicable : settleIndicator('competencia', () => getCompetitionAnalysis({ ...point, subcategory })),
     noPublic
       ? notApplicable
-      : settle('afluencia', () =>
-          getTrafficAnalysis({ ...point, subcategory, ...resolveTrafficWindow(answerCode) }),
+      : settleIndicator('afluencia', () =>
+          getTrafficAnalysis({ ...point, subcategory, ...trafficWindow.window }),
         ),
-    settle('densidad', () => getDensityInRadius(point)),
+    settleIndicator('densidad', () => getDensityInRadius(point)),
   ])
 
   const criteria = CRITERIA.map((buildCriterion) =>
@@ -119,6 +135,7 @@ export async function buildAnalysisReport(id) {
       answerCode,
       answerLabel,
       subcategoryName: analysis.subcategory.name,
+      trafficQuestion: trafficWindow.questionCode,
       competition,
       traffic,
       density,

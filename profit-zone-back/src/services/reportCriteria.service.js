@@ -3,7 +3,7 @@
 // devuelve una lectura. Los umbrales son una primera propuesta: están acá para
 // ajustarlos sin tocar la lógica.
 
-export const READINGS = ['strength', 'alert', 'weakness', 'neutral', 'not_evaluated']
+// Lecturas posibles: strength | alert | weakness | neutral | not_evaluated
 
 // Competencia directa dentro del radio
 const COMPETITION = {
@@ -35,32 +35,39 @@ function criterion(code, label, yourBusiness, zone, reading, extra = {}) {
   return { code, label, yourBusiness, zone, reading, ...extra }
 }
 
+// Criterio cuyo dato todavía no tiene fuente (no es un error de carga)
+function noSourceCriterion(code, label, yourBusiness) {
+  return criterion(code, label, yourBusiness, NO_DATA, 'not_evaluated', { noSource: true })
+}
+
+// Con "sin atención al público" los criterios que dependen del público que pasa no aplican
+function notApplicableCriterion(code, label, yourBusiness) {
+  return criterion(code, label, yourBusiness, NO_PUBLIC, 'not_evaluated', { notApplicable: true })
+}
+
 function formatInt(value) {
   return Math.round(value).toLocaleString('es-AR')
 }
 
 /** Costo: presupuesto vs. alquiler promedio. El alquiler todavía no tiene fuente (PZ-41). */
 export function costCriterion({ answerLabel }) {
-  return criterion('cost', 'Costo', answerLabel('budget'), NO_DATA, 'not_evaluated')
+  return noSourceCriterion('cost', 'Costo', answerLabel('budget'))
 }
 
 /** Público: edades objetivo vs. demografía por edad. El censo cargado no trae edades. */
 export function audienceCriterion({ answerLabel }) {
-  return criterion('audience', 'Público', answerLabel('target_age'), NO_DATA, 'not_evaluated')
+  return noSourceCriterion('audience', 'Público', answerLabel('target_age'))
 }
 
 /**
  * Horario: actividad típica del rubro en la franja del negocio. El servicio de
  * afluencia devuelve un perfil por rubro, no medido en el punto: se marca como estimado.
  */
-export function scheduleCriterion({ answerLabel, traffic, noPublic }) {
-  // La franja pico de la subcategoría es la que se usó para pedir la afluencia
-  const yourBusiness =
-    answerLabel('peak_slot_cafe') ?? answerLabel('peak_slot_fitness') ?? answerLabel('schedule')
+export function scheduleCriterion({ answerLabel, trafficQuestion, traffic, noPublic }) {
+  // Se muestra la respuesta con la que se pidió la afluencia
+  const yourBusiness = trafficQuestion ? answerLabel(trafficQuestion) : answerLabel('schedule')
   if (noPublic) {
-    return criterion('schedule', 'Horario', yourBusiness, NO_PUBLIC, 'not_evaluated', {
-      notApplicable: true,
-    })
+    return notApplicableCriterion('schedule', 'Horario', yourBusiness)
   }
   if (traffic.status !== 'ok') {
     return criterion('schedule', 'Horario', yourBusiness, 'No pudimos obtener la afluencia', 'not_evaluated')
@@ -85,9 +92,7 @@ export function arrivalCriterion({ answerCode, answerLabel, density, noPublic })
   const label = 'Cómo llega el cliente'
 
   if (noPublic) {
-    return criterion('arrival', label, yourBusiness, NO_PUBLIC, 'not_evaluated', {
-      notApplicable: true,
-    })
+    return notApplicableCriterion('arrival', label, yourBusiness)
   }
   if (code === 'unknown' || code === null) {
     return criterion('arrival', label, yourBusiness, 'Sin definir cómo llega tu cliente', 'not_evaluated')
@@ -115,25 +120,26 @@ export function competitionCriterion({ answerLabel, subcategoryName, competition
   const yourBusiness = priceLabel ? `${subcategoryName} · propuesta de precio: ${priceLabel}` : subcategoryName
 
   if (noPublic) {
-    return criterion('competition', 'Competencia', yourBusiness, NO_PUBLIC, 'not_evaluated', {
-      notApplicable: true,
-    })
+    return notApplicableCriterion('competition', 'Competencia', yourBusiness)
   }
   if (competition.status !== 'ok') {
     return criterion('competition', 'Competencia', yourBusiness, 'No pudimos obtener la competencia', 'not_evaluated')
   }
 
-  const { total, directCount, averageRating } = competition.data
+  const { total, directCount, averageRating, places = [] } = competition.data
+  // Sin locales con rating el servicio devuelve un promedio por defecto: no se usa
+  const hasRatings = places.some((place) => place.rating)
   // Si se llegó al máximo de resultados puede haber más locales que no vinieron
   const atLeast = total >= COMPETITION.maxResults ? 'Al menos ' : ''
+  const ratingText = hasRatings ? `, rating promedio ${averageRating.toLocaleString('es-AR')}` : ''
   const zone =
     directCount === 0
       ? 'Sin competencia directa en el radio'
-      : `${atLeast}${directCount} directos en el radio, rating promedio ${averageRating.toLocaleString('es-AR')}`
+      : `${atLeast}${directCount} directos en el radio${ratingText}`
   let reading = 'strength'
   if (
     directCount >= COMPETITION.saturatedDirect ||
-    (directCount >= COMPETITION.alertDirect && averageRating >= COMPETITION.strongRating)
+    (directCount >= COMPETITION.alertDirect && hasRatings && averageRating >= COMPETITION.strongRating)
   ) {
     reading = 'weakness'
   } else if (directCount >= COMPETITION.alertDirect) {
@@ -144,12 +150,12 @@ export function competitionCriterion({ answerLabel, subcategoryName, competition
 
 /** Accesibilidad (subte, avenidas): todavía no hay fuente de datos. */
 export function accessibilityCriterion({ answerLabel }) {
-  return criterion('accessibility', 'Accesibilidad', answerLabel('arrival_type'), NO_DATA, 'not_evaluated')
+  return noSourceCriterion('accessibility', 'Accesibilidad', answerLabel('arrival_type'))
 }
 
 /** Lugares de interés según el público (ej. institutos educativos): sin fuente todavía. */
 export function placesForAudienceCriterion({ answerLabel }) {
-  return criterion('places_for_audience', 'Según tu público', answerLabel('target_age'), NO_DATA, 'not_evaluated')
+  return noSourceCriterion('places_for_audience', 'Según tu público', answerLabel('target_age'))
 }
 
 export const CRITERIA = [
@@ -162,14 +168,37 @@ export const CRITERIA = [
   placesForAudienceCriterion,
 ]
 
+// good = fortaleza, alert = alerta, bad = debilidad
 const SUMMARY_PHRASES = {
-  cost: { good: 'un alquiler dentro de tu presupuesto', bad: 'un alquiler por encima de tu presupuesto' },
-  audience: { good: 'buena presencia de tu público', bad: 'poca presencia de tu público' },
-  arrival: { good: 'mucha gente viviendo cerca para el cliente de paso', bad: 'poca gente viviendo cerca para el cliente de paso' },
-  competition: { good: 'poca competencia directa', bad: 'competencia directa alta' },
-  accessibility: { good: 'buena accesibilidad', bad: 'accesibilidad limitada' },
-  places_for_audience: { good: 'lugares cerca que atraen a tu público', bad: 'pocos lugares cerca que atraigan a tu público' },
+  cost: {
+    good: 'un alquiler dentro de tu presupuesto',
+    alert: 'un alquiler cerca del límite de tu presupuesto',
+    bad: 'un alquiler por encima de tu presupuesto',
+  },
+  audience: {
+    good: 'buena presencia de tu público',
+    alert: 'presencia media de tu público',
+    bad: 'poca presencia de tu público',
+  },
+  arrival: {
+    good: 'mucha gente viviendo cerca para el cliente de paso',
+    alert: 'una cantidad media de gente viviendo cerca para el cliente de paso',
+    bad: 'poca gente viviendo cerca para el cliente de paso',
+  },
+  competition: {
+    good: 'poca competencia directa',
+    alert: 'competencia directa moderada',
+    bad: 'competencia directa alta',
+  },
+  accessibility: { good: 'buena accesibilidad', alert: 'accesibilidad regular', bad: 'accesibilidad limitada' },
+  places_for_audience: {
+    good: 'lugares cerca que atraen a tu público',
+    alert: 'algunos lugares cerca que atraen a tu público',
+    bad: 'pocos lugares cerca que atraigan a tu público',
+  },
 }
+
+const READING_PHRASE = { weakness: 'bad', alert: 'alert' }
 
 function joinPhrases(phrases) {
   if (phrases.length <= 1) return phrases.join('')
@@ -182,11 +211,14 @@ export function buildSummary(criteria) {
   const zoneCriteria = criteria.filter((c) => !c.estimated)
   const good = zoneCriteria.filter((c) => c.reading === 'strength').map((c) => SUMMARY_PHRASES[c.code].good)
   const bad = zoneCriteria
-    .filter((c) => c.reading === 'weakness' || c.reading === 'alert')
-    .map((c) => SUMMARY_PHRASES[c.code].bad)
+    .filter((c) => READING_PHRASE[c.reading])
+    .map((c) => SUMMARY_PHRASES[c.code][READING_PHRASE[c.reading]])
   const schedule = criteria.find((c) => c.code === 'schedule' && c.estimated)
   const notApplicable = criteria.filter((c) => c.notApplicable).length
-  const notEvaluated = criteria.filter((c) => c.reading === 'not_evaluated' && !c.notApplicable).length
+  const noSource = criteria.filter((c) => c.noSource).length
+  const failed = criteria.filter(
+    (c) => c.reading === 'not_evaluated' && !c.notApplicable && !c.noSource,
+  ).length
 
   const sentences = []
   if (good.length > 0) sentences.push(`La zona muestra ${joinPhrases(good)}.`)
@@ -202,11 +234,18 @@ export function buildSummary(criteria) {
   if (notApplicable > 0) {
     sentences.push('Como elegiste sin atención al público, no evaluamos competencia, horario ni cómo llega el cliente.')
   }
-  if (notEvaluated > 0) {
+  if (failed > 0) {
     sentences.push(
-      notEvaluated === 1
-        ? 'Un criterio no se pudo evaluar por falta de datos.'
-        : `${notEvaluated} criterios no se pudieron evaluar por falta de datos.`,
+      failed === 1
+        ? 'Un criterio no se pudo evaluar porque su dato no está disponible para este punto.'
+        : `${failed} criterios no se pudieron evaluar porque sus datos no están disponibles para este punto.`,
+    )
+  }
+  if (noSource > 0) {
+    sentences.push(
+      noSource === 1
+        ? 'Un criterio todavía no tiene fuente de datos.'
+        : `${noSource} criterios todavía no tienen fuente de datos.`,
     )
   }
   return sentences.join(' ')
