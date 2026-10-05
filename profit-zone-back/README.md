@@ -78,6 +78,10 @@ headers `Content-Type` y `Authorization`, y cachea el preflight 24 h.
 | `GET`  | `/api/categories/:categoryCode/subcategories/:subcategoryCode/questions` | Encuesta completa de un rubro (solo activas), separada en `business` y `details` |
 | `GET`  | `/api/questions` | Banco de preguntas con opciones y asignaciones (query: `scope`, `active`) |
 | `GET`  | `/api/questions/:code` | Una pregunta por code con sus opciones en orden (404 si no existe; query: `active`) |
+| `POST` | `/api/analyses` | Crea un análisis en borrador con el rubro y las respuestas (`{ categoryCode, subcategoryCode, answers }`). 201; 400 si faltan obligatorias o hay respuestas inválidas |
+| `GET`  | `/api/analyses/:id` | Un análisis con su rubro, ubicación y respuestas (404 si no existe) |
+| `PUT`  | `/api/analyses/:id/answers` | Reemplaza todas las respuestas (`{ answers }`), con las mismas validaciones que el alta |
+| `PATCH` | `/api/analyses/:id/location` | Guarda el punto y el radio (`{ lat, lng, radius }`, radio entero entre 200 y 600 m) |
 
 ### `GET /api/density`
 
