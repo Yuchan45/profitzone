@@ -45,6 +45,12 @@ src/pages/     vistas ruteadas; arman la pantalla con organisms/molecules/atoms
 - `src/services/api.js` agrega el `Bearer` solo y, ante un 401, renueva la sesión una vez con `/auth/refresh` y reintenta. Las llamadas de auth van en `src/services/auth.service.js`.
 - Rutas que requieren sesión: van dentro de `<Route element={<ProtectedRoute />}>` en `App.jsx` (redirige a `/login` y vuelve a la ruta original después).
 
+## Mapa
+
+- El mapa es Leaflet (`react-leaflet`) con tiles de OpenStreetMap, en `components/organisms/LocationMap`. Reusar ese componente en vez de sumar otra librería de mapas.
+- Los colores de círculos, polígonos y marcadores van por `className` (`pathOptions={{ className }}`) y CSS con tokens: los atributos SVG no resuelven `var(--…)`.
+- Las páginas con Leaflet se cargan con `React.lazy` desde `App.jsx`.
+
 ## Contextos
 
 - El `createContext` vive en un `.js` aparte (ver `src/context/authContextValue.js`) para cumplir la regla `react/only-export-components`. El provider va en `.jsx` y se consume con un hook (`src/hooks/useAuth.js`).

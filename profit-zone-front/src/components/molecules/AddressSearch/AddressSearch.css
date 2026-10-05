@@ -1,0 +1,80 @@
+.address-search {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-8);
+}
+
+.address-search-label {
+  color: var(--color-text);
+  font-size: var(--text-13);
+  font-weight: 600;
+}
+
+.address-search-field {
+  position: relative;
+}
+
+/* La lupa va a la izquierda, como en el Figma */
+.address-search-input {
+  width: 100%;
+  padding-left: 40px;
+}
+
+.address-search-submit {
+  position: absolute;
+  top: 50%;
+  left: var(--space-8);
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  transform: translateY(-50%);
+}
+
+.address-search-submit:hover {
+  color: var(--color-text);
+}
+
+.address-search-message {
+  margin: 0;
+  color: var(--color-text-secondary);
+  font-size: var(--text-13);
+}
+
+.address-search-message--error {
+  color: var(--color-error-dark);
+}
+
+.address-search-results {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: var(--space-4);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background-color: var(--color-surface);
+  list-style: none;
+}
+
+.address-search-result {
+  width: 100%;
+  padding: var(--space-8) var(--space-10);
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--color-text);
+  font-size: var(--text-14);
+  text-align: left;
+  cursor: pointer;
+}
+
+.address-search-result:hover,
+.address-search-result:focus-visible {
+  background-color: var(--color-surface-subtle);
+}

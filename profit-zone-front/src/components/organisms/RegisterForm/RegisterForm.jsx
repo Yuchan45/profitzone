@@ -40,7 +40,8 @@ function focusField(field) {
  * Formulario de registro. `onSubmit(values)` devuelve una promesa; si falla con
  * `{ fieldErrors }` se marcan esos campos, y con `{ message }` se muestra arriba.
  */
-function RegisterForm({ onSubmit }) {
+// `onSwitchToLogin` opcional: dentro de un modal cambia de pestaña en vez de ir a /login.
+function RegisterForm({ onSubmit, onSwitchToLogin }) {
   const [values, setValues] = useState(INITIAL_VALUES)
   const [errors, setErrors] = useState({})
   const [formError, setFormError] = useState(null)
@@ -178,7 +179,14 @@ function RegisterForm({ onSubmit }) {
       </Button>
 
       <p className="auth-form-switch">
-        ¿Ya tenés cuenta? <Link to="/login">Iniciá sesión</Link>
+        ¿Ya tenés cuenta?{' '}
+        {onSwitchToLogin ? (
+          <button type="button" className="auth-form-switch-button" onClick={onSwitchToLogin}>
+            Iniciá sesión
+          </button>
+        ) : (
+          <Link to="/login">Iniciá sesión</Link>
+        )}
       </p>
     </form>
   )

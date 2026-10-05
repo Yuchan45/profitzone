@@ -1,3 +1,4 @@
+import { lazy, Suspense } from 'react'
 import { Routes, Route } from 'react-router-dom'
 import { AnalysisFlowProvider } from './context/AnalysisFlowContext.jsx'
 import MainLayout from './components/templates/MainLayout/MainLayout.jsx'
@@ -14,6 +15,9 @@ import Login from './pages/Login/Login.jsx'
 import Reporte from './pages/Reporte/Reporte.jsx'
 import NotFound from './pages/NotFound.jsx'
 
+// El paso de ubicación trae Leaflet (~150 kB): se carga recién al entrar al paso
+const Ubicacion = lazy(() => import('./pages/Ubicacion/Ubicacion.jsx'))
+
 function App() {
   return (
     <Routes>
@@ -26,6 +30,14 @@ function App() {
       >
         <Route path="/analizar/rubro" element={<Rubro />} />
         <Route path="/analizar/negocio" element={<Negocio />} />
+        <Route
+          path="/analizar/ubicacion"
+          element={
+            <Suspense fallback={<div className="flow-skeleton" aria-busy="true" aria-label="Cargando el mapa" />}>
+              <Ubicacion />
+            </Suspense>
+          }
+        />
         <Route path="/analizar/reporte/:id" element={<Reporte />} />
       </Route>
       <Route element={<AuthLayout />}>

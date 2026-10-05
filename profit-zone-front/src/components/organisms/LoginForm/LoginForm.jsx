@@ -26,7 +26,8 @@ function validate(values) {
  * Formulario de inicio de sesión. `onSubmit(values)` devuelve una promesa; si
  * falla, su `message` se muestra arriba del formulario.
  */
-function LoginForm({ onSubmit }) {
+// `onSwitchToRegister` opcional: dentro de un modal cambia de pestaña en vez de ir a /registro.
+function LoginForm({ onSubmit, onSwitchToRegister }) {
   const [values, setValues] = useState(INITIAL_VALUES)
   const [errors, setErrors] = useState({})
   const [formError, setFormError] = useState(null)
@@ -107,7 +108,14 @@ function LoginForm({ onSubmit }) {
       </Button>
 
       <p className="auth-form-switch">
-        ¿No tenés cuenta? <Link to="/registro">Creá una</Link>
+        ¿No tenés cuenta?{' '}
+        {onSwitchToRegister ? (
+          <button type="button" className="auth-form-switch-button" onClick={onSwitchToRegister}>
+            Creá una
+          </button>
+        ) : (
+          <Link to="/registro">Creá una</Link>
+        )}
       </p>
     </form>
   )

@@ -24,6 +24,13 @@ Copiar `.env.example` a `.env` y ajustar:
 | -------------- | ---------------------------- |
 | `VITE_API_URL` | URL base de la API backend   |
 
+## Mapa
+
+El paso 3 (`/analizar/ubicacion`) usa [Leaflet](https://leafletjs.com) con `react-leaflet` y los tiles
+estándar de OpenStreetMap (gratis, sin clave, con atribución), mostrados en grises con CSS. La página se
+carga de forma diferida para no sumar Leaflet al bundle inicial. Las direcciones se buscan con el
+normalizador del GCBA a través de la API (`GET /api/geocode`).
+
 ## Estructura
 
 ```

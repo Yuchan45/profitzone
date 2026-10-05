@@ -43,6 +43,18 @@ const PATHS = {
       <circle cx="12" cy="10" r="3" />
     </>
   ),
+  search: (
+    <>
+      <circle cx="11" cy="11" r="8" />
+      <path d="m21 21-4.3-4.3" />
+    </>
+  ),
+  x: (
+    <>
+      <path d="M18 6 6 18" />
+      <path d="m6 6 12 12" />
+    </>
+  ),
   'user-round': (
     <>
       <circle cx="12" cy="8" r="5" />
