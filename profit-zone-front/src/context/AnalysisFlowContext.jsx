@@ -5,6 +5,8 @@ import { AnalysisFlowContext } from './analysisFlowContextValue.js'
 const STORAGE_KEY = 'profitzone_analysis_flow_v1'
 
 const INITIAL_STATE = {
+  // id del análisis guardado en la API (se crea al terminar "Tu negocio")
+  analysisId: null,
   categoryCode: null,
   subcategoryCode: null,
   // { [questionCode]: string[] } con los codes de las opciones elegidas
@@ -43,6 +45,8 @@ export function AnalysisFlowProvider({ children }) {
           // Las respuestas dependen del rubro: si cambia, se empieza de cero
           const sameRubro = prev.subcategoryCode === subcategoryCode
           return {
+            // Otro rubro es otro análisis: el guardado deja de aplicar
+            analysisId: sameRubro ? prev.analysisId : null,
             categoryCode,
             subcategoryCode,
             answers: sameRubro ? prev.answers : {},
@@ -55,6 +59,9 @@ export function AnalysisFlowProvider({ children }) {
           ...prev,
           answers: { ...prev.answers, [questionCode]: optionCodes },
         }))
+      },
+      setAnalysisId: (analysisId) => {
+        setState((prev) => ({ ...prev, analysisId }))
       },
       setRequiredQuestions: (stepId, questionCodes) => {
         setState((prev) => {

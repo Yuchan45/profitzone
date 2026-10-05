@@ -1,8 +1,10 @@
-import { useEffect } from 'react'
-import { Navigate, useSearchParams } from 'react-router-dom'
+import { useEffect, useState } from 'react'
+import { Navigate, useNavigate, useSearchParams } from 'react-router-dom'
 import { useAnalysisFlow } from '../../hooks/useAnalysisFlow.js'
 import { useFlowSteps } from '../../hooks/useFlowSteps.js'
 import { useSubcategorySurvey } from '../../hooks/useSubcategorySurvey.js'
+import { createAnalysis, replaceAnalysisAnswers } from '../../services/analyses.service.js'
+import { FLOW_STEPS } from '../../utils/flowSteps.js'
 import Stepper from '../../components/organisms/Stepper/Stepper.jsx'
 import StepHeading from '../../components/molecules/StepHeading/StepHeading.jsx'
 import StatusMessage from '../../components/molecules/StatusMessage/StatusMessage.jsx'
@@ -26,9 +28,30 @@ function isAnswered(answers, questions) {
   return questions.filter((q) => q.isRequired).every((q) => answers[q.code]?.length > 0)
 }
 
+// Reemplaza las respuestas de un análisis ya guardado. Devuelve false si el análisis
+// ya no existe en la API (404), para que se cree uno nuevo en su lugar.
+async function replaceAnswersIfExists(analysisId, answers) {
+  try {
+    await replaceAnalysisAnswers(analysisId, answers)
+    return true
+  } catch (error) {
+    if (error.response?.status === 404) return false
+    throw error
+  }
+}
+
 function Negocio() {
-  const { categoryCode, subcategoryCode, answers, setAnswer, setRequiredQuestions } =
-    useAnalysisFlow()
+  const {
+    analysisId,
+    categoryCode,
+    subcategoryCode,
+    answers,
+    setAnswer,
+    setAnalysisId,
+    setRequiredQuestions,
+  } = useAnalysisFlow()
+  const navigate = useNavigate()
+  const [saveState, setSaveState] = useState({ status: 'idle', error: null })
   const steps = useFlowSteps()
   const [searchParams, setSearchParams] = useSearchParams()
   const { status, data, error } = useSubcategorySurvey(categoryCode, subcategoryCode)
@@ -67,6 +90,29 @@ function Negocio() {
   }
 
   const showDetails = wantsDetails && status === 'ok'
+
+  // Al terminar el paso se guarda el análisis en la API: se crea la primera vez y,
+  // si el usuario vuelve a cambiar respuestas, se reemplazan.
+  const handleFinish = async () => {
+    setSaveState({ status: 'saving', error: null })
+    try {
+      const replaced = analysisId && (await replaceAnswersIfExists(analysisId, answers))
+      if (!replaced) {
+        const analysis = await createAnalysis({ categoryCode, subcategoryCode, answers })
+        setAnalysisId(analysis.id)
+      }
+      setSaveState({ status: 'idle', error: null })
+      // El paso 3 (Ubicación) todavía no tiene vista: se avanza cuando tenga ruta
+      const nextPath = FLOW_STEPS.find((step) => step.id === 'ubicacion').path
+      if (nextPath) navigate(nextPath)
+    } catch (error) {
+      setSaveState({
+        status: 'error',
+        error: error.response?.data?.message ?? error.message,
+      })
+    }
+  }
+  const isSaving = saveState.status === 'saving'
 
   const goToSection = (section) => {
     setSearchParams(section ? { seccion: section } : {})
@@ -123,6 +169,10 @@ function Negocio() {
         <QuestionList questions={generalQuestions} answers={answers} onAnswer={setAnswer} />
       )}
 
+      {saveState.status === 'error' && (
+        <StatusMessage variant="error">No pudimos guardar tus respuestas: {saveState.error}</StatusMessage>
+      )}
+
       <div className="flow-step-actions">
         {showDetails ? (
           <Button variant="secondary" onClick={() => goToSection(null)}>
@@ -135,18 +185,17 @@ function Negocio() {
         )}
 
         {showDetails ? (
-          // Todavía no existe el paso 3 (Ubicación): las respuestas ya quedan guardadas en el flujo
-          <Button variant="primary" disabled={!detailsComplete}>
-            Siguiente
+          <Button variant="primary" disabled={!detailsComplete || isSaving} onClick={handleFinish}>
+            {isSaving ? 'Guardando…' : 'Siguiente'}
           </Button>
         ) : (
           <Button
             variant="primary"
-            disabled={status !== 'ok' || !generalComplete}
-            // Sin preguntas específicas no hay sección de detalles: queda para el paso 3
-            onClick={detailQuestions.length > 0 ? () => goToSection(DETAILS_SECTION) : undefined}
+            disabled={status !== 'ok' || !generalComplete || isSaving}
+            // Sin preguntas específicas no hay sección de detalles: el paso termina acá
+            onClick={detailQuestions.length > 0 ? () => goToSection(DETAILS_SECTION) : handleFinish}
           >
-            Siguiente
+            {isSaving ? 'Guardando…' : 'Siguiente'}
           </Button>
         )}
       </div>
