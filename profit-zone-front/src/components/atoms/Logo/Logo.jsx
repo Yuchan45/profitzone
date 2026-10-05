@@ -1,16 +1,19 @@
-import Icon from '../Icon/Icon.jsx'
+import logoFull from '../../../assets/logo/profitzone-logo.png'
+import logoMark from '../../../assets/logo/profitzone-mark.png'
 import './Logo.css'
 
-const ICON_SIZES = { m: 20, s: 18 }
-
-function Logo({ size = 'm' }) {
+/**
+ * Logo de ProfitZone.
+ * variant: 'full' (isotipo + nombre) | 'mark' (solo el isotipo).
+ * size: 's' | 'm' | 'l' (alto del logo).
+ */
+function Logo({ variant = 'full', size = 'm' }) {
   return (
-    <span className={`logo logo--${size}`}>
-      <span className="logo-mark">
-        <Icon name="map-pin" size={ICON_SIZES[size]} strokeWidth={2.25} />
-      </span>
-      <span className="logo-text">ProfitZone</span>
-    </span>
+    <img
+      className={`logo logo--${variant} logo--${size}`}
+      src={variant === 'mark' ? logoMark : logoFull}
+      alt="ProfitZone"
+    />
   )
 }
 

@@ -1,37 +1,18 @@
 .logo {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-12);
-  color: var(--color-text);
+  display: block;
+  width: auto;
+  user-select: none;
 }
 
-.logo-mark {
-  display: grid;
-  place-items: center;
-  width: 36px;
-  height: 36px;
-  border-radius: var(--radius-md);
-  background-color: var(--color-primary);
-  color: var(--color-text);
-}
-
-.logo-text {
-  font-family: var(--font-heading);
-  font-size: var(--text-22);
-  font-weight: 800;
-  line-height: 1;
-}
-
+/* El ancho sale solo de la proporción de la imagen */
 .logo--s {
-  gap: var(--space-10);
+  height: 24px;
 }
 
-.logo--s .logo-mark {
-  width: 32px;
+.logo--m {
   height: 32px;
-  border-radius: var(--radius-sm);
 }
 
-.logo--s .logo-text {
-  font-size: var(--text-18);
+.logo--l {
+  height: 48px;
 }
