@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import FormField from '../../molecules/FormField/FormField.jsx'
 import PasswordInput from '../../molecules/PasswordInput/PasswordInput.jsx'
+import StatusMessage from '../../molecules/StatusMessage/StatusMessage.jsx'
 import Input from '../../atoms/Input/Input.jsx'
 import Button from '../../atoms/Button/Button.jsx'
 import Divider from '../../atoms/Divider/Divider.jsx'
@@ -21,10 +22,15 @@ function validate(values) {
   return Object.fromEntries(Object.entries(errors).filter(([, message]) => message))
 }
 
-/** Formulario de inicio de sesión. `onSubmit` recibe los valores ya validados. */
+/**
+ * Formulario de inicio de sesión. `onSubmit(values)` devuelve una promesa; si
+ * falla, su `message` se muestra arriba del formulario.
+ */
 function LoginForm({ onSubmit }) {
   const [values, setValues] = useState(INITIAL_VALUES)
   const [errors, setErrors] = useState({})
+  const [formError, setFormError] = useState(null)
+  const [submitting, setSubmitting] = useState(false)
 
   const handleChange = (event) => {
     const { name, value } = event.target
@@ -32,23 +38,34 @@ function LoginForm({ onSubmit }) {
     if (errors[name]) setErrors((prev) => ({ ...prev, [name]: undefined }))
   }
 
-  const handleSubmit = (event) => {
+  const handleSubmit = async (event) => {
     event.preventDefault()
     const nextErrors = validate(values)
     setErrors(nextErrors)
+    setFormError(null)
 
     const firstInvalid = FIELD_ORDER.find((field) => nextErrors[field])
     if (firstInvalid) {
       document.getElementById(`login-${firstInvalid}`)?.focus()
       return
     }
-    onSubmit({ ...values, email: values.email.trim() })
+
+    setSubmitting(true)
+    try {
+      await onSubmit({ email: values.email.trim(), password: values.password })
+    } catch (error) {
+      setFormError(error.message)
+    } finally {
+      setSubmitting(false)
+    }
   }
 
   const describedBy = (field) => (errors[field] ? `login-${field}-error` : undefined)
 
   return (
     <form className="auth-form" onSubmit={handleSubmit} noValidate>
+      {formError && <StatusMessage variant="error">{formError}</StatusMessage>}
+
       <FormField id="login-email" label="Correo electrónico" error={errors.email}>
         <Input
           id="login-email"
@@ -77,8 +94,8 @@ function LoginForm({ onSubmit }) {
         />
       </FormField>
 
-      <Button type="submit" className="auth-form-submit">
-        Iniciar sesión
+      <Button type="submit" className="auth-form-submit" disabled={submitting}>
+        {submitting ? 'Ingresando…' : 'Iniciar sesión'}
       </Button>
 
       <Divider label="o" />

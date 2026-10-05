@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import FormField from '../../molecules/FormField/FormField.jsx'
 import PasswordInput from '../../molecules/PasswordInput/PasswordInput.jsx'
+import StatusMessage from '../../molecules/StatusMessage/StatusMessage.jsx'
 import Input from '../../atoms/Input/Input.jsx'
 import Checkbox from '../../atoms/Checkbox/Checkbox.jsx'
 import Button from '../../atoms/Button/Button.jsx'
@@ -15,14 +16,15 @@ import {
 } from '../../../utils/validators.js'
 import '../../../styles/auth-form.css'
 
-const INITIAL_VALUES = { fullName: '', email: '', password: '', acceptTerms: false }
+const INITIAL_VALUES = { firstName: '', lastName: '', email: '', password: '', acceptTerms: false }
 
 // Orden en que se enfoca el primer campo con error al enviar
-const FIELD_ORDER = ['fullName', 'email', 'password', 'acceptTerms']
+const FIELD_ORDER = ['firstName', 'lastName', 'email', 'password', 'acceptTerms']
 
 function validate(values) {
   const errors = {
-    fullName: validateRequired(values.fullName, 'Ingresá tu nombre y apellido.'),
+    firstName: validateRequired(values.firstName, 'Ingresá tu nombre.'),
+    lastName: validateRequired(values.lastName, 'Ingresá tu apellido.'),
     email: validateEmail(values.email),
     password: validateNewPassword(values.password),
     acceptTerms: values.acceptTerms ? null : 'Tenés que aceptar los términos para crear la cuenta.',
@@ -30,10 +32,19 @@ function validate(values) {
   return Object.fromEntries(Object.entries(errors).filter(([, message]) => message))
 }
 
-/** Formulario de registro. `onSubmit` recibe los valores ya validados. */
+function focusField(field) {
+  document.getElementById(`register-${field}`)?.focus()
+}
+
+/**
+ * Formulario de registro. `onSubmit(values)` devuelve una promesa; si falla con
+ * `{ fieldErrors }` se marcan esos campos, y con `{ message }` se muestra arriba.
+ */
 function RegisterForm({ onSubmit }) {
   const [values, setValues] = useState(INITIAL_VALUES)
   const [errors, setErrors] = useState({})
+  const [formError, setFormError] = useState(null)
+  const [submitting, setSubmitting] = useState(false)
 
   const handleChange = (event) => {
     const { name, type, value, checked } = event.target
@@ -42,35 +53,71 @@ function RegisterForm({ onSubmit }) {
     if (errors[name]) setErrors((prev) => ({ ...prev, [name]: undefined }))
   }
 
-  const handleSubmit = (event) => {
+  const handleSubmit = async (event) => {
     event.preventDefault()
     const nextErrors = validate(values)
     setErrors(nextErrors)
+    setFormError(null)
 
     const firstInvalid = FIELD_ORDER.find((field) => nextErrors[field])
     if (firstInvalid) {
-      document.getElementById(`register-${firstInvalid}`)?.focus()
+      focusField(firstInvalid)
       return
     }
-    onSubmit({ ...values, fullName: values.fullName.trim(), email: values.email.trim() })
+
+    setSubmitting(true)
+    try {
+      await onSubmit({
+        firstName: values.firstName.trim(),
+        lastName: values.lastName.trim(),
+        email: values.email.trim(),
+        password: values.password,
+      })
+    } catch (error) {
+      if (error.fieldErrors) {
+        setErrors(error.fieldErrors)
+        focusField(FIELD_ORDER.find((field) => error.fieldErrors[field]))
+      } else {
+        setFormError(error.message)
+      }
+    } finally {
+      setSubmitting(false)
+    }
   }
 
   const describedBy = (field) => (errors[field] ? `register-${field}-error` : undefined)
 
   return (
     <form className="auth-form" onSubmit={handleSubmit} noValidate>
-      <FormField id="register-fullName" label="Nombre y apellido" error={errors.fullName}>
-        <Input
-          id="register-fullName"
-          name="fullName"
-          autoComplete="name"
-          placeholder="Carlos Mendoza"
-          value={values.fullName}
-          onChange={handleChange}
-          invalid={Boolean(errors.fullName)}
-          aria-describedby={describedBy('fullName')}
-        />
-      </FormField>
+      {formError && <StatusMessage variant="error">{formError}</StatusMessage>}
+
+      <div className="auth-form-row">
+        <FormField id="register-firstName" label="Nombre" error={errors.firstName}>
+          <Input
+            id="register-firstName"
+            name="firstName"
+            autoComplete="given-name"
+            placeholder="Carlos"
+            value={values.firstName}
+            onChange={handleChange}
+            invalid={Boolean(errors.firstName)}
+            aria-describedby={describedBy('firstName')}
+          />
+        </FormField>
+
+        <FormField id="register-lastName" label="Apellido" error={errors.lastName}>
+          <Input
+            id="register-lastName"
+            name="lastName"
+            autoComplete="family-name"
+            placeholder="Mendoza"
+            value={values.lastName}
+            onChange={handleChange}
+            invalid={Boolean(errors.lastName)}
+            aria-describedby={describedBy('lastName')}
+          />
+        </FormField>
+      </div>
 
       <FormField id="register-email" label="Correo electrónico" error={errors.email}>
         <Input
@@ -118,8 +165,8 @@ function RegisterForm({ onSubmit }) {
         )}
       </div>
 
-      <Button type="submit" className="auth-form-submit">
-        Crear cuenta
+      <Button type="submit" className="auth-form-submit" disabled={submitting}>
+        {submitting ? 'Creando cuenta…' : 'Crear cuenta'}
       </Button>
 
       <Divider label="o" />

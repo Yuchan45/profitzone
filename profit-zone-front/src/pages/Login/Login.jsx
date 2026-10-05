@@ -1,16 +1,29 @@
-import { useState } from 'react'
+import { Navigate, useLocation, useNavigate } from 'react-router-dom'
+import { useAuth } from '../../hooks/useAuth.js'
 import StepHeading from '../../components/molecules/StepHeading/StepHeading.jsx'
 import SegmentedNav from '../../components/molecules/SegmentedNav/SegmentedNav.jsx'
-import StatusMessage from '../../components/molecules/StatusMessage/StatusMessage.jsx'
 import LoginForm from '../../components/organisms/LoginForm/LoginForm.jsx'
 import { AUTH_TABS } from '../../utils/authTabs.js'
+import { getApiErrorMessage } from '../../utils/apiErrors.js'
 
 function Login() {
-  const [submitted, setSubmitted] = useState(false)
+  const { status, login } = useAuth()
+  const navigate = useNavigate()
+  const location = useLocation()
+  // A dónde volver después de iniciar sesión (lo deja ProtectedRoute)
+  const from = location.state?.from ?? '/'
 
-  // Todavía no hay endpoint de login en el back: el formulario valida y avisa.
-  const handleSubmit = () => {
-    setSubmitted(true)
+  if (status === 'authenticated') {
+    return <Navigate to={from} replace />
+  }
+
+  const handleSubmit = async (values) => {
+    try {
+      await login(values)
+      navigate(from, { replace: true })
+    } catch (error) {
+      throw new Error(getApiErrorMessage(error))
+    }
   }
 
   return (
@@ -20,11 +33,6 @@ function Login() {
         subtitle="Ingresá para ver tus análisis guardados en Mis reportes."
       />
       <SegmentedNav items={AUTH_TABS} label="Registro o inicio de sesión" />
-      {submitted && (
-        <StatusMessage>
-          Tus datos están bien. El inicio de sesión todavía no está conectado con el servidor.
-        </StatusMessage>
-      )}
       <LoginForm onSubmit={handleSubmit} />
     </>
   )

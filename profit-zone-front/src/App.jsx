@@ -3,6 +3,7 @@ import { AnalysisFlowProvider } from './context/AnalysisFlowContext.jsx'
 import MainLayout from './components/templates/MainLayout/MainLayout.jsx'
 import FlowLayout from './components/templates/FlowLayout/FlowLayout.jsx'
 import AuthLayout from './components/templates/AuthLayout/AuthLayout.jsx'
+import ProtectedRoute from './components/templates/ProtectedRoute/ProtectedRoute.jsx'
 import Home from './pages/Home.jsx'
 import Dashboard from './pages/Dashboard.jsx'
 import Perfil from './pages/Perfil/Perfil.jsx'
@@ -31,8 +32,11 @@ function App() {
       </Route>
       <Route element={<MainLayout />}>
         <Route path="/" element={<Home />} />
-        <Route path="/dashboard" element={<Dashboard />} />
-        <Route path="/perfil" element={<Perfil />} />
+        {/* Requieren sesión */}
+        <Route element={<ProtectedRoute />}>
+          <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/perfil" element={<Perfil />} />
+        </Route>
         <Route path="*" element={<NotFound />} />
       </Route>
     </Routes>

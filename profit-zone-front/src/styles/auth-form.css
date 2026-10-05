@@ -6,6 +6,20 @@
   gap: var(--space-20);
 }
 
+/* Dos campos en la misma fila (ej. Nombre y Apellido) */
+.auth-form-row {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-16);
+}
+
+@media (max-width: 420px) {
+  .auth-form-row {
+    grid-template-columns: 1fr;
+    gap: var(--space-20);
+  }
+}
+
 .auth-form-terms {
   display: flex;
   flex-direction: column;
