@@ -3,14 +3,11 @@ import {
   createAnalysis,
   replaceAnalysisAnswers,
   updateAnalysisLocation,
-  RADIUS_MIN_M,
-  RADIUS_MAX_M,
 } from '../services/analyses.service.js'
+import { httpError } from '../utils/httpErrors.js'
 
 function badRequest(message) {
-  const error = new Error(message)
-  error.status = 400
-  return error
+  return httpError(400, message)
 }
 
 function isPlainObject(value) {
@@ -65,16 +62,11 @@ export async function putAnalysisAnswers(req, res) {
 
 export async function patchAnalysisLocation(req, res) {
   const body = req.body ?? {}
-  const { radius } = body
-
-  if (!Number.isInteger(radius) || radius < RADIUS_MIN_M || radius > RADIUS_MAX_M) {
-    throw badRequest(`El radio debe ser un número entero entre ${RADIUS_MIN_M} y ${RADIUS_MAX_M} metros.`)
-  }
-
+  // El rango del radio es regla de negocio: lo valida el service
   const analysis = await updateAnalysisLocation(req.params.id, {
     lat: parseCoordinate(body.lat, 'lat', 90),
     lng: parseCoordinate(body.lng, 'lng', 180),
-    radius,
+    radius: body.radius,
   })
   res.json(analysis)
 }

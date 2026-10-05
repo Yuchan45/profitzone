@@ -43,7 +43,9 @@ export function AnalysisFlowProvider({ children }) {
       setRubro: (categoryCode, subcategoryCode) => {
         setState((prev) => {
           // Las respuestas dependen del rubro: si cambia, se empieza de cero
-          const sameRubro = prev.subcategoryCode === subcategoryCode
+          // El code de subcategoría es único solo dentro de su categoría
+          const sameRubro =
+            prev.categoryCode === categoryCode && prev.subcategoryCode === subcategoryCode
           return {
             // Otro rubro es otro análisis: el guardado deja de aplicar
             analysisId: sameRubro ? prev.analysisId : null,

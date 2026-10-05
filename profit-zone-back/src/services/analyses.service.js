@@ -8,23 +8,20 @@ import {
   QuestionOption,
 } from '../models/index.js'
 import { getSubcategorySurvey } from './questions.service.js'
+import { httpError } from '../utils/httpErrors.js'
 
 // Rango del radio de análisis en metros (PZ-16: rango acotado, ej. 200–600 m)
-export const RADIUS_MIN_M = 200
-export const RADIUS_MAX_M = 600
+const RADIUS_MIN_M = 200
+const RADIUS_MAX_M = 600
 
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
 function badRequest(message) {
-  const error = new Error(message)
-  error.status = 400
-  return error
+  return httpError(400, message)
 }
 
 function notFound(id) {
-  const error = new Error(`No existe el análisis "${id}".`)
-  error.status = 404
-  return error
+  return httpError(404, `No existe el análisis "${id}".`)
 }
 
 function toAnalysisDto(analysis) {
@@ -184,6 +181,9 @@ export async function replaceAnalysisAnswers(id, answers) {
 
 /** Guarda el punto y el radio elegidos en el paso 3. */
 export async function updateAnalysisLocation(id, { lat, lng, radius }) {
+  if (!Number.isInteger(radius) || radius < RADIUS_MIN_M || radius > RADIUS_MAX_M) {
+    throw badRequest(`El radio debe ser un número entero entre ${RADIUS_MIN_M} y ${RADIUS_MAX_M} metros.`)
+  }
   const analysis = await findAnalysis(id)
   await analysis.update({ centerLat: lat, centerLng: lng, radiusM: radius })
   return getAnalysis(id)
