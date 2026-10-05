@@ -55,6 +55,8 @@ un formato inválido, el proceso falla con un mensaje explicando qué corregir.
 | `DB_USER`      | No          | `sa`          | Usuario (en desarrollo, el admin del contenedor)       |
 | `DB_PASSWORD`  | Sí          | —             | Clave: 8+ caracteres, 3 de 4 tipos (A-Z, a-z, 0-9, símbolo). Sin `$`. Docker la usa para crear `sa` |
 | `DB_LOGGING`   | No          | `false`       | `true` muestra en consola el SQL de Sequelize          |
+| `GOOGLE_PLACES_API_KEY` | No | —             | Clave de API de Google Places (New) para competidores en el radio |
+| `BESTTIME_API_KEY`      | No | —             | Clave de API opcional para afluencia BestTime (fallback a modelo estimado) |
 
 ## CORS
 
@@ -69,6 +71,8 @@ headers `Content-Type` y `Authorization`, y cachea el preflight 24 h.
 | ------ | ------------- | ---------------------------- |
 | `GET`  | `/api/health` | Estado del servicio y de la DB (`database: up/down`; 503 si la DB no responde) |
 | `GET`  | `/api/density` | Densidad poblacional y demografía en un punto con radio en CABA (query: `lat`, `lng`, `radius`) |
+| `GET`  | `/api/competition` | Análisis de competidores directos e indirectos en un radio con Google Places |
+| `GET`  | `/api/traffic` | Estimación de afluencia horaria (7h a 23h) y score por franja horaria |
 
 ### `GET /api/density`
 
@@ -96,6 +100,97 @@ El cálculo se ejecuta en el motor espacial nativo de SQL Server 2022 (`geograph
 2. Se detectan los radios censales intersectados con `geom.STIntersects(@buffer) = 1`.
 3. Para cada radio censal, se calcula la fracción de área contenida dentro del círculo con `geom.STIntersection(@buffer).STArea() / geom.STArea()`.
 4. Los habitantes, viviendas y hogares se ponderan proporcionalmente a dicha fracción, garantizando precisión sin sobreestimar radios censales parcialmente intersectados.
+
+### `GET /api/competition`
+
+Obtiene el análisis de competidores directos e indirectos en un radio alrededor de unas coordenadas usando la API de Google Places (New).
+
+#### Parámetros de consulta (Query Params)
+
+| Parámetro     | Tipo     | Requerido | Default       | Descripción / Restricciones |
+| ------------- | -------- | :-------: | :-----------: | --------------------------- |
+| `lat`         | `number` | Sí        | —             | Latitud en grados decimales (`-90` a `90`). Ej: `-34.5880`. |
+| `lng`         | `number` | Sí        | —             | Longitud en grados decimales (`-180` a `180`). Ej: `-58.4300`. |
+| `radius`      | `number` | No        | `1000`        | Radio en metros (`10` a `20000`). Ej: `1000`. |
+| `subcategory` | `string` | No        | `restaurante` | Código del rubro (`restaurante`, `cafeteria`, `gimnasio`, `pilates`). |
+
+#### Ejemplo de solicitud y respuesta
+
+```http
+GET /api/competition?lat=-34.5880&lng=-58.4300&radius=1000&subcategory=cafeteria HTTP/1.1
+Host: localhost:8080
+```
+
+```json
+{
+  "total": 20,
+  "directCount": 18,
+  "indirectCount": 2,
+  "averageRating": 4.5,
+  "subcategory": "cafeteria",
+  "subcategoryName": "cafeterías",
+  "callout": "Hay bastante competencia directa y bien valorada cerca del punto.",
+  "source": "Google Places",
+  "places": [
+    {
+      "id": "ChIJcc8jgsy1vJUR7iCGeBH0ynk",
+      "name": "Local Support",
+      "rating": 4.4,
+      "userRatingCount": 1177,
+      "distanceMeters": 179,
+      "distanceText": "179 m",
+      "type": "Directa",
+      "location": {
+        "lat": -34.58899,
+        "lng": -58.43153
+      }
+    }
+  ]
+}
+```
+
+### `GET /api/traffic`
+
+Provee la estimación de afluencia horaria (curva de 7 h a 23 h) y el score de actividad (0 a 100) para una franja horaria objetivo.
+
+#### Parámetros de consulta (Query Params)
+
+| Parámetro     | Tipo     | Requerido | Default       | Descripción / Restricciones |
+| ------------- | -------- | :-------: | :-----------: | --------------------------- |
+| `lat`         | `number` | Sí        | —             | Latitud en grados decimales (`-90` a `90`). Ej: `-34.5880`. |
+| `lng`         | `number` | Sí        | —             | Longitud en grados decimales (`-180` a `180`). Ej: `-58.4300`. |
+| `radius`      | `number` | No        | `1000`        | Radio en metros (`10` a `20000`). Ej: `1000`. |
+| `subcategory` | `string` | No        | `restaurante` | Código del rubro (`restaurante`, `cafeteria`, `gimnasio`, `pilates`). |
+| `schedule`    | `string` | No        | `morning`     | Preset horario: `morning` (8-11h), `lunch` (12-15h), `afternoon` (16-19h), `dinner` (20-23h), `night` (21-23h), `day` (8-20h). |
+| `startHour`   | `number` | No        | —             | Hora de inicio personalizada (0 a 23). |
+| `endHour`     | `number` | No        | —             | Hora de fin personalizada (0 a 23). |
+
+#### Ejemplo de solicitud y respuesta
+
+```http
+GET /api/traffic?lat=-34.5880&lng=-58.4300&radius=1000&subcategory=cafeteria&schedule=morning HTTP/1.1
+Host: localhost:8080
+```
+
+```json
+{
+  "score": 77,
+  "scoreMax": 100,
+  "timeSlot": "mañana, 8 a 11 h",
+  "startHour": 8,
+  "endHour": 11,
+  "hourlyActivity": [
+    { "hour": 7, "label": "7 h", "value": 15, "isHighlighted": false },
+    { "hour": 8, "label": "8 h", "value": 48, "isHighlighted": true },
+    { "hour": 9, "label": "9 h", "value": 82, "isHighlighted": true },
+    { "hour": 10, "label": "10 h", "value": 94, "isHighlighted": true },
+    { "hour": 11, "label": "11 h", "value": 85, "isHighlighted": true }
+  ],
+  "callout": "La actividad sube fuerte a la mañana, en línea con tu franja de desayuno.",
+  "badge": "Estimado",
+  "source": "BestTime (popular times de locales del radio) · forecast 2026 · mide entradas a locales, no peatones"
+}
+```
 
 ## Base de datos
 
