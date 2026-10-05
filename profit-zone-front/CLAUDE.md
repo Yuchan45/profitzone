@@ -15,10 +15,10 @@ Los componentes viven en `src/components/` organizados por nivel. **Una carpeta 
 
 ```
 src/components/
-  atoms/       piezas mínimas sin lógica de negocio: Button, Chip, Icon, IconTile, Logo
-  molecules/   combinación chica de atoms con un propósito: CategoryCard, ApiStatus
-  organisms/   secciones completas de la UI: Header, Navbar, Footer, Stepper
-  templates/   layouts de página con <Outlet />: MainLayout, FlowLayout
+  atoms/       piezas mínimas sin lógica de negocio: Button, Chip, Checkbox, Divider, Icon, Input, Logo…
+  molecules/   combinación chica de atoms con un propósito: CategoryCard, FormField, PasswordInput, QuestionField…
+  organisms/   secciones completas de la UI: Header, Navbar, Stepper, QuestionList, RegisterForm…
+  templates/   layouts de página con <Outlet />: MainLayout, FlowLayout, AuthLayout
 src/pages/     vistas ruteadas; arman la pantalla con organisms/molecules/atoms
 ```
 
@@ -37,6 +37,13 @@ src/pages/     vistas ruteadas; arman la pantalla con organisms/molecules/atoms
   - flag `cancelled` en el cleanup del `useEffect`
   - mensaje de error `error.response?.data?.message ?? error.message`
   - parámetros primitivos en las dependencias del `useEffect`, nunca objetos o arrays creados en el render (provocarían requests infinitos)
+
+## Sesión (autenticación)
+
+- La sesión vive en `AuthContext` (montado en `main.jsx`) y se consume con `useAuth()`: `{ status: 'loading' | 'authenticated' | 'anonymous', user, login, register, logout }`.
+- El JWT de acceso se guarda **solo en memoria** (`src/services/authToken.js`). Nunca guardar tokens en `localStorage`/`sessionStorage`: el refresh token es una cookie httpOnly que maneja el navegador.
+- `src/services/api.js` agrega el `Bearer` solo y, ante un 401, renueva la sesión una vez con `/auth/refresh` y reintenta. Las llamadas de auth van en `src/services/auth.service.js`.
+- Rutas que requieren sesión: van dentro de `<Route element={<ProtectedRoute />}>` en `App.jsx` (redirige a `/login` y vuelve a la ruta original después).
 
 ## Contextos
 

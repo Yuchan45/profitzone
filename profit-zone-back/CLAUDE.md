@@ -33,6 +33,17 @@ SQL Server (Docker, `docker-compose.yml` en la raíz) + Sequelize.
   `bulkCreate` con `updateOnDuplicate` no funciona en MSSQL.
 - Comandos: `npm run db:up`, `db:migrate`, `db:migrate:undo`, `db:migrate:status`, `db:seed:catalog`, `db:seed:catalog:verify` (ver README).
 
+## Autenticación y autorización
+
+JWT de acceso de vida corta + refresh token opaco en cookie httpOnly. Endpoints en `src/routes/auth.routes.js` (`/api/auth/register`, `login`, `refresh`, `logout`, `me`).
+
+- **Proteger una ruta:** `router.get('/', requireAuth, handler)` (`src/middlewares/requireAuth.js`). Lee `Authorization: Bearer <token>` y deja `req.user = { id, role }`. Para limitar por rol: `requireAuth, requireRole('admin')` (`src/middlewares/requireRole.js`).
+- **Tokens:** el JWT de acceso (HS256, `{ sub, role }`) se firma y verifica solo con `src/utils/tokens.js`. El refresh token es opaco (`generateOpaqueToken`) y en `users.auth_tokens` se guarda únicamente su SHA-256 (`hashToken`): nunca el token en claro.
+- **Rotación:** cada `/refresh` revoca el token usado (`revoked_at` + `replaced_by_id`) y emite otro. Si llega un token ya rotado fuera del margen de gracia (30 s), se revocan todas las sesiones del usuario (reuso = posible robo). La lógica vive en `src/services/auth.service.js`.
+- **Cookie `pz_refresh`:** `httpOnly`, `SameSite=Strict`, `Path=/api/auth`, `Secure` según `COOKIE_SECURE`. Las rutas que la usan (`/refresh`, `/logout`) van con `requireTrustedOrigin` (defensa CSRF).
+- **Contraseñas:** solo con `hashPassword` / `verifyPassword` de `src/utils/password.js` (scrypt de `node:crypto`). Los mensajes de login fallido son siempre genéricos ("Correo o contraseña incorrectos.") para no revelar qué correos existen.
+- **Rate limit:** `/register` y `/login` comparten un límite de 10 intentos cada 15 minutos por IP (`express-rate-limit`).
+
 ## Errores
 
 - Express 5 manda al `errorHandler` tanto los `throw` síncronos como los rechazos de funciones `async`: en los controllers no hace falta `try/catch` ni `next(err)`.

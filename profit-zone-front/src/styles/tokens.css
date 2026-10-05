@@ -40,6 +40,14 @@
   --color-notice-bg: #fff2c2;
   --color-notice-text: #8a7a3d;
 
+  /* Mapa (manzana y parque vienen del Figma; el resto completa la ilustración) */
+  --color-map-land: #f3f1ec;
+  --color-map-block: #e4e9e0;
+  --color-map-park: #cfe6c8;
+  --color-map-water: #b9dcf0;
+  --color-map-avenue: #fbe7a5;
+  --color-map-label: #8a99ad;
+
   /* Base */
   --color-black: #000000;
   --color-white: #ffffff;

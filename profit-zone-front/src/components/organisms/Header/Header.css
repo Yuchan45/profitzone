@@ -13,6 +13,17 @@
   display: inline-flex;
 }
 
+.header-session {
+  display: flex;
+  align-items: center;
+  gap: var(--space-8);
+}
+
+.header-user {
+  color: var(--color-text-secondary);
+  font-size: var(--text-14);
+}
+
 @media (max-width: 1024px) {
   .header {
     padding: 0 var(--space-24);

@@ -5,9 +5,11 @@ import {
   updatePassword,
   toggleGoogleAccount,
   deleteAccount,
+  setProfileMockOwner,
 } from '../services/profile.service.js'
 
-export function useProfile() {
+/** Perfil del usuario. `userId` (primitivo) es el de la sesión: cada cuenta tiene su perfil. */
+export function useProfile(userId) {
   const [state, setState] = useState({
     status: 'loading',
     data: null,
@@ -18,6 +20,9 @@ export function useProfile() {
 
   useEffect(() => {
     let cancelled = false
+
+    // Mientras el perfil sea mock, se guarda por usuario
+    setProfileMockOwner(userId)
 
     fetchProfile()
       .then((data) => {
@@ -38,7 +43,7 @@ export function useProfile() {
     return () => {
       cancelled = true
     }
-  }, [])
+  }, [userId])
 
   const savePersonalData = useCallback(async (fields) => {
     setIsUpdating(true)

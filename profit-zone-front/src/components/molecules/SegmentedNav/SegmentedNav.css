@@ -1,0 +1,36 @@
+.segmented-nav {
+  display: grid;
+  grid-auto-columns: 1fr;
+  grid-auto-flow: column;
+  gap: var(--space-4);
+  padding: var(--space-4);
+  border-radius: var(--radius-md);
+  background-color: var(--color-surface-subtle);
+}
+
+.segmented-nav-item {
+  display: grid;
+  place-items: center;
+  height: 38px;
+  border-radius: var(--radius-sm);
+  color: var(--color-text-secondary);
+  font-family: var(--font-heading);
+  font-size: var(--text-14);
+  font-weight: 600;
+  transition:
+    background-color 0.15s ease,
+    color 0.15s ease;
+}
+
+.segmented-nav-item:hover {
+  color: var(--color-text);
+}
+
+/* Turquesa en su variante oscura (como los chips y links): el primario claro
+   no llega a un contraste legible sobre blanco */
+.segmented-nav-item.active,
+.segmented-nav-item.active:hover {
+  background-color: var(--color-surface);
+  color: var(--color-primary-dark);
+  box-shadow: var(--shadow-sm);
+}

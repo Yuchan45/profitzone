@@ -28,15 +28,15 @@ Copiar `.env.example` a `.env` y ajustar:
 
 ```
 src/
-  assets/      recursos estáticos
+  assets/      recursos estáticos (logo/: logo e isotipo de ProfitZone)
   components/  componentes reutilizables con atomic design
-    atoms/       piezas mínimas (Button, Chip, Icon, IconTile, Logo)
-    molecules/   combinaciones de atoms (CategoryCard, QuestionField, StepHeading, StatusMessage, ApiStatus)
-    organisms/   secciones de UI (Header, Navbar, Footer, Stepper, QuestionList)
-    templates/   layouts de página (MainLayout, FlowLayout)
+    atoms/       piezas mínimas (Button, Chip, Checkbox, Divider, GoogleLogo, Icon, IconTile, Input, Logo, MapBackdrop, SegmentedProgress)
+    molecules/   combinaciones de atoms (CategoryCard, FormField, PasswordInput, QuestionField, SegmentedNav, SelectionSummary, StepHeading, StatusMessage, ApiStatus)
+    organisms/   secciones de UI (Header, Navbar, Footer, Stepper, QuestionList, RegisterForm, LoginForm, AuthBrandPanel)
+    templates/   layouts de página (MainLayout, FlowLayout, AuthLayout)
   context/     contextos de React (AuthContext, AnalysisFlowContext: estado del flujo de análisis)
   hooks/       custom hooks (useAuth)
-  pages/       vistas ruteadas (Home, Dashboard, Perfil, Rubro, Negocio, NotFound)
+  pages/       vistas ruteadas (Home, Dashboard, Perfil, Rubro, Negocio, Registro, Login, NotFound)
   styles/      tokens.css: paleta, radios, espaciados y fuentes del Figma
   services/    cliente HTTP y llamadas a la API (api.js)
   utils/       helpers (formatters)
