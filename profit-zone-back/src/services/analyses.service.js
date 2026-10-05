@@ -8,7 +8,7 @@ import {
   QuestionOption,
 } from '../models/index.js'
 import { getSubcategorySurvey } from './questions.service.js'
-import { findAvailableNeighborhood } from './neighborhoods.service.js'
+import { availableNeighborhoodNames, findAvailableNeighborhood } from './neighborhoods.service.js'
 import { httpError } from '../utils/httpErrors.js'
 
 // Rango del radio de análisis en metros (PZ-16: rango acotado, ej. 200–600 m)
@@ -207,7 +207,7 @@ export async function updateAnalysisLocation(id, { lat, lng, radius }, userId) {
   }
   const analysis = await findAnalysis(id, userId)
   if (!(await findAvailableNeighborhood(lat, lng))) {
-    throw httpError(422, 'Elegí un punto dentro de Palermo.')
+    throw httpError(422, `Elegí un punto dentro de ${availableNeighborhoodNames()}.`)
   }
   await analysis.update({
     centerLat: lat,

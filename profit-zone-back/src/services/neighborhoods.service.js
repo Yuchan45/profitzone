@@ -1,5 +1,6 @@
 import { sequelize } from '../db/sequelize.js'
 import { wktToLatLngPolygons } from '../utils/wkt.js'
+import { isPointInPolygons } from '../utils/geo.js'
 
 // Barrios donde se puede analizar (MVP: solo Palermo, PZ-15). `censusName` es
 // el valor de census_data.census_radios.barrio.
@@ -47,14 +48,17 @@ export async function listNeighborhoods() {
   return cachedNeighborhoods
 }
 
-/** Barrio disponible que contiene el punto, o null si cae fuera de todos. */
+/** Nombres de los barrios disponibles para los mensajes ("Palermo", "Palermo o Belgrano"). */
+export function availableNeighborhoodNames() {
+  return AVAILABLE_NEIGHBORHOODS.map((n) => n.name).join(' o ')
+}
+
+/**
+ * Barrio disponible que contiene el punto, o null si cae fuera de todos. Usa el
+ * mismo contorno simplificado que muestra el mapa, para que el front y la API
+ * coincidan en los bordes.
+ */
 export async function findAvailableNeighborhood(lat, lng) {
-  const [rows] = await sequelize.query(
-    `SELECT TOP 1 barrio
-     FROM census_data.census_radios
-     WHERE geom.STIntersects(geography::Point(:lat, :lng, 4326)) = 1`,
-    { replacements: { lat, lng } },
-  )
-  const barrio = rows[0]?.barrio
-  return AVAILABLE_NEIGHBORHOODS.find((n) => n.censusName === barrio) ?? null
+  const neighborhoods = await listNeighborhoods()
+  return neighborhoods.find((n) => isPointInPolygons({ lat, lng }, n.boundary)) ?? null
 }

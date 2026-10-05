@@ -19,8 +19,9 @@ import AddressSearch from '../../components/molecules/AddressSearch/AddressSearc
 import SegmentedNav from '../../components/molecules/SegmentedNav/SegmentedNav.jsx'
 import RangeSlider from '../../components/atoms/RangeSlider/RangeSlider.jsx'
 import Button from '../../components/atoms/Button/Button.jsx'
+import Divider from '../../components/atoms/Divider/Divider.jsx'
 import { isPointInPolygons, walkingMinutes } from '../../utils/geo.js'
-import { getApiErrorMessage } from '../../utils/apiErrors.js'
+import { toAuthFormError } from '../../utils/apiErrors.js'
 import './Ubicacion.css'
 
 // Rango del radio en metros (la API valida lo mismo, PZ-16)
@@ -55,15 +56,6 @@ function buildSummaryRows(survey, answers) {
   const details = survey.details.map(labelOf).filter(Boolean).join(' · ')
   if (details) rows.push({ label: 'Detalles', value: details })
   return rows
-}
-
-// El error de la API se muestra en el formulario: en el campo de correo si ya existe
-function toFormError(error) {
-  const message = getApiErrorMessage(error)
-  if (error.response?.status === 409) {
-    return Object.assign(new Error(message), { fieldErrors: { email: message } })
-  }
-  return new Error(message)
 }
 
 function Ubicacion() {
@@ -103,9 +95,12 @@ function Ubicacion() {
   }
 
   const analyze = async () => {
-    const saved = await saveLocation.save()
+    const questionCodes = survey.data
+      ? [...survey.data.business, ...survey.data.details].map((q) => q.code)
+      : Object.keys(answers)
+    const savedId = await saveLocation.save(questionCodes)
     // El paso 4 (Análisis) todavía no tiene vista: se va directo al reporte
-    if (saved) navigate(`/analizar/reporte/${analysisId}`)
+    if (savedId) navigate(`/analizar/reporte/${savedId}`)
   }
 
   // "Analizar zona" pide cuenta: sin sesión se abre el modal y se sigue al entrar
@@ -121,7 +116,7 @@ function Ubicacion() {
     try {
       await authenticate(values)
     } catch (error) {
-      throw toFormError(error)
+      throw toAuthFormError(error)
     }
     setAuthModal((prev) => ({ ...prev, open: false }))
     await analyze()
@@ -200,7 +195,7 @@ function Ubicacion() {
               <StatusMessage>Marcá un punto en el mapa o buscá una dirección para empezar.</StatusMessage>
             )}
 
-            <hr className="ubicacion-divider" />
+            <Divider />
 
             {survey.status === 'ok' && (
               <BusinessSummary rows={buildSummaryRows(survey.data, answers)} editTo="/analizar/negocio" />

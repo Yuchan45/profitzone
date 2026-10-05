@@ -38,7 +38,10 @@ function App() {
             </Suspense>
           }
         />
-        <Route path="/analizar/reporte/:id" element={<Reporte />} />
+        {/* El reporte siempre tiene dueño: espera a recuperar la sesión y, sin sesión, pide login */}
+        <Route element={<ProtectedRoute />}>
+          <Route path="/analizar/reporte/:id" element={<Reporte />} />
+        </Route>
       </Route>
       <Route element={<AuthLayout />}>
         <Route path="/registro" element={<Registro />} />
