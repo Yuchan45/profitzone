@@ -76,7 +76,7 @@ function Negocio() {
   // Con preguntas específicas el paso tiene 2 partes: se indica en qué parte está el
   // usuario, porque el Stepper no avanza entre una y otra.
   const totalParts = detailQuestions.length > 0 ? 2 : 1
-  const eyebrow = totalParts > 1 ? `Parte ${showDetails ? 2 : 1} de ${totalParts}` : null
+  const part = totalParts > 1 ? { current: showDetails ? 2 : 1, total: totalParts } : null
 
   const heading = showDetails
     ? {
@@ -95,7 +95,7 @@ function Negocio() {
     <div className="flow-step">
       <Stepper steps={steps} current={2} />
 
-      <StepHeading eyebrow={eyebrow} title={heading.title} subtitle={heading.subtitle} />
+      <StepHeading part={part} title={heading.title} subtitle={heading.subtitle} />
 
       {status === 'loading' && (
         <div className="flow-skeleton negocio-skeleton" aria-busy="true" aria-label="Cargando preguntas" />

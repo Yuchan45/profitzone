@@ -4,8 +4,14 @@
   gap: var(--space-8);
 }
 
-.step-heading-eyebrow {
-  margin: 0 0 var(--space-4);
+.step-heading-part {
+  display: flex;
+  align-items: center;
+  gap: var(--space-12);
+  margin-bottom: var(--space-4);
+}
+
+.step-heading-part-label {
   color: var(--color-primary-dark);
   font-size: var(--text-13);
   font-weight: 600;
