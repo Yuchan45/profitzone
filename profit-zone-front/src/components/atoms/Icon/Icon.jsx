@@ -43,6 +43,12 @@ const PATHS = {
       <circle cx="12" cy="10" r="3" />
     </>
   ),
+  'user-round': (
+    <>
+      <circle cx="12" cy="8" r="5" />
+      <path d="M20 21a8 8 0 0 0-16 0" />
+    </>
+  ),
   store: (
     <>
       <path d="m2 7 4.41-4.41A2 2 0 0 1 7.83 2h8.34a2 2 0 0 1 1.42.59L22 7" />

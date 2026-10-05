@@ -71,6 +71,32 @@ const schema = {
     required: false,
     default: '',
   },
+  JWT_ACCESS_SECRET: {
+    required: true,
+    // HS256: el secreto tiene que ser largo y aleatorio
+    validate: (value) => value.length >= 32,
+    message: 'debe tener al menos 32 caracteres (generalo con: node -e "console.log(require(\'crypto\').randomBytes(48).toString(\'base64url\'))")',
+  },
+  JWT_ACCESS_TTL: {
+    required: false,
+    default: '15m',
+    // Formato de jsonwebtoken: número + unidad (s, m, h, d)
+    validate: (value) => /^\d+[smhd]$/.test(value),
+    message: 'debe ser un número seguido de s, m, h o d, ej: 15m',
+  },
+  REFRESH_TOKEN_TTL_DAYS: {
+    required: false,
+    default: '7',
+    parse: Number,
+    validate: (value) => Number.isInteger(value) && value >= 1 && value <= 90,
+    message: 'debe ser un número entero de días entre 1 y 90',
+  },
+  COOKIE_SECURE: {
+    // Sin definir: true en producción y false en desarrollo (http://localhost)
+    required: false,
+    validate: (value) => ['true', 'false'].includes(value),
+    message: 'debe ser true o false',
+  },
 }
 
 function loadEnv() {
@@ -110,6 +136,15 @@ function loadEnv() {
     isProduction: config.NODE_ENV === 'production',
     googlePlacesApiKey: config.GOOGLE_PLACES_API_KEY ?? '',
     bestTimeApiKey: config.BESTTIME_API_KEY ?? '',
+    auth: Object.freeze({
+      jwtAccessSecret: config.JWT_ACCESS_SECRET,
+      jwtAccessTtl: config.JWT_ACCESS_TTL,
+      refreshTokenTtlDays: config.REFRESH_TOKEN_TTL_DAYS,
+      cookieSecure:
+        config.COOKIE_SECURE === undefined
+          ? config.NODE_ENV === 'production'
+          : config.COOKIE_SECURE === 'true',
+    }),
     db: Object.freeze({
       host: config.DB_HOST,
       port: config.DB_PORT,

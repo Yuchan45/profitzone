@@ -20,6 +20,8 @@ User.belongsTo(Role, { foreignKey: 'roleId', as: 'role' })
 
 User.hasMany(AuthToken, { foreignKey: 'userId', as: 'authTokens', onDelete: 'CASCADE' })
 AuthToken.belongsTo(User, { foreignKey: 'userId', as: 'user' })
+// Rotación de refresh tokens: token usado → token que lo reemplazó
+AuthToken.belongsTo(AuthToken, { foreignKey: 'replacedById', as: 'replacedBy' })
 
 // catalog
 Category.hasMany(Subcategory, { foreignKey: 'categoryId', as: 'subcategories' })
