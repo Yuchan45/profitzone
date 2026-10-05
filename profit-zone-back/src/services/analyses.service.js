@@ -1,0 +1,190 @@
+import { sequelize } from '../db/sequelize.js'
+import {
+  Analysis,
+  AnalysisAnswer,
+  Category,
+  Subcategory,
+  Question,
+  QuestionOption,
+} from '../models/index.js'
+import { getSubcategorySurvey } from './questions.service.js'
+import { httpError } from '../utils/httpErrors.js'
+
+// Rango del radio de análisis en metros (PZ-16: rango acotado, ej. 200–600 m)
+const RADIUS_MIN_M = 200
+const RADIUS_MAX_M = 600
+
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+
+function badRequest(message) {
+  return httpError(400, message)
+}
+
+function notFound(id) {
+  return httpError(404, `No existe el análisis "${id}".`)
+}
+
+function toAnalysisDto(analysis) {
+  // Una fila por opción elegida: se agrupan por pregunta
+  const answers = {}
+  for (const answer of analysis.answers) {
+    const questionCode = answer.question.code
+    answers[questionCode] = [...(answers[questionCode] ?? []), answer.option.code]
+  }
+
+  return {
+    // SQL Server devuelve los uniqueidentifier en mayúsculas
+    id: analysis.id.toLowerCase(),
+    status: analysis.status,
+    category: {
+      code: analysis.subcategory.category.code,
+      name: analysis.subcategory.category.name,
+    },
+    subcategory: { code: analysis.subcategory.code, name: analysis.subcategory.name },
+    location:
+      analysis.radiusM === null
+        ? null
+        : {
+            lat: Number(analysis.centerLat),
+            lng: Number(analysis.centerLng),
+            radius: analysis.radiusM,
+          },
+    answers,
+    createdAt: analysis.createdAt,
+    updatedAt: analysis.updatedAt,
+  }
+}
+
+async function findAnalysis(id, { transaction } = {}) {
+  // Un id con otro formato haría fallar la conversión a uniqueidentifier en SQL Server
+  if (!UUID_PATTERN.test(id)) throw notFound(id)
+
+  const analysis = await Analysis.findByPk(id, {
+    transaction,
+    include: [
+      {
+        model: Subcategory,
+        as: 'subcategory',
+        include: [{ model: Category, as: 'category' }],
+      },
+      {
+        model: AnalysisAnswer,
+        as: 'answers',
+        include: [
+          { model: Question, as: 'question' },
+          { model: QuestionOption, as: 'option' },
+        ],
+      },
+    ],
+    order: [[{ model: AnalysisAnswer, as: 'answers' }, 'id', 'ASC']],
+  })
+
+  if (!analysis) throw notFound(id)
+  return analysis
+}
+
+/**
+ * Valida las respuestas contra la encuesta del rubro y las traduce a filas de
+ * analysis_answers. `answers`: { [questionCode]: optionCode[] }.
+ */
+async function buildAnswerRows(categoryCode, subcategoryCode, answers) {
+  const survey = await getSubcategorySurvey(categoryCode, subcategoryCode)
+  const surveyQuestions = new Map(
+    [...survey.business, ...survey.details].map((question) => [question.code, question]),
+  )
+
+  for (const [questionCode, optionCodes] of Object.entries(answers)) {
+    const question = surveyQuestions.get(questionCode)
+    if (!question) {
+      throw badRequest(`La pregunta "${questionCode}" no corresponde a este rubro.`)
+    }
+    const validOptions = new Set(question.options.map((option) => option.code))
+    const invalid = optionCodes.find((code) => !validOptions.has(code))
+    if (invalid) {
+      throw badRequest(`La opción "${invalid}" no corresponde a la pregunta "${question.prompt}".`)
+    }
+    if (question.inputType === 'single_choice' && optionCodes.length > 1) {
+      throw badRequest(`La pregunta "${question.prompt}" admite una sola respuesta.`)
+    }
+  }
+
+  const missing = [...surveyQuestions.values()].filter(
+    (question) => question.isRequired && !(answers[question.code]?.length > 0),
+  )
+  if (missing.length > 0) {
+    throw badRequest(`Faltan responder: ${missing.map((question) => question.prompt).join(' ')}`)
+  }
+
+  // La encuesta trae codes: se buscan los ids para guardar
+  const questions = await Question.findAll({
+    where: { code: Object.keys(answers) },
+    include: [{ model: QuestionOption, as: 'options' }],
+  })
+
+  return questions.flatMap((question) =>
+    // Sin duplicados: UQ_analysis_answers_analysis_question_option
+    [...new Set(answers[question.code])].map((optionCode) => ({
+      questionId: question.id,
+      optionId: question.options.find((option) => option.code === optionCode).id,
+    })),
+  )
+}
+
+/** Devuelve un análisis con su rubro, ubicación y respuestas. Lanza 404 si no existe. */
+export async function getAnalysis(id) {
+  return toAnalysisDto(await findAnalysis(id))
+}
+
+/** Crea un análisis en borrador con el rubro y las respuestas del paso 2. */
+export async function createAnalysis({ categoryCode, subcategoryCode, answers }) {
+  const answerRows = await buildAnswerRows(categoryCode, subcategoryCode, answers)
+  // buildAnswerRows ya validó que el rubro exista y esté activo
+  const subcategory = await Subcategory.findOne({
+    where: { code: subcategoryCode },
+    include: [{ model: Category, as: 'category', where: { code: categoryCode } }],
+  })
+
+  const id = await sequelize.transaction(async (transaction) => {
+    const analysis = await Analysis.create({ subcategoryId: subcategory.id }, { transaction })
+    await AnalysisAnswer.bulkCreate(
+      answerRows.map((row) => ({ ...row, analysisId: analysis.id })),
+      { transaction },
+    )
+    return analysis.id
+  })
+
+  return getAnalysis(id)
+}
+
+/** Reemplaza todas las respuestas de un análisis (el usuario volvió al paso 2 y las cambió). */
+export async function replaceAnalysisAnswers(id, answers) {
+  const analysis = await findAnalysis(id)
+  const answerRows = await buildAnswerRows(
+    analysis.subcategory.category.code,
+    analysis.subcategory.code,
+    answers,
+  )
+
+  await sequelize.transaction(async (transaction) => {
+    await AnalysisAnswer.destroy({ where: { analysisId: id }, transaction })
+    await AnalysisAnswer.bulkCreate(
+      answerRows.map((row) => ({ ...row, analysisId: id })),
+      { transaction },
+    )
+    // Las respuestas no tocan la fila del análisis: se marca el cambio a mano
+    analysis.changed('updatedAt', true)
+    await analysis.save({ transaction })
+  })
+
+  return getAnalysis(id)
+}
+
+/** Guarda el punto y el radio elegidos en el paso 3. */
+export async function updateAnalysisLocation(id, { lat, lng, radius }) {
+  if (!Number.isInteger(radius) || radius < RADIUS_MIN_M || radius > RADIUS_MAX_M) {
+    throw badRequest(`El radio debe ser un número entero entre ${RADIUS_MIN_M} y ${RADIUS_MAX_M} metros.`)
+  }
+  const analysis = await findAnalysis(id)
+  await analysis.update({ centerLat: lat, centerLng: lng, radiusM: radius })
+  return getAnalysis(id)
+}
