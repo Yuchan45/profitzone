@@ -73,6 +73,11 @@ headers `Content-Type` y `Authorization`, y cachea el preflight 24 h.
 | `GET`  | `/api/density` | Densidad poblacional y demografía en un punto con radio en CABA (query: `lat`, `lng`, `radius`) |
 | `GET`  | `/api/competition` | Análisis de competidores directos e indirectos en un radio con Google Places |
 | `GET`  | `/api/traffic` | Estimación de afluencia horaria (7h a 23h) y score por franja horaria |
+| `GET`  | `/api/categories` | Categorías (rubros) con sus subcategorías y términos de búsqueda (query: `active`) |
+| `GET`  | `/api/categories/:code` | Una categoría por code con sus subcategorías (404 si no existe; query: `active`) |
+| `GET`  | `/api/categories/:categoryCode/subcategories/:subcategoryCode/questions` | Encuesta completa de un rubro (solo activas), separada en `business` y `details` |
+| `GET`  | `/api/questions` | Banco de preguntas con opciones y asignaciones (query: `scope`, `active`) |
+| `GET`  | `/api/questions/:code` | Una pregunta por code con sus opciones en orden (404 si no existe; query: `active`) |
 
 ### `GET /api/density`
 
@@ -189,6 +194,77 @@ Host: localhost:8080
   "callout": "La actividad sube fuerte a la mañana, en línea con tu franja de desayuno.",
   "badge": "Estimado",
   "source": "BestTime (popular times de locales del radio) · forecast 2026 · mide entradas a locales, no peatones"
+}
+```
+
+### Catálogo: `GET /api/categories` y `GET /api/questions`
+
+Exponen el catálogo cargado por `npm run db:seed:catalog` (equivalen a las consultas 1 a 9 de `src/db/queries/basic_queries.sql`). Todo se identifica por `code`, nunca por `id`.
+
+| Parámetro | Endpoints | Descripción |
+| --------- | --------- | ----------- |
+| `active`  | `/api/categories`, `/api/categories/:code`, `/api/questions`, `/api/questions/:code` | Opcional. `true` devuelve solo registros activos y `false` solo inactivos. Sin el parámetro devuelve todo, con `isActive` en cada fila. Otro valor → 400. |
+| `scope`   | `/api/questions` | Opcional. `global`, `category` o `subcategory`: deja solo las preguntas asignadas con ese scope. Otro valor → 400. |
+
+En `/api/questions`, `isShared: true` marca las preguntas asignadas en más de un rubro.
+
+```http
+GET /api/categories?active=true HTTP/1.1
+Host: localhost:8080
+```
+
+```json
+[
+  {
+    "code": "gastronomia",
+    "name": "Gastronomía",
+    "description": "Restaurantes y cafeterías.",
+    "sortOrder": 1,
+    "isActive": true,
+    "subcategoryCount": 2,
+    "subcategories": [
+      {
+        "code": "restaurante",
+        "name": "Restaurante",
+        "description": null,
+        "sortOrder": 1,
+        "isActive": true,
+        "searchTerms": [{ "termType": "type", "termValue": "restaurant", "isPrimary": true }]
+      }
+    ]
+  }
+]
+```
+
+### `GET /api/categories/:categoryCode/subcategories/:subcategoryCode/questions`
+
+Arma la encuesta que ve el usuario de un rubro: preguntas globales, de su categoría y de su subcategoría, **solo activas**, en el orden en que se muestran. `business` es el paso "Tu negocio" y `details` el de detalles del rubro. Responde 404 si la combinación categoría/subcategoría no existe o está inactiva.
+
+```http
+GET /api/categories/gastronomia/subcategories/cafeteria/questions HTTP/1.1
+Host: localhost:8080
+```
+
+```json
+{
+  "category": { "code": "gastronomia", "name": "Gastronomía" },
+  "subcategory": { "code": "cafeteria", "name": "Cafetería" },
+  "business": [
+    {
+      "code": "service_mode",
+      "prompt": "¿Cómo vas a atender al público?",
+      "helpText": null,
+      "inputType": "single_choice",
+      "section": "business",
+      "scope": "global",
+      "sortOrder": 1,
+      "isRequired": true,
+      "options": [
+        { "code": "street", "label": "Local a la calle", "valueMin": null, "valueMax": null, "isUnknown": false, "metadata": null, "sortOrder": 1, "isActive": true }
+      ]
+    }
+  ],
+  "details": []
 }
 ```
 
