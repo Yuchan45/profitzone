@@ -5,6 +5,7 @@ import Home from './pages/Home.jsx'
 import Dashboard from './pages/Dashboard.jsx'
 import Perfil from './pages/Perfil/Perfil.jsx'
 import Rubro from './pages/Rubro/Rubro.jsx'
+import TuNegocio from './pages/TuNegocio/TuNegocio.jsx'
 import NotFound from './pages/NotFound.jsx'
 
 function App() {
@@ -12,6 +13,7 @@ function App() {
     <Routes>
       <Route element={<FlowLayout />}>
         <Route path="/analizar/rubro" element={<Rubro />} />
+        <Route path="/analizar/negocio" element={<TuNegocio />} />
       </Route>
       <Route element={<MainLayout />}>
         <Route path="/" element={<Home />} />

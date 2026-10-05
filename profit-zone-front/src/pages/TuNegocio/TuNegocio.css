@@ -1,0 +1,52 @@
+.tu-negocio {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-32);
+}
+
+.tu-negocio-heading {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-8);
+}
+
+.tu-negocio-title {
+  margin: 0;
+  font-size: var(--text-32);
+  font-weight: 800;
+  line-height: 1.1;
+}
+
+.tu-negocio-subtitle {
+  margin: 0;
+  color: var(--color-text-secondary);
+  font-size: var(--text-16);
+  line-height: 1.5;
+}
+
+.tu-negocio-message {
+  margin: 0;
+  padding: var(--space-16) var(--space-20);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background-color: var(--color-surface);
+  color: var(--color-text-secondary);
+  font-size: var(--text-14);
+}
+
+.tu-negocio-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-16);
+}
+
+@media (max-width: 720px) {
+  .tu-negocio {
+    gap: var(--space-24);
+  }
+
+  .tu-negocio-title {
+    font-size: var(--text-28);
+  }
+}

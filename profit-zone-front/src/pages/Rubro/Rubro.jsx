@@ -1,12 +1,13 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useCategories } from '../../hooks/useCategories.js'
+import { useAnalysis } from '../../hooks/useAnalysis.js'
 import Stepper from '../../components/organisms/Stepper/Stepper.jsx'
 import CategoryCard from '../../components/molecules/CategoryCard/CategoryCard.jsx'
 import Chip from '../../components/atoms/Chip/Chip.jsx'
 import Button from '../../components/atoms/Button/Button.jsx'
+import { ANALYSIS_STEPS } from '../../utils/analysisSteps.js'
 import './Rubro.css'
-
-const PASOS = ['Rubro', 'Tu negocio', 'Ubicación', 'Análisis', 'Reporte']
 
 // La API no trae íconos: se asignan por code de categoría.
 const CATEGORY_ICONS = {
@@ -16,13 +17,21 @@ const CATEGORY_ICONS = {
 const DEFAULT_CATEGORY_ICON = 'store'
 
 function Rubro() {
+  const navigate = useNavigate()
   const { status, data: categories, error } = useCategories()
-  const [selectedCategoryCode, setSelectedCategoryCode] = useState(null)
-  const [selectedSubcategoryCode, setSelectedSubcategoryCode] = useState(null)
+  const { analysis, setRubro } = useAnalysis()
+  // Si el usuario vuelve a este paso, arranca con lo que ya había elegido
+  const [selectedCategoryCode, setSelectedCategoryCode] = useState(analysis.category?.code ?? null)
+  const [selectedSubcategoryCode, setSelectedSubcategoryCode] = useState(
+    analysis.subcategory?.code ?? null,
+  )
 
   // Hasta que el usuario elija, queda seleccionada la primera categoría
   const category =
     categories?.find((c) => c.code === selectedCategoryCode) ?? categories?.[0] ?? null
+  // Puede quedar una subcategoría guardada que ya no esté activa: en ese caso no cuenta
+  const subcategory =
+    category?.subcategories.find((s) => s.code === selectedSubcategoryCode) ?? null
 
   const handleSelectCategory = (code) => {
     if (code === category?.code) return
@@ -30,9 +39,17 @@ function Rubro() {
     setSelectedSubcategoryCode(null)
   }
 
+  const handleNext = () => {
+    setRubro(
+      { code: category.code, name: category.name },
+      { code: subcategory.code, name: subcategory.name },
+    )
+    navigate('/analizar/negocio')
+  }
+
   return (
     <div className="rubro">
-      <Stepper steps={PASOS} current={1} />
+      <Stepper steps={ANALYSIS_STEPS} current={1} />
 
       <header className="rubro-heading">
         <h1 className="rubro-title">¿Qué querés abrir?</h1>
@@ -83,7 +100,7 @@ function Rubro() {
                 {category.subcategories.map((s) => (
                   <Chip
                     key={s.code}
-                    selected={s.code === selectedSubcategoryCode}
+                    selected={s.code === subcategory?.code}
                     onClick={() => setSelectedSubcategoryCode(s.code)}
                   >
                     {s.name}
@@ -101,7 +118,7 @@ function Rubro() {
         <Button variant="text" to="/">
           Volver al inicio
         </Button>
-        <Button variant="primary" disabled={!selectedSubcategoryCode}>
+        <Button variant="primary" disabled={!subcategory} onClick={handleNext}>
           Siguiente
         </Button>
       </div>
