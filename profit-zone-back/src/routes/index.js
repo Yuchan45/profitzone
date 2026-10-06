@@ -9,6 +9,7 @@ import analysesRoutes from './analyses.routes.js'
 import neighborhoodsRoutes from './neighborhoods.routes.js'
 import geocodeRoutes from './geocode.routes.js'
 import authRoutes from './auth.routes.js'
+import rentalsRoutes from './rentals.routes.js'
 
 const router = Router()
 
@@ -22,5 +23,6 @@ router.use('/analyses', analysesRoutes)
 router.use('/neighborhoods', neighborhoodsRoutes)
 router.use('/geocode', geocodeRoutes)
 router.use('/auth', authRoutes)
+router.use('/rentals', rentalsRoutes)
 
 export default router
