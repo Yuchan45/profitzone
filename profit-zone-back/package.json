@@ -16,7 +16,8 @@
     "db:migrate:status": "node scripts/migrate.js status",
     "db:seed:catalog": "node scripts/seed-catalog.js",
     "db:seed:catalog:verify": "node scripts/verify-catalog-seed.js",
-    "db:seed:census": "node scripts/seed-census.js"
+    "db:seed:census": "node scripts/seed-census.js",
+    "db:seed:rentals": "node scripts/seed-commercial-rentals.js"
   },
   "keywords": [],
   "author": "",
@@ -35,6 +36,6 @@
     "umzug": "^3.8.3"
   },
   "devDependencies": {
-    "nodemon": "^3.1.14"
+    "nodemon": "^1.14.10"
   }
 }
