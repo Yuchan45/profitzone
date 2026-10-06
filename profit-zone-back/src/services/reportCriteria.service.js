@@ -22,6 +22,14 @@ const DENSITY = {
   low: 4000,
 }
 
+// Alquiler mensual (mediana de los avisos del radio) contra el tope del presupuesto
+const RENT = {
+  // Hasta este factor sobre el tope del presupuesto es alerta; más arriba, debilidad
+  alertOverBudget: 1.25,
+  // Con menos avisos que esto se aclara que la muestra es chica
+  fewListings: 3,
+}
+
 // Score de afluencia (0–100) en la franja del negocio
 const TRAFFIC = {
   high: 65,
@@ -40,6 +48,11 @@ function noSourceCriterion(code, label, yourBusiness) {
   return criterion(code, label, yourBusiness, NO_DATA, 'not_evaluated', { noSource: true })
 }
 
+// El usuario respondió "no sé" o no definió el dato: no es una falla de la fuente
+function undefinedAnswerCriterion(code, label, yourBusiness, zone) {
+  return criterion(code, label, yourBusiness, zone, 'not_evaluated', { undefinedAnswer: true })
+}
+
 // Con "sin atención al público" los criterios que dependen del público que pasa no aplican
 function notApplicableCriterion(code, label, yourBusiness) {
   return criterion(code, label, yourBusiness, NO_PUBLIC, 'not_evaluated', { notApplicable: true })
@@ -49,9 +62,39 @@ function formatInt(value) {
   return Math.round(value).toLocaleString('es-AR')
 }
 
-/** Costo: presupuesto vs. alquiler promedio. El alquiler todavía no tiene fuente (PZ-41). */
-export function costCriterion({ answerLabel }) {
-  return noSourceCriterion('cost', 'Costo', answerLabel('budget'))
+function formatArs(value) {
+  return `$${formatInt(value)}`
+}
+
+/** Costo: tope del presupuesto vs. la mediana del alquiler mensual de los locales en oferta en el radio. */
+export function costCriterion({ answerOption, answerLabel, rent }) {
+  const yourBusiness = answerLabel('budget')
+  const budget = answerOption('budget')
+  const label = 'Costo'
+
+  if (!budget || budget.isUnknown) {
+    return undefinedAnswerCriterion('cost', label, yourBusiness, 'Sin presupuesto definido')
+  }
+  if (rent.status !== 'ok') {
+    return criterion('cost', label, yourBusiness, 'No pudimos obtener el alquiler', 'not_evaluated')
+  }
+
+  // Solo cuentan los avisos con precio: son los que forman la mediana
+  const { pricedInRadius, medianRentArs } = rent.data
+  if (pricedInRadius === 0) {
+    return criterion('cost', label, yourBusiness, 'Sin locales en alquiler publicados en el radio', 'not_evaluated')
+  }
+
+  const listings = pricedInRadius === 1 ? '1 aviso' : `${pricedInRadius} avisos`
+  const sample = pricedInRadius < RENT.fewListings ? `, solo ${listings}` : ` (${listings})`
+  const zone = `Alquiler mediano de ${formatArs(medianRentArs)}/mes${sample}`
+  // "Más de $2M" no tiene tope: cualquier alquiler entra
+  const budgetMax = budget.valueMax
+  if (budgetMax === null || medianRentArs <= budgetMax) {
+    return criterion('cost', label, yourBusiness, zone, 'strength')
+  }
+  const reading = medianRentArs > budgetMax * RENT.alertOverBudget ? 'weakness' : 'alert'
+  return criterion('cost', label, yourBusiness, zone, reading)
 }
 
 /** Público: edades objetivo vs. demografía por edad. El censo cargado no trae edades. */
@@ -95,7 +138,7 @@ export function arrivalCriterion({ answerCode, answerLabel, density, noPublic })
     return notApplicableCriterion('arrival', label, yourBusiness)
   }
   if (code === 'unknown' || code === null) {
-    return criterion('arrival', label, yourBusiness, 'Sin definir cómo llega tu cliente', 'not_evaluated')
+    return undefinedAnswerCriterion('arrival', label, yourBusiness, 'Sin definir cómo llega tu cliente')
   }
   if (density.status !== 'ok') {
     return criterion('arrival', label, yourBusiness, 'No pudimos obtener la densidad', 'not_evaluated')
@@ -172,7 +215,7 @@ export const CRITERIA = [
 const SUMMARY_PHRASES = {
   cost: {
     good: 'un alquiler dentro de tu presupuesto',
-    alert: 'un alquiler cerca del límite de tu presupuesto',
+    alert: 'un alquiler algo por encima de tu presupuesto',
     bad: 'un alquiler por encima de tu presupuesto',
   },
   audience: {
@@ -217,7 +260,7 @@ export function buildSummary(criteria) {
   const notApplicable = criteria.filter((c) => c.notApplicable).length
   const noSource = criteria.filter((c) => c.noSource).length
   const failed = criteria.filter(
-    (c) => c.reading === 'not_evaluated' && !c.notApplicable && !c.noSource,
+    (c) => c.reading === 'not_evaluated' && !c.notApplicable && !c.noSource && !c.undefinedAnswer,
   ).length
 
   const sentences = []

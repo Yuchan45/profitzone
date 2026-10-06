@@ -78,7 +78,7 @@ headers `Content-Type` y `Authorization`, y cachea el preflight 24 h.
 | `GET`  | `/api/density` | Densidad poblacional y demografía en un punto con radio en CABA (query: `lat`, `lng`, `radius`) |
 | `GET`  | `/api/competition` | Análisis de competidores directos e indirectos en un radio con Google Places |
 | `GET`  | `/api/traffic` | Estimación de afluencia horaria (7h a 23h) y score por franja horaria |
-| `GET`  | `/api/rentals` | Promedio y estadísticas de alquileres comerciales en un radio (query: `lat`, `lng`, `radius`) |
+| `GET`  | `/api/rentals` | Promedio y estadísticas de alquileres comerciales en un radio (query: `lat`, `lng`, `radius`; 503 si no hay avisos cargados) |
 | `GET`  | `/api/categories` | Categorías (rubros) con sus subcategorías y términos de búsqueda (query: `active`) |
 | `GET`  | `/api/categories/:code` | Una categoría por code con sus subcategorías (404 si no existe; query: `active`) |
 | `GET`  | `/api/categories/:categoryCode/subcategories/:subcategoryCode/questions` | Encuesta completa de un rubro (solo activas), separada en `business` y `details` |
@@ -219,6 +219,8 @@ Host: localhost:8080
 
 Calcula el precio promedio y mediana de alquiler de locales comerciales, el valor por m² (en ARS y USD unificados según DolarAPI Oficial) y la lista de locales disponibles dentro de un radio de influencia en CABA.
 
+`pricedInRadius` es la cantidad de avisos con precio, que son los que entran en el promedio y la mediana en pesos (los publicados solo en dólares se convierten con el tipo de cambio oficial). Si no hay avisos cargados (tabla vacía y sin el JSON local) o la DB no responde, devuelve **503** con un mensaje en vez de 0 locales.
+
 #### Parámetros de consulta (Query Params)
 
 | Parámetro | Tipo     | Requerido | Default | Descripción / Restricciones |
@@ -239,6 +241,7 @@ Host: localhost:8080
   "center": { "lat": -34.5880, "lng": -58.4300 },
   "radiusInMeters": 1000,
   "totalInRadius": 203,
+  "pricedInRadius": 198,
   "averageRentArs": 6437841,
   "medianRentArs": 5390000,
   "averageRentUsd": 4180,

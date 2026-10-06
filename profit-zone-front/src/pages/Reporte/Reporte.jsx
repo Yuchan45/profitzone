@@ -7,7 +7,7 @@ import StepHeading from '../../components/molecules/StepHeading/StepHeading.jsx'
 import StatusMessage from '../../components/molecules/StatusMessage/StatusMessage.jsx'
 import StatTile from '../../components/molecules/StatTile/StatTile.jsx'
 import Button from '../../components/atoms/Button/Button.jsx'
-import { formatDate, formatNumber } from '../../utils/formatters.js'
+import { formatCurrency, formatDate, formatNumber } from '../../utils/formatters.js'
 import './Reporte.css'
 
 // Google Places devuelve como máximo 20 locales por consulta
@@ -33,6 +33,17 @@ function populationTile({ status, data }) {
   if (status !== 'ok') return { value: null, caption: 'No pudimos cargar este dato' }
   if (!data.inCoverage) return { value: null, caption: 'Fuera de la cobertura del censo' }
   return { value: formatNumber(data.poblacionEstimada), caption: 'habitantes en el radio' }
+}
+
+function rentTile({ status, data }) {
+  if (status !== 'ok') return { value: null, caption: 'No pudimos cargar este dato' }
+  // Solo los avisos con precio forman la mediana
+  if (data.pricedInRadius === 0) return { value: null, caption: 'Sin locales en alquiler publicados en el radio' }
+  const listings = data.pricedInRadius === 1 ? '1 aviso' : `${formatNumber(data.pricedInRadius)} avisos`
+  return {
+    value: formatCurrency(data.medianRentArs, 'ARS', { decimals: 0 }),
+    caption: `por mes, mediana de ${listings}`,
+  }
 }
 
 function Reporte() {
@@ -88,7 +99,7 @@ function Reporte() {
               <StatTile label="Competencia" {...competitionTile(report.indicators.competition)} />
               <StatTile label="Afluencia (estimada)" {...trafficTile(report.indicators.traffic)} />
               <StatTile label="Población" {...populationTile(report.indicators.density)} />
-              <StatTile label="Alquiler" value={null} caption={PENDING_CAPTION} />
+              <StatTile label="Alquiler" {...rentTile(report.indicators.rent)} />
               <StatTile label="Accesibilidad" value={null} caption={PENDING_CAPTION} />
             </div>
           </section>
