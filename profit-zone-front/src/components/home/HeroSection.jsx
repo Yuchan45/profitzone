@@ -1,6 +1,9 @@
 import { Link } from 'react-router-dom'
 import { Button } from '../ui/button.jsx'
 import HeroFigures from './HeroFigures.jsx'
+import FlipWords from './FlipWords.jsx'
+
+const FLIP_WORDS = ['la ubicación', 'la competencia', 'el alquiler', 'la afluencia', 'la demografía']
 
 function HeroSection() {
   return (
@@ -9,12 +12,14 @@ function HeroSection() {
 
       <div className="relative z-10 mx-auto max-w-xl text-center lg:max-w-2xl">
         <h1 className="font-heading text-4xl font-bold leading-[1.1] tracking-tight text-foreground sm:text-5xl lg:text-6xl">
-          Evaluá una ubicación antes de abrir tu negocio
+          <span className="block">
+            Evaluá <FlipWords words={FLIP_WORDS} />
+          </span>
+          <span className="block">antes de abrir tu negocio</span>
         </h1>
         <p className="mx-auto mt-6 max-w-xl text-base leading-relaxed text-muted-foreground sm:text-lg">
-          Elegí un punto en Palermo y te mostramos competencia, alquiler, afluencia, demografía y
-          accesibilidad de la zona, cruzados con el perfil de tu emprendimiento. Sin crear una
-          cuenta.
+          No prometemos decirte qué negocio va a tener éxito, ni eliminamos el riesgo de emprender.
+          <span className="mt-2 block font-bold text-brand-text">Sólo reducimos tu incertidumbre</span>
         </p>
         <div className="mt-8 flex flex-wrap justify-center gap-3">
           <Button asChild size="lg" className="h-11 px-6 font-semibold">
