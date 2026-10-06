@@ -3,6 +3,7 @@ import { getSubcategorySurvey } from './questions.service.js'
 import { getCompetitionAnalysis } from './competition.service.js'
 import { getTrafficAnalysis } from './traffic.service.js'
 import { getDensityInRadius } from './density.service.js'
+import { getRentalsInRadius } from './rentals.service.js'
 import { CRITERIA, buildSummary } from './reportCriteria.service.js'
 import { httpError } from '../utils/httpErrors.js'
 
@@ -67,25 +68,29 @@ async function getSurveyOrEmpty(categoryCode, subcategoryCode) {
 
 /** Arma los helpers para leer las respuestas del análisis con los textos de la encuesta. */
 function buildAnswerReaders(answers, survey) {
-  const optionLabels = new Map()
+  const options = new Map()
   for (const question of [...survey.business, ...survey.details]) {
     for (const option of question.options) {
-      optionLabels.set(`${question.code}:${option.code}`, option.label)
+      options.set(`${question.code}:${option.code}`, option)
     }
   }
 
+  const answerCode = (questionCode) => answers[questionCode]?.[0] ?? null
+
   return {
-    answerCode: (questionCode) => answers[questionCode]?.[0] ?? null,
+    answerCode,
+    // Opción completa (con valueMin/valueMax) de una pregunta de respuesta única
+    answerOption: (questionCode) => options.get(`${questionCode}:${answerCode(questionCode)}`) ?? null,
     answerLabel: (questionCode) => {
       const codes = answers[questionCode] ?? []
       if (codes.length === 0) return null
       // Si la opción se desactivó en el catálogo, se muestra el code
-      return codes.map((code) => optionLabels.get(`${questionCode}:${code}`) ?? code).join(' y ')
+      return codes.map((code) => options.get(`${questionCode}:${code}`)?.label ?? code).join(' y ')
     },
   }
 }
 
-function buildSources({ competition, traffic, density }) {
+function buildSources({ competition, traffic, density, rent }) {
   const sources = []
   if (competition.status === 'ok') {
     const date = new Date(competition.data.queryDate).toLocaleDateString('es-AR')
@@ -94,8 +99,13 @@ function buildSources({ competition, traffic, density }) {
   // El servicio de afluencia usa un perfil por rubro, no consulta el punto
   if (traffic.status === 'ok') sources.push('Afluencia: perfil horario típico del rubro (estimado).')
   if (density.status === 'ok') sources.push('Demografía: censo nacional (INDEC) por radio censal, ponderado por área.')
-  sources.push('Alquiler, accesibilidad y lugares según tu público: todavía sin fuente de datos.')
+  if (rent.status === 'ok') sources.push(`Alquiler: avisos de locales comerciales en alquiler (${rent.data.source}).`)
+  sources.push('Accesibilidad y lugares según tu público: todavía sin fuente de datos.')
   return sources
+}
+
+function summarizeRent({ totalInRadius, medianRentArs, averageRentArs, medianPricePerM2Ars, averageSurfaceM2 }) {
+  return { totalInRadius, medianRentArs, averageRentArs, medianPricePerM2Ars, averageSurfaceM2 }
 }
 
 /**
@@ -110,7 +120,7 @@ export async function buildAnalysisReport(id, userId) {
   }
 
   const survey = await getSurveyOrEmpty(analysis.category.code, analysis.subcategory.code)
-  const { answerCode, answerLabel } = buildAnswerReaders(analysis.answers, survey)
+  const { answerCode, answerOption, answerLabel } = buildAnswerReaders(analysis.answers, survey)
   const trafficWindow = resolveTrafficWindow(answerCode)
   const noPublic = answerCode('service_mode') === 'no_public'
 
@@ -120,7 +130,7 @@ export async function buildAnalysisReport(id, userId) {
   const notApplicable = { status: 'not_applicable' }
 
   // Sin atención al público no se muestran competencia ni afluencia (estados-y-variantes)
-  const [competition, traffic, density] = await Promise.all([
+  const [competition, traffic, density, rent] = await Promise.all([
     noPublic ? notApplicable : settleIndicator('competencia', () => getCompetitionAnalysis({ ...point, subcategory })),
     noPublic
       ? notApplicable
@@ -128,17 +138,20 @@ export async function buildAnalysisReport(id, userId) {
           getTrafficAnalysis({ ...point, subcategory, ...trafficWindow.window }),
         ),
     settleIndicator('densidad', () => getDensityInRadius(point)),
+    settleIndicator('alquiler', () => getRentalsInRadius(point)),
   ])
 
   const criteria = CRITERIA.map((buildCriterion) =>
     buildCriterion({
       answerCode,
+      answerOption,
       answerLabel,
       subcategoryName: analysis.subcategory.name,
       trafficQuestion: trafficWindow.questionCode,
       competition,
       traffic,
       density,
+      rent,
       noPublic,
     }),
   )
@@ -157,10 +170,10 @@ export async function buildAnalysisReport(id, userId) {
       competition,
       traffic,
       density,
-      // PZ-41 (alquiler) todavía en curso
-      rent: { status: 'unavailable' },
+      // Sin el listado de avisos: el reporte solo muestra el resumen del alquiler
+      rent: rent.status === 'ok' ? { status: 'ok', data: summarizeRent(rent.data) } : rent,
     },
-    sources: buildSources({ competition, traffic, density }),
+    sources: buildSources({ competition, traffic, density, rent }),
     notices: NOTICES,
     generatedAt: new Date().toISOString(),
   }

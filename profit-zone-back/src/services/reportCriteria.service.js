@@ -22,6 +22,14 @@ const DENSITY = {
   low: 4000,
 }
 
+// Alquiler mensual (mediana de los avisos del radio) contra el tope del presupuesto
+const RENT = {
+  // Hasta este factor sobre el tope del presupuesto es alerta; más arriba, debilidad
+  alertOverBudget: 1.25,
+  // Con menos avisos que esto se aclara que la muestra es chica
+  fewListings: 3,
+}
+
 // Score de afluencia (0–100) en la franja del negocio
 const TRAFFIC = {
   high: 65,
@@ -49,9 +57,40 @@ function formatInt(value) {
   return Math.round(value).toLocaleString('es-AR')
 }
 
-/** Costo: presupuesto vs. alquiler promedio. El alquiler todavía no tiene fuente (PZ-41). */
-export function costCriterion({ answerLabel }) {
-  return noSourceCriterion('cost', 'Costo', answerLabel('budget'))
+function formatArs(value) {
+  return `$${formatInt(value)}`
+}
+
+/** Costo: tope del presupuesto vs. la mediana del alquiler mensual de los locales en oferta en el radio. */
+export function costCriterion({ answerOption, answerLabel, rent }) {
+  const yourBusiness = answerLabel('budget')
+  const budget = answerOption('budget')
+  const label = 'Costo'
+
+  if (!budget || budget.isUnknown) {
+    return criterion('cost', label, yourBusiness, 'Sin presupuesto definido', 'not_evaluated')
+  }
+  if (rent.status !== 'ok') {
+    return criterion('cost', label, yourBusiness, 'No pudimos obtener el alquiler', 'not_evaluated')
+  }
+
+  const { totalInRadius, medianRentArs } = rent.data
+  if (totalInRadius === 0 || !medianRentArs) {
+    return criterion('cost', label, yourBusiness, 'Sin locales en alquiler publicados en el radio', 'not_evaluated')
+  }
+
+  const listings = totalInRadius === 1 ? '1 aviso' : `${totalInRadius} avisos`
+  const sample = totalInRadius < RENT.fewListings ? `, solo ${listings}` : ` (${listings})`
+  const zone = `Alquiler mediano de ${formatArs(medianRentArs)}/mes${sample}`
+  // "Más de $2M" no tiene tope: cualquier alquiler entra
+  const max = budget.valueMax
+  let reading = 'strength'
+  if (max !== null && medianRentArs > max * RENT.alertOverBudget) {
+    reading = 'weakness'
+  } else if (max !== null && medianRentArs > max) {
+    reading = 'alert'
+  }
+  return criterion('cost', label, yourBusiness, zone, reading)
 }
 
 /** Público: edades objetivo vs. demografía por edad. El censo cargado no trae edades. */

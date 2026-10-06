@@ -147,7 +147,9 @@ export async function getRentalsInRadius({ lat, lng, radiusInMeters = 1000 }) {
   try {
     rows = await queryRentalsFromDb(lat, lng, radiusInMeters)
   } catch (error) {
-    // Si la DB falla o no tiene la tabla migrada, se utiliza el seeder JSON local
+    // Si la DB falla o no tiene la tabla migrada, se utiliza el seeder JSON local.
+    // Sin ninguno de los dos no hay fuente: no se responde "0 locales" como si fuera un dato.
+    if (!getFallbackCatalog()) throw error
     rows = queryRentalsFromFallback(lat, lng, radiusInMeters)
     source = 'Dataset Local (zonaprop_locales_caba_alquiler.json)'
   }
