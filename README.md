@@ -67,6 +67,7 @@ si dice **"API conectada"**, el front está hablando con el back correctamente.
 | `npm run db:migrate:undo` / `db:migrate:status` | Revierte la última / lista el estado |
 | `npm run db:seed:catalog` | Carga/actualiza el catálogo base (idempotente) |
 | `npm run db:seed:catalog:verify` | Verifica el seed (conteos, idempotencia) |
+| `npm run db:seed:rentals` | Carga locales comerciales en alquiler en SQL Server (idempotente) |
 
 ### `profit-zone-front`
 
@@ -136,6 +137,7 @@ acepta únicamente los orígenes de `CORS_ORIGINS`; cualquier otro recibe **403*
 | ------ | ------------------ | --------------------------------------------------------------- |
 | `GET`  | `/api/health`      | Estado del servicio y de la DB (503 si la DB no responde)       |
 | `GET`  | `/api/density`     | Densidad censal y demografía en un radio de CABA (query: `lat`, `lng`, `radius`) |
+| `GET`  | `/api/rentals`     | Estadísticas de precios y locales en alquiler en un radio de CABA (query: `lat`, `lng`, `radius`) |
 | `GET`  | `/api/competition` | Competidores directos/indirectos en el radio con Google Places  |
 | `GET`  | `/api/traffic`     | Afluencia horaria (7h-23h) y score por franja horaria           |
 | `GET`  | `/api/categories`  | Categorías (rubros) con subcategorías y términos de búsqueda (query: `active`) |

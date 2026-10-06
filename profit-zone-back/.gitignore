@@ -5,3 +5,5 @@ npm-debug.log*
 
 GEMINI.md
 env
+
+src/db/seeders/data/zonaprop_*
