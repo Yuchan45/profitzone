@@ -5,6 +5,7 @@ import { useFlowSteps } from '../../hooks/useFlowSteps.js'
 import { useSubcategorySurvey } from '../../hooks/useSubcategorySurvey.js'
 import { useSaveAnalysis } from '../../hooks/useSaveAnalysis.js'
 import { FLOW_STEPS } from '../../utils/flowSteps.js'
+import { visibleQuestions as getVisibleQuestions } from '../../utils/hiddenQuestions.js'
 import Stepper from '../../components/organisms/Stepper/Stepper.jsx'
 import StepHeading from '../../components/molecules/StepHeading/StepHeading.jsx'
 import StatusMessage from '../../components/molecules/StatusMessage/StatusMessage.jsx'
@@ -37,9 +38,10 @@ function Negocio() {
   const [searchParams, setSearchParams] = useSearchParams()
   const { status, data, error } = useSubcategorySurvey(categoryCode, subcategoryCode)
 
-  const allQuestions = status === 'ok' ? [...data.business, ...data.details] : []
-  const generalQuestions = allQuestions.filter((q) => GENERAL_SCOPES.includes(q.scope))
-  const detailQuestions = allQuestions.filter((q) => q.scope === DETAILS_SCOPE)
+  // Algunas respuestas ocultan preguntas que dejan de aplicar (ej. "Sin atención al público")
+  const visibleQuestions = status === 'ok' ? getVisibleQuestions(data, answers) : []
+  const generalQuestions = visibleQuestions.filter((q) => GENERAL_SCOPES.includes(q.scope))
+  const detailQuestions = visibleQuestions.filter((q) => q.scope === DETAILS_SCOPE)
 
   // El paso queda completo con las obligatorias de las dos secciones (lo usa el Stepper).
   // String como dependencia: el array se crea en cada render.
@@ -74,7 +76,7 @@ function Negocio() {
 
   // Al terminar el paso se guarda el análisis en la API y se avanza al paso 3
   const handleFinish = async () => {
-    const saved = await saveAnalysis.save(allQuestions.map((q) => q.code))
+    const saved = await saveAnalysis.save(visibleQuestions.map((q) => q.code))
     // El paso 3 (Ubicación) todavía no tiene vista: se avanza cuando tenga ruta
     const nextPath = FLOW_STEPS.find((step) => step.id === 'ubicacion').path
     if (saved && nextPath) navigate(nextPath)

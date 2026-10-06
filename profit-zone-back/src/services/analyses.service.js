@@ -96,16 +96,32 @@ async function findAnalysis(id, userId, { transaction } = {}) {
 }
 
 /**
- * Valida las respuestas contra la encuesta del rubro y las traduce a filas de
- * analysis_answers. `answers`: { [questionCode]: optionCode[] }.
+ * Codes de las preguntas que ocultan las opciones elegidas (`metadata.hideQuestions`).
+ * El front aplica la misma regla en src/utils/hiddenQuestions.js: mantenerlas iguales.
  */
-async function buildAnswerRows(categoryCode, subcategoryCode, answers) {
+function hiddenQuestionCodes(questions, answers) {
+  const hidden = new Set()
+  for (const question of questions) {
+    for (const optionCode of answers[question.code] ?? []) {
+      const option = question.options.find((o) => o.code === optionCode)
+      for (const code of option?.metadata?.hideQuestions ?? []) hidden.add(code)
+    }
+  }
+  return hidden
+}
+
+/**
+ * Valida las respuestas contra la encuesta del rubro y las traduce a filas de
+ * analysis_answers. `rawAnswers`: { [questionCode]: optionCode[] }.
+ */
+async function buildAnswerRows(categoryCode, subcategoryCode, rawAnswers) {
   const survey = await getSubcategorySurvey(categoryCode, subcategoryCode)
   const surveyQuestions = new Map(
     [...survey.business, ...survey.details].map((question) => [question.code, question]),
   )
 
-  for (const [questionCode, optionCodes] of Object.entries(answers)) {
+  // Primero se validan todas las respuestas que llegaron, incluidas las de preguntas ocultas
+  for (const [questionCode, optionCodes] of Object.entries(rawAnswers)) {
     const question = surveyQuestions.get(questionCode)
     if (!question) {
       throw badRequest(`La pregunta "${questionCode}" no corresponde a este rubro.`)
@@ -120,8 +136,13 @@ async function buildAnswerRows(categoryCode, subcategoryCode, answers) {
     }
   }
 
+  // Las preguntas que oculta una respuesta (ej. "Sin atención al público") no se
+  // piden ni se guardan, aunque el cliente las mande
+  const hidden = hiddenQuestionCodes([...surveyQuestions.values()], rawAnswers)
+  const answers = Object.fromEntries(Object.entries(rawAnswers).filter(([code]) => !hidden.has(code)))
+
   const missing = [...surveyQuestions.values()].filter(
-    (question) => question.isRequired && !(answers[question.code]?.length > 0),
+    (question) => question.isRequired && !hidden.has(question.code) && !(answers[question.code]?.length > 0),
   )
   if (missing.length > 0) {
     throw badRequest(`Faltan responder: ${missing.map((question) => question.prompt).join(' ')}`)
