@@ -7,7 +7,7 @@ import StepHeading from '../../components/molecules/StepHeading/StepHeading.jsx'
 import StatusMessage from '../../components/molecules/StatusMessage/StatusMessage.jsx'
 import StatTile from '../../components/molecules/StatTile/StatTile.jsx'
 import Button from '../../components/atoms/Button/Button.jsx'
-import { formatDate, formatNumber } from '../../utils/formatters.js'
+import { formatCurrency, formatDate, formatNumber } from '../../utils/formatters.js'
 import './Reporte.css'
 
 // Google Places devuelve como máximo 20 locales por consulta
@@ -37,9 +37,13 @@ function populationTile({ status, data }) {
 
 function rentTile({ status, data }) {
   if (status !== 'ok') return { value: null, caption: 'No pudimos cargar este dato' }
-  if (data.totalInRadius === 0) return { value: null, caption: 'Sin locales en alquiler publicados en el radio' }
-  const listings = data.totalInRadius === 1 ? '1 aviso' : `${formatNumber(data.totalInRadius)} avisos`
-  return { value: `$${formatNumber(data.medianRentArs)}`, caption: `por mes, mediana de ${listings}` }
+  // Solo los avisos con precio en pesos forman la mediana
+  if (data.pricedInRadius === 0) return { value: null, caption: 'Sin locales en alquiler publicados en el radio' }
+  const listings = data.pricedInRadius === 1 ? '1 aviso' : `${formatNumber(data.pricedInRadius)} avisos`
+  return {
+    value: formatCurrency(data.medianRentArs, 'ARS', { decimals: 0 }),
+    caption: `por mes, mediana de ${listings}`,
+  }
 }
 
 function Reporte() {

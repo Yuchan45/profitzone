@@ -74,22 +74,21 @@ export function costCriterion({ answerOption, answerLabel, rent }) {
     return criterion('cost', label, yourBusiness, 'No pudimos obtener el alquiler', 'not_evaluated')
   }
 
-  const { totalInRadius, medianRentArs } = rent.data
-  if (totalInRadius === 0 || !medianRentArs) {
+  // Solo cuentan los avisos con precio en pesos: son los que forman la mediana
+  const { pricedInRadius, medianRentArs } = rent.data
+  if (pricedInRadius === 0) {
     return criterion('cost', label, yourBusiness, 'Sin locales en alquiler publicados en el radio', 'not_evaluated')
   }
 
-  const listings = totalInRadius === 1 ? '1 aviso' : `${totalInRadius} avisos`
-  const sample = totalInRadius < RENT.fewListings ? `, solo ${listings}` : ` (${listings})`
+  const listings = pricedInRadius === 1 ? '1 aviso' : `${pricedInRadius} avisos`
+  const sample = pricedInRadius < RENT.fewListings ? `, solo ${listings}` : ` (${listings})`
   const zone = `Alquiler mediano de ${formatArs(medianRentArs)}/mes${sample}`
   // "Más de $2M" no tiene tope: cualquier alquiler entra
-  const max = budget.valueMax
-  let reading = 'strength'
-  if (max !== null && medianRentArs > max * RENT.alertOverBudget) {
-    reading = 'weakness'
-  } else if (max !== null && medianRentArs > max) {
-    reading = 'alert'
+  const budgetMax = budget.valueMax
+  if (budgetMax === null || medianRentArs <= budgetMax) {
+    return criterion('cost', label, yourBusiness, zone, 'strength')
   }
+  const reading = medianRentArs > budgetMax * RENT.alertOverBudget ? 'weakness' : 'alert'
   return criterion('cost', label, yourBusiness, zone, reading)
 }
 

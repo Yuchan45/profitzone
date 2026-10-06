@@ -3,24 +3,43 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { QueryTypes } from 'sequelize'
 import { sequelize } from '../db/sequelize.js'
+import { httpError } from '../utils/httpErrors.js'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const FALLBACK_DATA_PATH = path.resolve(__dirname, '../db/seeders/data/zonaprop_locales_caba_alquiler.json')
 
-let cachedFallbackData = null
+// undefined: todavía no se buscó el archivo; null: no existe o no tiene avisos
+let cachedFallbackData
+// Se recuerda solo cuando la tabla ya tiene datos: si está vacía se vuelve a mirar
+// (alguien puede correr el seed con la API levantada)
+let dbHasRentals = false
 
 function getFallbackCatalog() {
-  if (cachedFallbackData) return cachedFallbackData
+  if (cachedFallbackData !== undefined) return cachedFallbackData
+  cachedFallbackData = null
   if (fs.existsSync(FALLBACK_DATA_PATH)) {
     try {
-      const raw = fs.readFileSync(FALLBACK_DATA_PATH, 'utf8')
-      cachedFallbackData = JSON.parse(raw)
-      return cachedFallbackData
+      const catalog = JSON.parse(fs.readFileSync(FALLBACK_DATA_PATH, 'utf8'))
+      if (Array.isArray(catalog?.properties)) cachedFallbackData = catalog
     } catch {
-      return null
+      // archivo corrupto: se trata como si no estuviera
     }
   }
-  return null
+  return cachedFallbackData
+}
+
+/** Sin avisos cargados no hay fuente: no se responde "0 locales" como si fuera un dato. */
+function noRentalDataError() {
+  return httpError(503, 'Todavía no hay datos de alquileres cargados para consultar.')
+}
+
+async function tableHasRentals() {
+  if (dbHasRentals) return true
+  const [row] = await sequelize.query('SELECT TOP 1 1 AS found FROM commercial_data.commercial_rentals', {
+    type: QueryTypes.SELECT,
+  })
+  dbHasRentals = Boolean(row)
+  return dbHasRentals
 }
 
 /**
@@ -144,12 +163,19 @@ export async function getRentalsInRadius({ lat, lng, radiusInMeters = 1000 }) {
   let rows = []
   let source = 'SQL Server (commercial_data.commercial_rentals)'
 
+  let useFallback = false
   try {
     rows = await queryRentalsFromDb(lat, lng, radiusInMeters)
+    // Sin filas puede ser que el radio no tenga avisos o que la tabla esté sin cargar
+    if (rows.length === 0 && !(await tableHasRentals())) useFallback = true
   } catch (error) {
-    // Si la DB falla o no tiene la tabla migrada, se utiliza el seeder JSON local.
-    // Sin ninguno de los dos no hay fuente: no se responde "0 locales" como si fuera un dato.
-    if (!getFallbackCatalog()) throw error
+    // Si la DB falla o no tiene la tabla migrada, se utiliza el seeder JSON local
+    console.warn(`[ProfitZone] No se pudieron consultar los alquileres en la DB: ${error.message}`)
+    useFallback = true
+  }
+
+  if (useFallback) {
+    if (!getFallbackCatalog()) throw noRentalDataError()
     rows = queryRentalsFromFallback(lat, lng, radiusInMeters)
     source = 'Dataset Local (zonaprop_locales_caba_alquiler.json)'
   }
@@ -162,6 +188,7 @@ export async function getRentalsInRadius({ lat, lng, radiusInMeters = 1000 }) {
       center: { lat, lng },
       radiusInMeters,
       totalInRadius: 0,
+      pricedInRadius: 0,
       averageRentArs: 0,
       medianRentArs: 0,
       averageRentUsd: 0,
@@ -225,6 +252,8 @@ export async function getRentalsInRadius({ lat, lng, radiusInMeters = 1000 }) {
     center: { lat, lng },
     radiusInMeters,
     totalInRadius: rows.length,
+    // Avisos con precio en pesos: son los que entran en el promedio y la mediana
+    pricedInRadius: pricesArs.length,
     averageRentArs,
     medianRentArs,
     averageRentUsd,

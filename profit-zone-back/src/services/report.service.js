@@ -99,13 +99,13 @@ function buildSources({ competition, traffic, density, rent }) {
   // El servicio de afluencia usa un perfil por rubro, no consulta el punto
   if (traffic.status === 'ok') sources.push('Afluencia: perfil horario típico del rubro (estimado).')
   if (density.status === 'ok') sources.push('Demografía: censo nacional (INDEC) por radio censal, ponderado por área.')
-  if (rent.status === 'ok') sources.push(`Alquiler: avisos de locales comerciales en alquiler (${rent.data.source}).`)
+  if (rent.status === 'ok') sources.push('Alquiler: avisos de locales comerciales en alquiler publicados en ZonaProp.')
   sources.push('Accesibilidad y lugares según tu público: todavía sin fuente de datos.')
   return sources
 }
 
-function summarizeRent({ totalInRadius, medianRentArs, averageRentArs, medianPricePerM2Ars, averageSurfaceM2 }) {
-  return { totalInRadius, medianRentArs, averageRentArs, medianPricePerM2Ars, averageSurfaceM2 }
+function summarizeRent({ totalInRadius, pricedInRadius, medianRentArs, averageRentArs, medianPricePerM2Ars, averageSurfaceM2 }) {
+  return { totalInRadius, pricedInRadius, medianRentArs, averageRentArs, medianPricePerM2Ars, averageSurfaceM2 }
 }
 
 /**
