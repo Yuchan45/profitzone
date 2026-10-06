@@ -38,6 +38,7 @@ con un error que indica cómo levantarlo.
 | `npm run db:seed:catalog` | Carga/actualiza el catálogo base. Idempotente: se puede correr N veces |
 | `npm run db:seed:catalog:verify` | Corre el seed y verifica conteos, idempotencia y preguntas por subcategoría |
 | `npm run db:seed:census` | Carga los 3.554 radios censales de CABA en `census_data.census_radios` con geometrías e índice espacial |
+| `npm run db:seed:rentals` | Carga los 3.800 locales comerciales en alquiler de CABA en `commercial_data.commercial_rentals` con geometrías e índice espacial |
 
 ## Variables de entorno
 
@@ -77,6 +78,7 @@ headers `Content-Type` y `Authorization`, y cachea el preflight 24 h.
 | `GET`  | `/api/density` | Densidad poblacional y demografía en un punto con radio en CABA (query: `lat`, `lng`, `radius`) |
 | `GET`  | `/api/competition` | Análisis de competidores directos e indirectos en un radio con Google Places |
 | `GET`  | `/api/traffic` | Estimación de afluencia horaria (7h a 23h) y score por franja horaria |
+| `GET`  | `/api/rentals` | Promedio y estadísticas de alquileres comerciales en un radio (query: `lat`, `lng`, `radius`) |
 | `GET`  | `/api/categories` | Categorías (rubros) con sus subcategorías y términos de búsqueda (query: `active`) |
 | `GET`  | `/api/categories/:code` | Una categoría por code con sus subcategorías (404 si no existe; query: `active`) |
 | `GET`  | `/api/categories/:categoryCode/subcategories/:subcategoryCode/questions` | Encuesta completa de un rubro (solo activas), separada en `business` y `details` |
@@ -213,6 +215,60 @@ Host: localhost:8080
 }
 ```
 
+### `GET /api/rentals`
+
+Calcula el precio promedio y mediana de alquiler de locales comerciales, el valor por m² (en ARS y USD unificados según DolarAPI Oficial) y la lista de locales disponibles dentro de un radio de influencia en CABA.
+
+#### Parámetros de consulta (Query Params)
+
+| Parámetro | Tipo     | Requerido | Default | Descripción / Restricciones |
+| --------- | -------- | :-------: | :-----: | --------------------------- |
+| `lat`     | `number` | Sí        | —       | Latitud en grados decimales (`-90` a `90`). Ej: `-34.5880`. |
+| `lng`     | `number` | Sí        | —       | Longitud en grados decimales (`-180` a `180`). Ej: `-58.4300`. |
+| `radius`  | `number` | No        | `1000`  | Radio de búsqueda en metros (`10` a `20000`). Ej: `1000`. |
+
+#### Ejemplo de solicitud y respuesta
+
+```http
+GET /api/rentals?lat=-34.5880&lng=-58.4300&radius=1000 HTTP/1.1
+Host: localhost:8080
+```
+
+```json
+{
+  "center": { "lat": -34.5880, "lng": -58.4300 },
+  "radiusInMeters": 1000,
+  "totalInRadius": 203,
+  "averageRentArs": 6437841,
+  "medianRentArs": 5390000,
+  "averageRentUsd": 4180,
+  "medianRentUsd": 3500,
+  "averagePricePerM2Ars": 34630,
+  "medianPricePerM2Ars": 30030,
+  "averagePricePerM2Usd": 22.49,
+  "medianPricePerM2Usd": 19.50,
+  "averageSurfaceM2": 186,
+  "minRentArs": 500000,
+  "maxRentArs": 38500000,
+  "neighborhoods": ["Palermo", "Palermo Hollywood", "Palermo Soho", "Villa Crespo"],
+  "callout": "Zona comercial consolidada con alta oferta (203 locales disponibles). Valor medio de referencia: $34.630/m².",
+  "places": [
+    {
+      "id": "60284104",
+      "address": "Antezana 500",
+      "neighborhood": "Villa Crespo",
+      "priceArs": 500000,
+      "priceUsd": 324.68,
+      "surfaceM2": 27,
+      "pricePerM2Ars": 18518.52,
+      "distanceMeters": 180,
+      "distanceText": "180 m",
+      "url": "https://www.zonaprop.com.ar/propiedades/..."
+    }
+  ]
+}
+```
+
 ### Catálogo: `GET /api/categories` y `GET /api/questions`
 
 Exponen el catálogo cargado por `npm run db:seed:catalog` (equivalen a las consultas 1 a 9 de `src/db/queries/basic_queries.sql`). Todo se identifica por `code`, nunca por `id`.
@@ -319,6 +375,22 @@ HOGARES_NBI|	Indicador| INDEC	Hogares con Necesidades Básicas Insatisfechas (mi
 AREA_KM2|	Geometría|Superficie real del polígono calculada por la cartografía oficial.|
 geometry|	MultiPolygon|	Coordenadas vectoriales exactas de los límites de las manzanas en WGS84.|
 
+### Locales Comerciales (seed)
+
+`npm run db:seed:rentals` carga en `commercial_data.commercial_rentals` los 3.800 locales comerciales en alquiler relevados en CABA, georreferenciados mediante la API oficial del GCBA (USIG) y con precios unificados a Dólar Oficial vía DolarAPI. Se crea un índice espacial (`IX_commercial_rentals_geom`) que permite calcular precios de mercado por radio en milisegundos.
+
+| Variable | Tipo | Significado |
+| -------- | ---- | ----------- |
+| `source_id` | `varchar(50)` | Identificador único de la publicación de Zonaprop. |
+| `address` | `nvarchar(255)` | Dirección original de la publicación. |
+| `normalized_address` | `nvarchar(255)` | Dirección normalizada oficial por el Gobierno de la Ciudad (USIG). |
+| `neighborhood` | `nvarchar(100)` | Barrio oficial o zona comercial en CABA. |
+| `price_ars` | `decimal(14,2)` | Precio mensual de alquiler expresado en Pesos Argentinos (ARS). |
+| `price_usd` | `decimal(14,2)` | Precio mensual de alquiler expresado en Dólares Estadounidenses (USD). |
+| `surface_m2` | `decimal(10,2)` | Superficie total o cubierta en metros cuadrados. |
+| `price_per_m2_ars` | `decimal(14,2)` | Valor locativo mensual por metro cuadrado en ARS. |
+| `price_per_m2_usd` | `decimal(14,2)` | Valor locativo mensual por metro cuadrado en USD. |
+| `geom` | `geography` | Coordenadas vectoriales puntuales WGS84 (`Point(lat, lng, 4326)`). |
 
 ## Estructura
 
