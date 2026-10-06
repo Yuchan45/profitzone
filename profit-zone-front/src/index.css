@@ -233,3 +233,16 @@
     transform: scale(1);
   }
 }
+
+@theme {
+  --animate-how-progress: how-progress 6s linear forwards;
+
+  @keyframes how-progress {
+    from {
+      transform: scaleX(0);
+    }
+    to {
+      transform: scaleX(1);
+    }
+  }
+}
