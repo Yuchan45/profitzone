@@ -84,7 +84,12 @@ export const questions = [
       {
         code: 'no_public',
         label: 'Sin atención al público',
-        metadata: { hideIndicators: ['competition', 'traffic'] },
+        // hideQuestions: preguntas que dependen del público que pasa. No se muestran
+        // ni son obligatorias si se elige esta opción.
+        metadata: {
+          hideIndicators: ['competition', 'traffic'],
+          hideQuestions: ['schedule', 'arrival_type', 'peak_slot_cafe', 'peak_slot_fitness'],
+        },
       },
     ],
   },

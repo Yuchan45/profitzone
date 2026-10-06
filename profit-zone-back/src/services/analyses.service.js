@@ -95,14 +95,31 @@ async function findAnalysis(id, userId, { transaction } = {}) {
   return analysis
 }
 
+/** Codes de las preguntas que ocultan las opciones elegidas (`metadata.hideQuestions`). */
+function hiddenQuestionCodes(questions, answers) {
+  const hidden = new Set()
+  for (const question of questions) {
+    for (const optionCode of answers[question.code] ?? []) {
+      const option = question.options.find((o) => o.code === optionCode)
+      for (const code of option?.metadata?.hideQuestions ?? []) hidden.add(code)
+    }
+  }
+  return hidden
+}
+
 /**
  * Valida las respuestas contra la encuesta del rubro y las traduce a filas de
  * analysis_answers. `answers`: { [questionCode]: optionCode[] }.
  */
-async function buildAnswerRows(categoryCode, subcategoryCode, answers) {
+async function buildAnswerRows(categoryCode, subcategoryCode, rawAnswers) {
   const survey = await getSubcategorySurvey(categoryCode, subcategoryCode)
+  const allQuestions = [...survey.business, ...survey.details]
+  // Las preguntas que oculta una respuesta (ej. "Sin atención al público") no se
+  // piden ni se guardan, aunque el cliente las mande
+  const hidden = hiddenQuestionCodes(allQuestions, rawAnswers)
+  const answers = Object.fromEntries(Object.entries(rawAnswers).filter(([code]) => !hidden.has(code)))
   const surveyQuestions = new Map(
-    [...survey.business, ...survey.details].map((question) => [question.code, question]),
+    allQuestions.filter((question) => !hidden.has(question.code)).map((question) => [question.code, question]),
   )
 
   for (const [questionCode, optionCodes] of Object.entries(answers)) {
