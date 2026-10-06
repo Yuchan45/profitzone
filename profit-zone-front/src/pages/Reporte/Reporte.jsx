@@ -35,6 +35,13 @@ function populationTile({ status, data }) {
   return { value: formatNumber(data.poblacionEstimada), caption: 'habitantes en el radio' }
 }
 
+function rentTile({ status, data }) {
+  if (status !== 'ok') return { value: null, caption: 'No pudimos cargar este dato' }
+  if (data.totalInRadius === 0) return { value: null, caption: 'Sin locales en alquiler publicados en el radio' }
+  const listings = data.totalInRadius === 1 ? '1 aviso' : `${formatNumber(data.totalInRadius)} avisos`
+  return { value: `$${formatNumber(data.medianRentArs)}`, caption: `por mes, mediana de ${listings}` }
+}
+
 function Reporte() {
   const { id } = useParams()
   const steps = useFlowSteps()
@@ -88,7 +95,7 @@ function Reporte() {
               <StatTile label="Competencia" {...competitionTile(report.indicators.competition)} />
               <StatTile label="Afluencia (estimada)" {...trafficTile(report.indicators.traffic)} />
               <StatTile label="Población" {...populationTile(report.indicators.density)} />
-              <StatTile label="Alquiler" value={null} caption={PENDING_CAPTION} />
+              <StatTile label="Alquiler" {...rentTile(report.indicators.rent)} />
               <StatTile label="Accesibilidad" value={null} caption={PENDING_CAPTION} />
             </div>
           </section>
