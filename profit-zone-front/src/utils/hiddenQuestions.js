@@ -12,3 +12,10 @@ export function hiddenQuestionCodes(questions, answers) {
   }
   return hidden
 }
+
+/** Preguntas de la encuesta (business + details) que siguen aplicando con estas respuestas. */
+export function visibleQuestions(survey, answers) {
+  const questions = [...survey.business, ...survey.details]
+  const hidden = hiddenQuestionCodes(questions, answers)
+  return questions.filter((q) => !hidden.has(q.code))
+}

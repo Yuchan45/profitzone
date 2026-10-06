@@ -22,7 +22,7 @@ import Button from '../../components/atoms/Button/Button.jsx'
 import Divider from '../../components/atoms/Divider/Divider.jsx'
 import { isPointInPolygons, walkingMinutes } from '../../utils/geo.js'
 import { toAuthFormError } from '../../utils/apiErrors.js'
-import { hiddenQuestionCodes } from '../../utils/hiddenQuestions.js'
+import { visibleQuestions } from '../../utils/hiddenQuestions.js'
 import './Ubicacion.css'
 
 // Rango del radio en metros (la API valida lo mismo, PZ-16)
@@ -44,19 +44,19 @@ const SUMMARY_LABELS = {
 
 function buildSummaryRows(survey, answers) {
   // Respuestas de preguntas ocultas (ej. con "Sin atención al público") no se muestran
-  const hidden = hiddenQuestionCodes([...survey.business, ...survey.details], answers)
+  const visible = visibleQuestions(survey, answers)
   const labelOf = (question) =>
-    (hidden.has(question.code) ? [] : (answers[question.code] ?? []))
+    (answers[question.code] ?? [])
       .map((code) => question.options.find((option) => option.code === code)?.label)
       .filter(Boolean)
       .join(', ')
 
   const rows = [{ label: 'Rubro', value: `${survey.category.name} · ${survey.subcategory.name}` }]
-  for (const question of survey.business) {
+  for (const question of visible.filter((q) => q.section === 'business')) {
     const value = labelOf(question)
     if (value) rows.push({ label: SUMMARY_LABELS[question.code] ?? question.prompt, value })
   }
-  const details = survey.details.map(labelOf).filter(Boolean).join(' · ')
+  const details = visible.filter((q) => q.section === 'details').map(labelOf).filter(Boolean).join(' · ')
   if (details) rows.push({ label: 'Detalles', value: details })
   return rows
 }
@@ -122,8 +122,9 @@ function Ubicacion() {
   }
 
   const analyze = async () => {
+    // Solo las preguntas que aplican: las ocultas no se mandan
     const questionCodes = survey.data
-      ? [...survey.data.business, ...survey.data.details].map((q) => q.code)
+      ? visibleQuestions(survey.data, answers).map((q) => q.code)
       : Object.keys(answers)
     const savedId = await saveLocation.save(questionCodes)
     // El paso 4 (Análisis) todavía no tiene vista: se va directo al reporte
