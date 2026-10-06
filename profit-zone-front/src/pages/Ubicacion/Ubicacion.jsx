@@ -22,6 +22,7 @@ import Button from '../../components/atoms/Button/Button.jsx'
 import Divider from '../../components/atoms/Divider/Divider.jsx'
 import { isPointInPolygons, walkingMinutes } from '../../utils/geo.js'
 import { toAuthFormError } from '../../utils/apiErrors.js'
+import { hiddenQuestionCodes } from '../../utils/hiddenQuestions.js'
 import './Ubicacion.css'
 
 // Rango del radio en metros (la API valida lo mismo, PZ-16)
@@ -42,8 +43,10 @@ const SUMMARY_LABELS = {
 }
 
 function buildSummaryRows(survey, answers) {
+  // Respuestas de preguntas ocultas (ej. con "Sin atención al público") no se muestran
+  const hidden = hiddenQuestionCodes([...survey.business, ...survey.details], answers)
   const labelOf = (question) =>
-    (answers[question.code] ?? [])
+    (hidden.has(question.code) ? [] : (answers[question.code] ?? []))
       .map((code) => question.options.find((option) => option.code === code)?.label)
       .filter(Boolean)
       .join(', ')

@@ -5,6 +5,7 @@ import { useFlowSteps } from '../../hooks/useFlowSteps.js'
 import { useSubcategorySurvey } from '../../hooks/useSubcategorySurvey.js'
 import { useSaveAnalysis } from '../../hooks/useSaveAnalysis.js'
 import { FLOW_STEPS } from '../../utils/flowSteps.js'
+import { hiddenQuestionCodes } from '../../utils/hiddenQuestions.js'
 import Stepper from '../../components/organisms/Stepper/Stepper.jsx'
 import StepHeading from '../../components/molecules/StepHeading/StepHeading.jsx'
 import StatusMessage from '../../components/molecules/StatusMessage/StatusMessage.jsx'
@@ -37,7 +38,10 @@ function Negocio() {
   const [searchParams, setSearchParams] = useSearchParams()
   const { status, data, error } = useSubcategorySurvey(categoryCode, subcategoryCode)
 
-  const allQuestions = status === 'ok' ? [...data.business, ...data.details] : []
+  const surveyQuestions = status === 'ok' ? [...data.business, ...data.details] : []
+  // Algunas respuestas ocultan preguntas que dejan de aplicar (ej. "Sin atención al público")
+  const hidden = hiddenQuestionCodes(surveyQuestions, answers)
+  const allQuestions = surveyQuestions.filter((q) => !hidden.has(q.code))
   const generalQuestions = allQuestions.filter((q) => GENERAL_SCOPES.includes(q.scope))
   const detailQuestions = allQuestions.filter((q) => q.scope === DETAILS_SCOPE)
 
