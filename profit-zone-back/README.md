@@ -219,7 +219,7 @@ Host: localhost:8080
 
 Calcula el precio promedio y mediana de alquiler de locales comerciales, el valor por m² (en ARS y USD unificados según DolarAPI Oficial) y la lista de locales disponibles dentro de un radio de influencia en CABA.
 
-`pricedInRadius` es la cantidad de avisos con precio en pesos, que son los que entran en el promedio y la mediana. Si no hay avisos cargados (tabla vacía y sin el JSON local), responde **503** con un mensaje en vez de devolver 0 locales.
+`pricedInRadius` es la cantidad de avisos con precio, que son los que entran en el promedio y la mediana en pesos (los publicados solo en dólares se convierten con el tipo de cambio oficial). Si no hay avisos cargados (tabla vacía y sin el JSON local) o la DB no responde, devuelve **503** con un mensaje en vez de 0 locales.
 
 #### Parámetros de consulta (Query Params)
 

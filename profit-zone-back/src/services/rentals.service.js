@@ -29,8 +29,13 @@ function getFallbackCatalog() {
 }
 
 /** Sin avisos cargados no hay fuente: no se responde "0 locales" como si fuera un dato. */
-function noRentalDataError() {
-  return httpError(503, 'Todavía no hay datos de alquileres cargados para consultar.')
+function noRentalDataError(dbFailed) {
+  return httpError(
+    503,
+    dbFailed
+      ? 'No pudimos consultar los datos de alquileres. Probá de nuevo en unos minutos.'
+      : 'Todavía no hay datos de alquileres cargados para consultar.',
+  )
 }
 
 async function tableHasRentals() {
@@ -164,6 +169,7 @@ export async function getRentalsInRadius({ lat, lng, radiusInMeters = 1000 }) {
   let source = 'SQL Server (commercial_data.commercial_rentals)'
 
   let useFallback = false
+  let dbFailed = false
   try {
     rows = await queryRentalsFromDb(lat, lng, radiusInMeters)
     // Sin filas puede ser que el radio no tenga avisos o que la tabla esté sin cargar
@@ -172,10 +178,11 @@ export async function getRentalsInRadius({ lat, lng, radiusInMeters = 1000 }) {
     // Si la DB falla o no tiene la tabla migrada, se utiliza el seeder JSON local
     console.warn(`[ProfitZone] No se pudieron consultar los alquileres en la DB: ${error.message}`)
     useFallback = true
+    dbFailed = true
   }
 
   if (useFallback) {
-    if (!getFallbackCatalog()) throw noRentalDataError()
+    if (!getFallbackCatalog()) throw noRentalDataError(dbFailed)
     rows = queryRentalsFromFallback(lat, lng, radiusInMeters)
     source = 'Dataset Local (zonaprop_locales_caba_alquiler.json)'
   }
@@ -216,7 +223,9 @@ export async function getRentalsInRadius({ lat, lng, radiusInMeters = 1000 }) {
   const neighborhoodsSet = new Set()
 
   for (const r of rows) {
+    // Los avisos publicados solo en dólares se pasan a pesos con el tipo de cambio oficial
     if (r.priceArs) pricesArs.push(Number(r.priceArs))
+    else if (r.priceUsd) pricesArs.push(Math.round(Number(r.priceUsd) * exchangeRate.rate))
     if (r.priceUsd) pricesUsd.push(Number(r.priceUsd))
     if (r.pricePerM2Ars) pricesM2Ars.push(Number(r.pricePerM2Ars))
     if (r.pricePerM2Usd) pricesM2Usd.push(Number(r.pricePerM2Usd))
@@ -252,7 +261,7 @@ export async function getRentalsInRadius({ lat, lng, radiusInMeters = 1000 }) {
     center: { lat, lng },
     radiusInMeters,
     totalInRadius: rows.length,
-    // Avisos con precio en pesos: son los que entran en el promedio y la mediana
+    // Avisos con precio (en pesos o en dólares convertidos): forman el promedio y la mediana
     pricedInRadius: pricesArs.length,
     averageRentArs,
     medianRentArs,

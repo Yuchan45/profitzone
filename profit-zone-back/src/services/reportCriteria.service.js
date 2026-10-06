@@ -48,6 +48,11 @@ function noSourceCriterion(code, label, yourBusiness) {
   return criterion(code, label, yourBusiness, NO_DATA, 'not_evaluated', { noSource: true })
 }
 
+// El usuario respondió "no sé" o no definió el dato: no es una falla de la fuente
+function undefinedAnswerCriterion(code, label, yourBusiness, zone) {
+  return criterion(code, label, yourBusiness, zone, 'not_evaluated', { undefinedAnswer: true })
+}
+
 // Con "sin atención al público" los criterios que dependen del público que pasa no aplican
 function notApplicableCriterion(code, label, yourBusiness) {
   return criterion(code, label, yourBusiness, NO_PUBLIC, 'not_evaluated', { notApplicable: true })
@@ -68,13 +73,13 @@ export function costCriterion({ answerOption, answerLabel, rent }) {
   const label = 'Costo'
 
   if (!budget || budget.isUnknown) {
-    return criterion('cost', label, yourBusiness, 'Sin presupuesto definido', 'not_evaluated')
+    return undefinedAnswerCriterion('cost', label, yourBusiness, 'Sin presupuesto definido')
   }
   if (rent.status !== 'ok') {
     return criterion('cost', label, yourBusiness, 'No pudimos obtener el alquiler', 'not_evaluated')
   }
 
-  // Solo cuentan los avisos con precio en pesos: son los que forman la mediana
+  // Solo cuentan los avisos con precio: son los que forman la mediana
   const { pricedInRadius, medianRentArs } = rent.data
   if (pricedInRadius === 0) {
     return criterion('cost', label, yourBusiness, 'Sin locales en alquiler publicados en el radio', 'not_evaluated')
@@ -133,7 +138,7 @@ export function arrivalCriterion({ answerCode, answerLabel, density, noPublic })
     return notApplicableCriterion('arrival', label, yourBusiness)
   }
   if (code === 'unknown' || code === null) {
-    return criterion('arrival', label, yourBusiness, 'Sin definir cómo llega tu cliente', 'not_evaluated')
+    return undefinedAnswerCriterion('arrival', label, yourBusiness, 'Sin definir cómo llega tu cliente')
   }
   if (density.status !== 'ok') {
     return criterion('arrival', label, yourBusiness, 'No pudimos obtener la densidad', 'not_evaluated')
@@ -210,7 +215,7 @@ export const CRITERIA = [
 const SUMMARY_PHRASES = {
   cost: {
     good: 'un alquiler dentro de tu presupuesto',
-    alert: 'un alquiler cerca del límite de tu presupuesto',
+    alert: 'un alquiler algo por encima de tu presupuesto',
     bad: 'un alquiler por encima de tu presupuesto',
   },
   audience: {
@@ -255,7 +260,7 @@ export function buildSummary(criteria) {
   const notApplicable = criteria.filter((c) => c.notApplicable).length
   const noSource = criteria.filter((c) => c.noSource).length
   const failed = criteria.filter(
-    (c) => c.reading === 'not_evaluated' && !c.notApplicable && !c.noSource,
+    (c) => c.reading === 'not_evaluated' && !c.notApplicable && !c.noSource && !c.undefinedAnswer,
   ).length
 
   const sentences = []

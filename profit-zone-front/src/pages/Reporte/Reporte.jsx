@@ -37,7 +37,7 @@ function populationTile({ status, data }) {
 
 function rentTile({ status, data }) {
   if (status !== 'ok') return { value: null, caption: 'No pudimos cargar este dato' }
-  // Solo los avisos con precio en pesos forman la mediana
+  // Solo los avisos con precio forman la mediana
   if (data.pricedInRadius === 0) return { value: null, caption: 'Sin locales en alquiler publicados en el radio' }
   const listings = data.pricedInRadius === 1 ? '1 aviso' : `${formatNumber(data.pricedInRadius)} avisos`
   return {
