@@ -1,0 +1,81 @@
+.auth-brand {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-32);
+  overflow: hidden;
+  padding: var(--space-64) var(--space-64) var(--space-40);
+  background-color: var(--color-text);
+  color: var(--color-white);
+}
+
+/* Mapa de fondo, cubriendo todo el panel */
+.auth-brand-map {
+  position: absolute;
+  inset: 0;
+}
+
+/* Overlay oscuro parejo: el texto va centrado sobre el mapa, así que se oscurece
+   todo el panel por igual (un poco más hacia la izquierda, donde arranca el texto) */
+.auth-brand-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    to right,
+    color-mix(in srgb, var(--color-text) 85%, transparent) 0%,
+    color-mix(in srgb, var(--color-text) 72%, transparent) 60%,
+    color-mix(in srgb, var(--color-text) 62%, transparent) 100%
+  );
+}
+
+/* El contenido va por encima del mapa y del overlay */
+.auth-brand > :not(.auth-brand-map, .auth-brand-overlay) {
+  position: relative;
+}
+
+/* Link al inicio con el isotipo. Sin align-self se estira al ancho de la
+   columna (flex en columna). */
+.auth-brand-home {
+  align-self: flex-start;
+  border-radius: var(--radius-sm);
+  transition: opacity 0.15s ease;
+}
+
+.auth-brand-home:hover {
+  opacity: 0.8;
+}
+
+/* El isotipo es azul marino: sobre el fondo oscuro se pasa a blanco */
+.auth-brand-home .logo {
+  filter: brightness(0) invert(1);
+}
+
+.auth-brand-content {
+  /* Centrado vertical entre el logo (arriba) y el footer (abajo) */
+  margin-block: auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-20);
+  max-width: 460px;
+}
+
+.auth-brand-title {
+  margin: 0;
+  font-size: var(--text-40);
+  font-weight: 800;
+  line-height: 1.12;
+  color: var(--color-white);
+}
+
+.auth-brand-text {
+  margin: 0;
+  color: var(--color-text-on-dark);
+  font-size: var(--text-16);
+  line-height: 1.6;
+}
+
+.auth-brand-footer {
+  margin: 0;
+  color: var(--color-text-on-dark);
+  font-size: var(--text-13);
+}

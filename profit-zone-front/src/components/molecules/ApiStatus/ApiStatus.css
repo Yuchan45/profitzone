@@ -1,0 +1,27 @@
+.api-status {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-8);
+  margin-top: var(--space-24);
+  padding: var(--space-8) var(--space-14);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-full);
+  background-color: var(--color-surface);
+  color: var(--color-text-secondary);
+  font-size: var(--text-14);
+}
+
+.api-status-dot {
+  width: 0.6rem;
+  height: 0.6rem;
+  border-radius: 50%;
+  background-color: var(--color-text-tertiary);
+}
+
+.api-status--ok .api-status-dot {
+  background-color: var(--color-success);
+}
+
+.api-status--error .api-status-dot {
+  background-color: var(--color-error);
+}

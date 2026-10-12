@@ -1,0 +1,74 @@
+.auth-shell {
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
+  min-height: 100vh;
+  background-color: var(--color-surface);
+}
+
+.auth-main {
+  display: flex;
+  justify-content: center;
+  padding: var(--space-48) var(--space-40);
+}
+
+.auth-main-inner {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-28);
+  width: 100%;
+  max-width: 420px;
+  margin: auto 0;
+}
+
+/* Fila superior: logo a la izquierda y "Volver al inicio" a la derecha */
+.auth-main-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-16);
+  margin-bottom: var(--space-12);
+}
+
+.auth-main-brand {
+  display: inline-flex;
+}
+
+.auth-main-back {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-8);
+  /* El padding agranda el área clickeable; el margen negativo lo compensa
+     para que el texto quede alineado con el borde del formulario */
+  margin-right: calc(-1 * var(--space-8));
+  padding: var(--space-8);
+  border-radius: var(--radius-sm);
+  color: var(--color-text-secondary);
+  font-family: var(--font-heading);
+  font-size: var(--text-14);
+  font-weight: 600;
+  white-space: nowrap;
+  transition: color 0.15s ease;
+}
+
+.auth-main-back:hover {
+  color: var(--color-primary-dark);
+}
+
+/* En pantallas chicas se oculta el panel de marca y queda solo el formulario */
+@media (max-width: 900px) {
+  .auth-shell {
+    grid-template-columns: 1fr;
+  }
+
+  .auth-shell > .auth-brand {
+    display: none;
+  }
+
+  .auth-main {
+    padding: var(--space-32) var(--space-16) var(--space-48);
+  }
+
+  .auth-main-inner {
+    margin: 0 auto;
+  }
+}

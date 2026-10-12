@@ -1,10 +1,6 @@
-import { env } from '../config/env.js'
+import { getHealthStatus } from '../services/health.service.js'
 
-export function getHealth(req, res) {
-  res.json({
-    status: 'ok',
-    service: 'profit-zone-back',
-    environment: env.nodeEnv,
-    timestamp: new Date().toISOString(),
-  })
+export async function getHealth(req, res) {
+  const health = await getHealthStatus()
+  res.status(health.database === 'up' ? 200 : 503).json(health)
 }

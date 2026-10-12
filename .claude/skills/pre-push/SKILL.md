@@ -9,7 +9,7 @@ El hook `.claude/hooks/require-pre-push.mjs` bloquea cualquier `git push` que ej
 
 ## 0. Preparar
 
-1. `git status --porcelain`. Si hay cambios sin commitear, avisar que no se van a pushear y preguntar si se commitean antes o se ignoran.
+1. `git status --porcelain`. Si hay cambios sin commitear, avisar que no se van a pushear y preguntar si se commitean antes o se ignoran. No commitearlos sin un "sí" explícito.
 2. Determinar el rango de commits que se van a pushear:
    - `git fetch origin` (si falla por red, seguir con lo que haya local y avisarlo)
    - base = `@{u}` si la rama tiene upstream; si no, `origin/main`
@@ -56,7 +56,7 @@ Veredicto: LISTO PARA PUSHEAR / CORREGIR ANTES
 
 ## 4. Decisión y push
 
-- **Hay bloqueantes**: no pushear. Ofrecer corregirlos. Después de corregir y commitear (con la skill `commit`), volver a correr esta skill desde el paso 0.
+- **Hay bloqueantes**: no pushear. Ofrecer corregirlos y esperar el OK. Después de corregir, **no commitear por iniciativa propia**: mostrar los cambios (`git status` / `git diff --stat`) y preguntar si se commitean. Solo con un "sí" explícito, commitear con la skill `commit` y volver a correr esta skill desde el paso 0.
 - **No hay bloqueantes**: preguntar al usuario si pushea. Solo con un "sí" explícito:
   1. Registrar la aprobación del HEAD revisado:
      `git rev-parse HEAD > "$(git rev-parse --git-dir)/claude-pre-push-approved"`

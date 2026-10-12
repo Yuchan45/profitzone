@@ -1,0 +1,66 @@
+.map-backdrop {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.map-backdrop-land {
+  fill: var(--color-map-land);
+}
+
+.map-backdrop-block {
+  fill: var(--color-map-block);
+}
+
+.map-backdrop-avenue {
+  stroke: var(--color-map-avenue);
+  stroke-width: 22;
+}
+
+.map-backdrop-park {
+  fill: var(--color-map-park);
+}
+
+.map-backdrop-water {
+  fill: var(--color-map-water);
+}
+
+.map-backdrop-street-label {
+  fill: var(--color-map-label);
+  font-family: var(--font-body);
+  font-size: 12px;
+  letter-spacing: 0.04em;
+}
+
+.map-backdrop-radius {
+  fill: var(--color-primary-12);
+  stroke: var(--color-primary);
+  stroke-width: 2.5;
+  stroke-dasharray: 10 8;
+}
+
+.map-backdrop-center-halo {
+  fill: var(--color-primary);
+  opacity: 0.35;
+}
+
+.map-backdrop-pin-shadow {
+  fill: var(--color-black);
+  opacity: 0.2;
+}
+
+.map-backdrop-pin-dot {
+  fill: var(--color-white);
+}
+
+.map-backdrop-pin--selected path {
+  fill: var(--color-primary);
+  stroke: var(--color-primary-dark);
+  stroke-width: 1;
+}
+
+.map-backdrop-pin--competitor path {
+  fill: var(--color-error);
+  stroke: var(--color-error-dark);
+  stroke-width: 1;
+}

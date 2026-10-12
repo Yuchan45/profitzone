@@ -1,5 +1,19 @@
 import app from './app.js'
 import { env } from './config/env.js'
+import { closeDatabase, connectDatabase } from './db/sequelize.js'
+// Registra modelos y asociaciones al arrancar: un error de definición aparece acá y no en la primera request.
+import './models/index.js'
+
+try {
+  await connectDatabase()
+  console.log(`[ProfitZone] Conectado a SQL Server en ${env.db.host}:${env.db.port}/${env.db.name}`)
+} catch (error) {
+  console.error(
+    `[ProfitZone] No se pudo conectar a SQL Server en ${env.db.host}:${env.db.port}/${env.db.name}: ${error.message}\n` +
+      '  ¿Levantaste la DB? Desde profit-zone-back: npm run db:up && npm run db:migrate',
+  )
+  process.exit(1)
+}
 
 const server = app.listen(env.port)
 let shuttingDown = false
@@ -36,6 +50,9 @@ for (const signal of ['SIGINT', 'SIGTERM']) {
   process.on(signal, () => {
     shuttingDown = true
     console.log(`\n[ProfitZone] ${signal} recibido, cerrando servidor...`)
-    server.close(() => process.exit(0))
+    server.close(async () => {
+      await closeDatabase()
+      process.exit(0)
+    })
   })
 }
