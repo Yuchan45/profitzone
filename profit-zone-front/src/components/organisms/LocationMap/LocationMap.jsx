@@ -81,7 +81,9 @@ function FollowPoint({ point, focusKey }) {
 
 /**
  * Mapa del paso 3: muestra el contorno del barrio, el punto elegido y el círculo
- * del radio. Un click o arrastrar el marcador cambia el punto (`onPointChange`).
+ * del radio. Sin punto, un click lo coloca; con punto, solo se mueve arrastrando el
+ * marcador (un click suelto no lo cambia: evita moverlo sin querer al tocar un
+ * competidor) y el click llama a `onMapClick`. Los cambios llegan por `onPointChange`.
  * Solo se aceptan puntos dentro del barrio: un click o un arrastre afuera no mueve
  * el punto y llama a `onOutsidePick`.
  * `focusKey` cambia cuando el punto viene del buscador, para centrar el mapa ahí.
@@ -97,6 +99,7 @@ function LocationMap({
   radius,
   onPointChange,
   onOutsidePick,
+  onMapClick,
   focusKey,
   outside = false,
   places = [],
@@ -115,7 +118,12 @@ function LocationMap({
   const showPlaceNames = zoom >= PLACE_NAMES_ZOOM
   const isInside = (candidate) => !boundary || isPointInPolygons(candidate, boundary)
 
-  const handlePick = (candidate) => {
+  const handleMapClick = (candidate) => {
+    // Con el punto ya puesto, el click no lo mueve: se mueve arrastrando el marcador
+    if (point) {
+      onMapClick?.()
+      return
+    }
     if (isInside(candidate)) onPointChange(candidate)
     else onOutsidePick?.()
   }
@@ -202,12 +210,14 @@ function LocationMap({
             />
           </>
         )}
-        <PickOnClick onPick={handlePick} />
+        <PickOnClick onPick={handleMapClick} />
         <FitMinZoom bounds={maxBounds} />
         <WatchZoom onZoom={setZoom} />
         <FollowPoint point={point} focusKey={focusKey} />
       </MapContainer>
-      <p className="location-map-hint">Hacé click en el mapa o arrastrá el marcador</p>
+      <p className="location-map-hint">
+        {point ? 'Arrastrá el marcador para mover el punto' : 'Hacé click en el mapa para marcar tu punto'}
+      </p>
     </div>
   )
 }

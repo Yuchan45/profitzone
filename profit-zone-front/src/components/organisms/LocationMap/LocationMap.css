@@ -110,6 +110,11 @@
   cursor: grab;
 }
 
+/* Con el punto puesto, la única forma de moverlo es arrastrar el marcador */
+.location-map-marker:active {
+  cursor: grabbing;
+}
+
 /* Controles de zoom con los estilos de la app */
 .location-map .leaflet-control-zoom {
   overflow: hidden;

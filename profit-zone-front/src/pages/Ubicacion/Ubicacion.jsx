@@ -257,6 +257,7 @@ function Ubicacion() {
               radius={radius}
               onPointChange={handlePointChange}
               onOutsidePick={() => setOutsidePick(true)}
+              onMapClick={closePlace}
               places={nearbyPlaces.data?.places}
               selectedPlaceId={selectedPlaceId}
               onPlaceSelect={setSelectedPlaceId}
