@@ -246,7 +246,23 @@ async function main() {
     props.VARONES = varones
   }
 
-  fs.writeFileSync(GEOJSON_PATH, JSON.stringify(geojson))
+  const featureLines = geojson.features.map((f, idx) => {
+    const suffix = idx < geojson.features.length - 1 ? ',' : ''
+    return `${JSON.stringify(f)}${suffix}`
+  })
+  const formattedGeojson = [
+    '{',
+    `"type": ${JSON.stringify(geojson.type)},`,
+    `"name": ${JSON.stringify(geojson.name)},`,
+    `"crs": ${JSON.stringify(geojson.crs)},`,
+    '"features": [',
+    ...featureLines,
+    ']',
+    '}',
+    '',
+  ].join('\n')
+
+  fs.writeFileSync(GEOJSON_PATH, formattedGeojson)
   console.log(
     `${PREFIX} GeoJSON enriquecido exitosamente (${geojson.features.length} radios: ${directMatches} directos, ${fraccionFallbacks} por fracción).`,
   )
