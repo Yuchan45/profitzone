@@ -1,42 +1,254 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+@import "@fontsource-variable/geist";
 @import './styles/tokens.css';
 
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --font-sans: "Plus Jakarta Sans Variable", ui-sans-serif, system-ui, sans-serif;
+  --font-heading: "Outfit Variable", ui-sans-serif, system-ui, sans-serif;
+
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  --color-navy: #1b2a4e;
+  --color-brand-text: #0a8f7a;
+
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+}
+
 :root {
-  font-family: var(--font-body);
-  color-scheme: light;
-  -webkit-font-smoothing: antialiased;
+  --radius: 0.75rem;
+
+  --background: #fbfbf9;
+  --foreground: #1b2a4e;
+  --card: #ffffff;
+  --card-foreground: #1b2a4e;
+  --popover: #ffffff;
+  --popover-foreground: #1b2a4e;
+  --primary: #00c9a7;
+  --primary-foreground: #14213d;
+  --secondary: #f4f4f1;
+  --secondary-foreground: #1b2a4e;
+  --muted: #f4f4f1;
+  --muted-foreground: #64708a;
+  --accent: #f4f4f1;
+  --accent-foreground: #1b2a4e;
+  --destructive: #e5484d;
+  --border: #e8e8e3;
+  --input: #e8e8e3;
+  --ring: #00c9a7;
 }
 
-* {
-  box-sizing: border-box;
+@layer base {
+  * {
+    box-sizing: border-box;
+    @apply border-border outline-ring/50;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  :root {
+    color-scheme: light;
+  }
+
+  body {
+    margin: 0;
+    min-height: 100vh;
+    @apply bg-background font-sans text-foreground antialiased;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    font-family: var(--font-heading);
+    color: var(--color-text);
+  }
+
+  a {
+    color: inherit;
+    text-decoration: none;
+  }
+
+  button {
+    font-family: inherit;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+  }
 }
 
-body {
-  margin: 0;
-  min-height: 100vh;
-  background-color: var(--color-bg);
-  color: var(--color-text);
+/* Hero: figuras flotantes (componente HeroFigures) */
+.hero-float {
+  animation: hero-float var(--float-duration, 7s) ease-in-out var(--float-delay, 0s) infinite
+    alternate;
 }
 
-h1,
-h2,
-h3,
-h4,
-h5,
-h6 {
-  font-family: var(--font-heading);
-  color: var(--color-text);
+@keyframes hero-float {
+  from {
+    translate: 0 0;
+  }
+  to {
+    translate: var(--float-x, 0px) var(--float-y, -12px);
+  }
 }
 
-a {
-  color: inherit;
-  text-decoration: none;
+.hero-dash {
+  animation: hero-dash 1.6s linear infinite;
 }
 
-button {
-  font-family: inherit;
+@keyframes hero-dash {
+  to {
+    stroke-dashoffset: -13;
+  }
 }
 
-:focus-visible {
-  outline: 2px solid var(--color-primary);
-  outline-offset: 2px;
+.hero-pulse {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: hero-pulse 3s ease-out infinite;
+}
+
+@keyframes hero-pulse {
+  0% {
+    opacity: 0.7;
+    transform: scale(0.7);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.35);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-float,
+  .hero-dash,
+  .hero-pulse,
+  .hero-donut-main,
+  .hero-donut-accent,
+  .hero-bar,
+  .hero-breathe {
+    animation: none;
+  }
+}
+
+/* Hero: cambios de valores "de vez en cuando" */
+.hero-donut-main {
+  animation: hero-donut-main 9s ease-in-out infinite;
+}
+
+.hero-donut-accent {
+  animation: hero-donut-accent 9s ease-in-out infinite;
+}
+
+@keyframes hero-donut-main {
+  0%,
+  35% {
+    stroke-dasharray: 132 188.5;
+  }
+  50%,
+  85% {
+    stroke-dasharray: 96 188.5;
+  }
+  100% {
+    stroke-dasharray: 132 188.5;
+  }
+}
+
+@keyframes hero-donut-accent {
+  0%,
+  35% {
+    stroke-dasharray: 41 188.5;
+    stroke-dashoffset: -138;
+  }
+  50%,
+  85% {
+    stroke-dasharray: 62 188.5;
+    stroke-dashoffset: -102;
+  }
+  100% {
+    stroke-dasharray: 41 188.5;
+    stroke-dashoffset: -138;
+  }
+}
+
+.hero-bar {
+  transform-box: fill-box;
+  transform-origin: bottom;
+  animation: hero-bar 8s ease-in-out infinite;
+}
+
+@keyframes hero-bar {
+  0%,
+  40% {
+    transform: scaleY(1);
+  }
+  55%,
+  85% {
+    transform: scaleY(var(--loop-scale, 1.4));
+  }
+  100% {
+    transform: scaleY(1);
+  }
+}
+
+.hero-breathe {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: hero-breathe 8s ease-in-out infinite;
+}
+
+@keyframes hero-breathe {
+  0%,
+  40% {
+    transform: scale(1);
+  }
+  55%,
+  85% {
+    transform: scale(var(--loop-scale, 1.5));
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@theme {
+  --animate-how-progress: how-progress 6s linear forwards;
+
+  @keyframes how-progress {
+    from {
+      transform: scaleX(0);
+    }
+    to {
+      transform: scaleX(1);
+    }
+  }
 }

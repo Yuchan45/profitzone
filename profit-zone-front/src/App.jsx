@@ -47,8 +47,11 @@ function App() {
         <Route path="/registro" element={<Registro />} />
         <Route path="/login" element={<Login />} />
       </Route>
-      <Route element={<MainLayout />}>
+      {/* La landing usa ancho completo: sus secciones tienen fondos de borde a borde */}
+      <Route element={<MainLayout fullWidth />}>
         <Route path="/" element={<Home />} />
+      </Route>
+      <Route element={<MainLayout />}>
         {/* Requieren sesión */}
         <Route element={<ProtectedRoute />}>
           <Route path="/dashboard" element={<Dashboard />} />

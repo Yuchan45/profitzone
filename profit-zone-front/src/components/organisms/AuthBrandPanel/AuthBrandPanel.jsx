@@ -14,7 +14,7 @@ function AuthBrandPanel() {
       <div className="auth-brand-overlay" />
 
       <Link to="/" className="auth-brand-home" aria-label="ProfitZone, ir al inicio">
-        <Logo variant="mark" size="l" />
+        <Logo variant="negative" size="m" />
       </Link>
 
       <div className="auth-brand-content">

@@ -11,3 +11,8 @@
   width: 100%;
   margin: 0 auto;
 }
+
+.app-content--full {
+  flex: 1;
+  width: 100%;
+}

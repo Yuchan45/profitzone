@@ -45,11 +45,6 @@
   opacity: 0.8;
 }
 
-/* El isotipo es azul marino: sobre el fondo oscuro se pasa a blanco */
-.auth-brand-home .logo {
-  filter: brightness(0) invert(1);
-}
-
 .auth-brand-content {
   /* Centrado vertical entre el logo (arriba) y el footer (abajo) */
   margin-block: auto;
