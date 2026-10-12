@@ -67,6 +67,12 @@ export async function seedCensusData({ batchSize = 100 } = {}) {
               :viviendas AS viviendas,
               :hogares AS hogares,
               :hogaresNbi AS hogares_nbi,
+              :edad0a14 AS edad_0_14,
+              :edad15a34 AS edad_15_34,
+              :edad35a59 AS edad_35_59,
+              :edad60Mas AS edad_60_mas,
+              :mujeres AS mujeres,
+              :varones AS varones,
               :areaKm2 AS area_km2,
               :wkt AS wkt
           ) AS source
@@ -79,9 +85,19 @@ export async function seedCensusData({ batchSize = 100 } = {}) {
               viviendas = source.viviendas,
               hogares = source.hogares,
               hogares_nbi = source.hogares_nbi,
+              edad_0_14 = source.edad_0_14,
+              edad_15_34 = source.edad_15_34,
+              edad_35_59 = source.edad_35_59,
+              edad_60_mas = source.edad_60_mas,
+              mujeres = source.mujeres,
+              varones = source.varones,
               area_km2 = source.area_km2
           WHEN NOT MATCHED THEN
-            INSERT (radio_id, barrio, comuna, poblacion, viviendas, hogares, hogares_nbi, area_km2, geom)
+            INSERT (
+              radio_id, barrio, comuna, poblacion, viviendas, hogares, hogares_nbi,
+              edad_0_14, edad_15_34, edad_35_59, edad_60_mas, mujeres, varones,
+              area_km2, geom
+            )
             VALUES (
               source.radio_id,
               source.barrio,
@@ -90,6 +106,12 @@ export async function seedCensusData({ batchSize = 100 } = {}) {
               source.viviendas,
               source.hogares,
               source.hogares_nbi,
+              source.edad_0_14,
+              source.edad_15_34,
+              source.edad_35_59,
+              source.edad_60_mas,
+              source.mujeres,
+              source.varones,
               source.area_km2,
               CASE 
                 WHEN geography::STGeomFromText(source.wkt, 4326).MakeValid().EnvelopeAngle() > 90 
@@ -108,6 +130,12 @@ export async function seedCensusData({ batchSize = 100 } = {}) {
             viviendas: Math.round(Number(props.VIVIENDAS)) || 0,
             hogares: Math.round(Number(props.HOGARES)) || 0,
             hogaresNbi: Math.round(Number(props.HOGARES_NBI)) || 0,
+            edad0a14: Math.round(Number(props.EDAD_0_14)) || 0,
+            edad15a34: Math.round(Number(props.EDAD_15_34)) || 0,
+            edad35a59: Math.round(Number(props.EDAD_35_59)) || 0,
+            edad60Mas: Math.round(Number(props.EDAD_60_MAS)) || 0,
+            mujeres: Math.round(Number(props.MUJERES)) || 0,
+            varones: Math.round(Number(props.VARONES)) || 0,
             areaKm2: Number(props.AREA_KM2) || 0,
             wkt,
           },
