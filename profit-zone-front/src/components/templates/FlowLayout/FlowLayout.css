@@ -1,4 +1,9 @@
+/* Ancho del flujo: el header y el contenido usan el mismo margen lateral (--flow-gutter)
+   y el mismo ancho máximo de contenido (--flow-max-width), así quedan alineados */
 .flow-shell {
+  --flow-max-width: 1080px;
+  --flow-gutter: var(--space-24);
+
   display: flex;
   flex-direction: column;
   min-height: 100vh;
@@ -8,9 +13,9 @@
 .flow-content {
   flex: 1;
   width: 100%;
-  max-width: calc(1080px + 2 * var(--space-24));
+  max-width: calc(var(--flow-max-width) + 2 * var(--flow-gutter));
   margin: 0 auto;
-  padding: var(--space-40) var(--space-24) var(--space-64);
+  padding: var(--space-40) var(--flow-gutter) var(--space-64);
 }
 
 /* Estructura común de cada paso del flujo (la usan las páginas de /analizar) */
@@ -57,9 +62,22 @@
   }
 }
 
+/* Desde 1366 px (notebooks y monitores) se aprovecha el ancho: margen lateral chico
+   y contenido más ancho, con tope para que no se estire de más en pantallas grandes */
+@media (min-width: 1366px) {
+  .flow-shell {
+    --flow-max-width: 1600px;
+    --flow-gutter: var(--space-48);
+  }
+}
+
 @media (max-width: 720px) {
+  .flow-shell {
+    --flow-gutter: var(--space-16);
+  }
+
   .flow-content {
-    padding: var(--space-24) var(--space-16) var(--space-48);
+    padding: var(--space-24) var(--flow-gutter) var(--space-48);
   }
 
   .flow-step {
