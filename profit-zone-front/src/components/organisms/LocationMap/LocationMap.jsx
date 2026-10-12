@@ -86,7 +86,8 @@ function FollowPoint({ point, focusKey }) {
  * el punto y llama a `onOutsidePick`.
  * `focusKey` cambia cuando el punto viene del buscador, para centrar el mapa ahí.
  * `places` (opcional): negocios del rubro en el radio, como puntos; los de
- * competencia directa (`direct`) se destacan.
+ * competencia directa (`direct`) se destacan. Un click en un negocio llama a
+ * `onPlaceSelect(id)` (no mueve el punto) y `selectedPlaceId` lo marca en el mapa.
  */
 function LocationMap({
   center,
@@ -99,6 +100,8 @@ function LocationMap({
   focusKey,
   outside = false,
   places = [],
+  selectedPlaceId = null,
+  onPlaceSelect,
 }) {
   // Memo: FitMinZoom depende de este objeto
   const maxBounds = useMemo(
@@ -149,13 +152,23 @@ function LocationMap({
             />
             {places.map((place) => (
               <CircleMarker
-                // La key cambia con showPlaceNames: Leaflet no actualiza "permanent" de un tooltip ya creado
-                key={`${place.id}-${showPlaceNames}`}
+                // La key cambia con los nombres fijos y con la selección: Leaflet no actualiza
+                // "permanent" de un tooltip ya creado ni la clase CSS de un punto ya dibujado
+                key={`${place.id}-${showPlaceNames}-${place.id === selectedPlaceId}`}
                 center={[place.lat, place.lng]}
-                radius={place.direct ? 6 : 4}
+                radius={place.id === selectedPlaceId ? 9 : place.direct ? 6 : 4}
                 pathOptions={{
-                  className: place.direct ? 'location-map-place location-map-place--direct' : 'location-map-place',
+                  className: [
+                    'location-map-place',
+                    place.direct && 'location-map-place--direct',
+                    place.id === selectedPlaceId && 'location-map-place--selected',
+                  ]
+                    .filter(Boolean)
+                    .join(' '),
                 }}
+                // El click abre la ficha y no llega al mapa (no mueve el punto)
+                bubblingMouseEvents={false}
+                eventHandlers={{ click: () => onPlaceSelect?.(place.id) }}
               >
                 {place.name && (
                   <Tooltip

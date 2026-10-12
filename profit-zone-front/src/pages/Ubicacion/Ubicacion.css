@@ -6,6 +6,12 @@
   align-items: start;
 }
 
+/* Contenedor del mapa: la ficha del competidor se posiciona sobre él */
+.ubicacion-map {
+  position: relative;
+  min-width: 0;
+}
+
 .ubicacion-panel {
   display: flex;
   flex-direction: column;

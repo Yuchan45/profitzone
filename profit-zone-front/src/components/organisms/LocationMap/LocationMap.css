@@ -64,10 +64,21 @@
   stroke-width: 1;
 }
 
+.location-map-place {
+  cursor: pointer;
+}
+
 .location-map-place--direct {
   fill: var(--color-warning);
   fill-opacity: 1;
   stroke-width: 2;
+}
+
+/* Negocio con la ficha abierta: anillo oscuro para ubicarlo en el mapa */
+.location-map-place--selected {
+  fill-opacity: 1;
+  stroke: var(--color-text);
+  stroke-width: 3;
 }
 
 /* Nombre del competidor: etiqueta chica sin flecha, más marcada si es directo */

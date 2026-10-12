@@ -5,6 +5,15 @@ export function walkingMinutes(meters) {
   return Math.max(1, Math.round(meters / WALKING_METERS_PER_MINUTE))
 }
 
+/** Distancia en metros entre dos puntos { lat, lng } (fórmula de haversine). */
+export function distanceMeters(a, b) {
+  const toRad = (deg) => (deg * Math.PI) / 180
+  const dLat = toRad(b.lat - a.lat)
+  const dLng = toRad(b.lng - a.lng)
+  const h = Math.sin(dLat / 2) ** 2 + Math.cos(toRad(a.lat)) * Math.cos(toRad(b.lat)) * Math.sin(dLng / 2) ** 2
+  return 2 * 6371000 * Math.asin(Math.sqrt(h))
+}
+
 const kilometers = new Intl.NumberFormat('es-AR', { maximumFractionDigits: 2 })
 
 /** Distancia para mostrar: "300 m", "1,25 km", "2 km". */

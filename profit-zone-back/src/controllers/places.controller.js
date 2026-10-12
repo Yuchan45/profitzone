@@ -1,4 +1,4 @@
-import { findNearbyPlaces } from '../services/places.service.js'
+import { findNearbyPlaces, getPlace } from '../services/places.service.js'
 import { httpError } from '../utils/httpErrors.js'
 
 // Rango del radio de la vista previa (el paso 3 permite de 100 m a 2 km)
@@ -32,4 +32,10 @@ export async function getNearbyPlaces(req, res) {
       match: typeof match === 'string' && match.includes(':') ? match.trim() : null,
     }),
   )
+}
+
+export async function getPlaceById(req, res) {
+  const id = Number(req.params.id)
+  if (!Number.isInteger(id) || id <= 0) throw httpError(404, 'No encontramos ese negocio.')
+  res.json(await getPlace(id))
 }

@@ -28,3 +28,9 @@ export async function fetchNearbyPlaces({ lat, lng, radius, category, subcategor
   })
   return data
 }
+
+/** Ficha de un negocio de la vista previa (datos de OpenStreetMap). */
+export async function fetchPlace(id) {
+  const { data } = await api.get(`/places/${id}`)
+  return data
+}

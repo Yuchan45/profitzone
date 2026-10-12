@@ -79,6 +79,7 @@ headers `Content-Type` y `Authorization`, y cachea el preflight 24 h.
 | `GET`  | `/api/density` | Densidad poblacional y demografía en un punto con radio en CABA (query: `lat`, `lng`, `radius`) |
 | `GET`  | `/api/competition` | Análisis de competidores directos e indirectos en un radio con Google Places. **Requiere sesión** (consume una API paga) |
 | `GET`  | `/api/places/nearby?lat=&lng=&radius=&category=&subcategory=&match=` | Vista previa del paso 3: negocios del rubro dentro del círculo (radio de 100 a 2000 m), desde OpenStreetMap (`osm_data.places`, gratis, sin sesión). `match` (opcional, `pregunta:opción`, ej. `cuisine_type:asian`) marca como `direct` los que coinciden con la cocina elegida. Responde `{ source, updatedAt, total, directTotal, directLabel, places: [{ id, name, lat, lng, direct }] }`. 400 si los parámetros son inválidos |
+| `GET`  | `/api/places/:id` | Ficha de un negocio de la vista previa (datos de OpenStreetMap, sin sesión): `{ id, kind, name, cuisines, lat, lng, details, source, updatedAt }`. `details` trae solo lo que el local tenga cargado en OSM (`street`, `houseNumber`, `openingHours`, `phone`, `website`, `instagram`, `facebook`, `outdoorSeating`, `delivery`, `takeaway`, `wheelchair`). 404 si no existe |
 | `GET`  | `/api/traffic` | Estimación de afluencia horaria (7h a 23h) y score por franja horaria |
 | `GET`  | `/api/rentals` | Promedio y estadísticas de alquileres comerciales en un radio (query: `lat`, `lng`, `radius`; 503 si no hay avisos cargados) |
 | `GET`  | `/api/categories` | Categorías (rubros) con sus subcategorías y términos de búsqueda (query: `active`) |
@@ -410,6 +411,7 @@ geometry|	MultiPolygon|	Coordenadas vectoriales exactas de los límites de las m
 | `cuisine` | `varchar(200)` | Etiqueta `cuisine` de OSM (ej. `sushi;japanese`); en Palermo la tiene cerca del 38% de los restaurantes. |
 | `geom` | `geography` | Punto del negocio (centro, si es un edificio). |
 | `is_active` / `last_seen_at` | `bit` / `datetime2` | Si apareció en la última carga, y cuándo. |
+| `details` | `nvarchar(max)` (JSON) | Datos para la ficha del local que tenga cargados en OSM: dirección, horarios, teléfono, web, redes y servicios (mesas afuera, delivery, take away, accesibilidad). |
 
 Datos © colaboradores de OpenStreetMap, licencia ODbL: el mapa del front muestra la atribución.
 

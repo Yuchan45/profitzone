@@ -69,3 +69,31 @@ export async function findNearbyPlaces({ lat, lng, radius, categoryCode, subcate
     places: places.slice(0, MAX_PLACES),
   }
 }
+
+/**
+ * Ficha de un negocio de la vista previa: nombre, tipo, cocina (valores de OSM),
+ * punto y los datos que tenga en OSM (`details`: dirección, horarios, contacto,
+ * servicios; cada local trae un subconjunto distinto). Lanza 404 si no existe.
+ */
+export async function getPlace(id) {
+  const [rows] = await sequelize.query(
+    `SELECT id, kind, name, cuisine, details, geom.Lat AS lat, geom.Long AS lng, last_seen_at AS lastSeenAt
+     FROM osm_data.places
+     WHERE id = :id AND is_active = 1`,
+    { replacements: { id } },
+  )
+  const place = rows[0]
+  if (!place) throw httpError(404, 'No encontramos ese negocio.')
+
+  return {
+    id: place.id,
+    kind: place.kind,
+    name: place.name,
+    cuisines: place.cuisine ? place.cuisine.split(';').map((value) => value.trim()).filter(Boolean) : [],
+    lat: place.lat,
+    lng: place.lng,
+    details: place.details ? JSON.parse(place.details) : {},
+    source: 'OpenStreetMap',
+    updatedAt: place.lastSeenAt,
+  }
+}

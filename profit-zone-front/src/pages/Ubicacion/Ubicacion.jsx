@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { Navigate, useNavigate } from 'react-router-dom'
 import { useAnalysisFlow } from '../../hooks/useAnalysisFlow.js'
 import { useAuth } from '../../hooks/useAuth.js'
@@ -7,10 +7,12 @@ import { useNeighborhoods } from '../../hooks/useNeighborhoods.js'
 import { useAddressSearch } from '../../hooks/useAddressSearch.js'
 import { useReverseGeocode } from '../../hooks/useReverseGeocode.js'
 import { useNearbyPlaces } from '../../hooks/useNearbyPlaces.js'
+import { usePlace } from '../../hooks/usePlace.js'
 import { useSaveLocation } from '../../hooks/useSaveLocation.js'
 import { useSubcategorySurvey } from '../../hooks/useSubcategorySurvey.js'
 import Stepper from '../../components/organisms/Stepper/Stepper.jsx'
 import LocationMap from '../../components/organisms/LocationMap/LocationMap.jsx'
+import PlaceCard from '../../components/organisms/PlaceCard/PlaceCard.jsx'
 import BusinessSummary from '../../components/organisms/BusinessSummary/BusinessSummary.jsx'
 import Modal from '../../components/organisms/Modal/Modal.jsx'
 import RegisterForm from '../../components/organisms/RegisterForm/RegisterForm.jsx'
@@ -23,7 +25,7 @@ import RangeSlider from '../../components/atoms/RangeSlider/RangeSlider.jsx'
 import Button from '../../components/atoms/Button/Button.jsx'
 import Divider from '../../components/atoms/Divider/Divider.jsx'
 import Icon from '../../components/atoms/Icon/Icon.jsx'
-import { formatDistance, isPointInPolygons, walkingMinutes } from '../../utils/geo.js'
+import { distanceMeters, formatDistance, isPointInPolygons, walkingMinutes } from '../../utils/geo.js'
 import { toAuthFormError } from '../../utils/apiErrors.js'
 import { FLOW_STEPS } from '../../utils/flowSteps.js'
 import { visibleQuestions } from '../../utils/hiddenQuestions.js'
@@ -107,6 +109,10 @@ function Ubicacion() {
   // Avisos: se intentó pasar el radio del plan / se tocó fuera del barrio
   const [radiusBlocked, setRadiusBlocked] = useState(false)
   const [outsidePick, setOutsidePick] = useState(false)
+  // Competidor con la ficha abierta (click en un punto del mapa)
+  const [selectedPlaceId, setSelectedPlaceId] = useState(null)
+  const selectedPlace = usePlace(selectedPlaceId)
+  const closePlace = useCallback(() => setSelectedPlaceId(null), [])
 
   const radiusLimit = UNLIMITED_RADIUS_ROLES.includes(user?.role) ? RADIUS.max : FREE_MAX_RADIUS
 
@@ -152,6 +158,7 @@ function Ubicacion() {
   // (o queda vacío si no hay una cerca), para que no quede una dirección que ya no aplica
   const handlePointChange = async (nextPoint) => {
     setOutsidePick(false)
+    setSelectedPlaceId(null)
     setLocation({ ...nextPoint, radius })
     setSuggestionsEnabled(false)
     addressSearch.clear()
@@ -241,18 +248,32 @@ function Ubicacion() {
 
       {neighborhood && (
         <div className="ubicacion-layout">
-          <LocationMap
-            center={neighborhood.center}
-            bounds={neighborhood.bounds}
-            boundary={neighborhood.boundary}
-            point={point}
-            radius={radius}
-            onPointChange={handlePointChange}
-            onOutsidePick={() => setOutsidePick(true)}
-            places={nearbyPlaces.data?.places}
-            focusKey={focusKey}
-            outside={isOutside}
-          />
+          <div className="ubicacion-map">
+            <LocationMap
+              center={neighborhood.center}
+              bounds={neighborhood.bounds}
+              boundary={neighborhood.boundary}
+              point={point}
+              radius={radius}
+              onPointChange={handlePointChange}
+              onOutsidePick={() => setOutsidePick(true)}
+              places={nearbyPlaces.data?.places}
+              selectedPlaceId={selectedPlaceId}
+              onPlaceSelect={setSelectedPlaceId}
+              focusKey={focusKey}
+              outside={isOutside}
+            />
+            {selectedPlaceId !== null && (
+              <PlaceCard
+                status={selectedPlace.status}
+                place={selectedPlace.data}
+                error={selectedPlace.error}
+                direct={Boolean(nearbyPlaces.data?.places.find((place) => place.id === selectedPlaceId)?.direct)}
+                distance={point && selectedPlace.data ? distanceMeters(point, selectedPlace.data) : null}
+                onClose={closePlace}
+              />
+            )}
+          </div>
 
           <aside className="ubicacion-panel">
             <AddressSearch

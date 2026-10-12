@@ -84,6 +84,31 @@ export function classifyPlace(tags) {
   return null
 }
 
+// Etiquetas de OSM que se guardan para la ficha del local (paso 3): nombre en la ficha → etiquetas posibles
+const DETAIL_TAGS = {
+  street: ['addr:street'],
+  houseNumber: ['addr:housenumber'],
+  openingHours: ['opening_hours'],
+  phone: ['phone', 'contact:phone'],
+  website: ['website', 'contact:website'],
+  instagram: ['contact:instagram'],
+  facebook: ['contact:facebook'],
+  outdoorSeating: ['outdoor_seating'],
+  delivery: ['delivery'],
+  takeaway: ['takeaway'],
+  wheelchair: ['wheelchair'],
+}
+
+/** JSON con los datos de la ficha que tenga el local, o null si no tiene ninguno. */
+function toDetails(tags) {
+  const details = {}
+  for (const [key, candidates] of Object.entries(DETAIL_TAGS)) {
+    const value = candidates.map((tag) => tags[tag]).find(Boolean)
+    if (value) details[key] = value.slice(0, 300)
+  }
+  return Object.keys(details).length > 0 ? JSON.stringify(details) : null
+}
+
 function toRow(element) {
   const tags = element.tags ?? {}
   const kind = classifyPlace(tags)
@@ -96,6 +121,7 @@ function toRow(element) {
     kind,
     name: tags.name?.slice(0, 200) ?? null,
     cuisine: tags.cuisine?.toLowerCase().slice(0, 200) ?? null,
+    details: toDetails(tags),
     lat,
     lng,
   }
@@ -125,11 +151,11 @@ export async function seedOsmPlaces() {
          USING (SELECT :osmType AS osm_type, :osmId AS osm_id) AS source
          ON target.osm_type = source.osm_type AND target.osm_id = source.osm_id
          WHEN MATCHED THEN
-           UPDATE SET kind = :kind, name = :name, cuisine = :cuisine,
+           UPDATE SET kind = :kind, name = :name, cuisine = :cuisine, details = :details,
              geom = geography::Point(:lat, :lng, 4326), is_active = 1, last_seen_at = :seenAt
          WHEN NOT MATCHED THEN
-           INSERT (osm_type, osm_id, kind, name, cuisine, geom, is_active, last_seen_at)
-           VALUES (:osmType, :osmId, :kind, :name, :cuisine, geography::Point(:lat, :lng, 4326), 1, :seenAt);`,
+           INSERT (osm_type, osm_id, kind, name, cuisine, details, geom, is_active, last_seen_at)
+           VALUES (:osmType, :osmId, :kind, :name, :cuisine, :details, geography::Point(:lat, :lng, 4326), 1, :seenAt);`,
         { replacements: { ...row, seenAt: runStartedAt }, transaction },
       )
       stats.saved++
