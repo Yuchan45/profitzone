@@ -36,6 +36,20 @@ const TRAFFIC = {
   low: 40,
 }
 
+// Público objetivo por edad en el radio (participación de referencia CABA por grupo)
+const AUDIENCE = {
+  expectedShareByGroup: {
+    kids: 14,
+    young: 30,
+    adults: 34,
+    seniors: 22,
+  },
+  strengthRatio: 0.95,
+  weaknessRatio: 0.75,
+  minStrengthCount: 1500,
+  minAlertCount: 500,
+}
+
 const NO_DATA = 'Sin datos para esta zona todavía'
 const NO_PUBLIC = 'No aplica sin atención al público'
 
@@ -97,9 +111,53 @@ export function costCriterion({ answerOption, answerLabel, rent }) {
   return criterion('cost', label, yourBusiness, zone, reading)
 }
 
-/** Público: edades objetivo vs. demografía por edad. El censo cargado no trae edades. */
-export function audienceCriterion({ answerLabel }) {
-  return noSourceCriterion('audience', 'Público', answerLabel('target_age'))
+/** Público: edades objetivo vs. demografía por edad y sexo en el radio censal. */
+export function audienceCriterion({ answerCodes, answerLabel, density }) {
+  const yourBusiness = answerLabel('target_age')
+  const selectedCodes = answerCodes ? answerCodes('target_age') : []
+  const label = 'Público'
+
+  if (selectedCodes.length === 0) {
+    return undefinedAnswerCriterion('audience', label, yourBusiness, 'Sin público objetivo definido')
+  }
+  if (density.status !== 'ok') {
+    return criterion('audience', label, yourBusiness, 'No pudimos obtener la demografía por edad', 'not_evaluated')
+  }
+  if (!density.data.inCoverage || !density.data.distribucionPorEdad) {
+    return criterion('audience', label, yourBusiness, 'Fuera de la cobertura del censo (CABA)', 'not_evaluated')
+  }
+
+  const ageDist = density.data.distribucionPorEdad
+  const sexDist = density.data.distribucionPorSexo
+
+  const targetCount = selectedCodes.reduce(
+    (sum, code) => sum + (ageDist[code]?.poblacionEstimada ?? 0),
+    0,
+  )
+  const targetShare = Number(
+    selectedCodes.reduce((sum, code) => sum + (ageDist[code]?.porcentaje ?? 0), 0).toFixed(1),
+  )
+  const expectedShare = selectedCodes.reduce(
+    (sum, code) => sum + (AUDIENCE.expectedShareByGroup[code] ?? 25),
+    0,
+  )
+
+  const sexSummary =
+    sexDist && sexDist.predominio !== 'sin_datos'
+      ? ` · ${Number(sexDist.porcentajeMujeres.toFixed(1)).toLocaleString('es-AR')}% mujeres y ${Number(sexDist.porcentajeVarones.toFixed(1)).toLocaleString('es-AR')}% varones`
+      : ''
+
+  const zone = `${formatInt(targetCount)} hab. de tu rango (${targetShare.toLocaleString('es-AR')}% del radio${sexSummary})`
+
+  const shareRatio = expectedShare > 0 ? targetShare / expectedShare : 1
+  let reading = 'alert'
+  if (targetCount < AUDIENCE.minAlertCount || shareRatio < AUDIENCE.weaknessRatio) {
+    reading = 'weakness'
+  } else if (targetCount >= AUDIENCE.minStrengthCount && shareRatio >= AUDIENCE.strengthRatio) {
+    reading = 'strength'
+  }
+
+  return criterion('audience', label, yourBusiness, zone, reading)
 }
 
 /**

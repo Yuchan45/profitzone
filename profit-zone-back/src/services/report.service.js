@@ -76,9 +76,11 @@ function buildAnswerReaders(answers, survey) {
   }
 
   const answerCode = (questionCode) => answers[questionCode]?.[0] ?? null
+  const answerCodes = (questionCode) => answers[questionCode] ?? []
 
   return {
     answerCode,
+    answerCodes,
     // Opción completa (con valueMin/valueMax) de una pregunta de respuesta única
     answerOption: (questionCode) => options.get(`${questionCode}:${answerCode(questionCode)}`) ?? null,
     answerLabel: (questionCode) => {
@@ -98,7 +100,11 @@ function buildSources({ competition, traffic, density, rent }) {
   }
   // El servicio de afluencia usa un perfil por rubro, no consulta el punto
   if (traffic.status === 'ok') sources.push('Afluencia: perfil horario típico del rubro (estimado).')
-  if (density.status === 'ok') sources.push('Demografía: censo nacional (INDEC) por radio censal, ponderado por área.')
+  if (density.status === 'ok') {
+    sources.push(
+      'Demografía: censo nacional (INDEC) por radio censal y estructura por edad y sexo del Geoportal INDEC (Censo 2022), ponderados por área.',
+    )
+  }
   if (rent.status === 'ok') sources.push('Alquiler: avisos de locales comerciales en alquiler publicados en ZonaProp.')
   sources.push('Accesibilidad y lugares según tu público: todavía sin fuente de datos.')
   return sources
@@ -120,7 +126,7 @@ export async function buildAnalysisReport(id, userId) {
   }
 
   const survey = await getSurveyOrEmpty(analysis.category.code, analysis.subcategory.code)
-  const { answerCode, answerOption, answerLabel } = buildAnswerReaders(analysis.answers, survey)
+  const { answerCode, answerCodes, answerOption, answerLabel } = buildAnswerReaders(analysis.answers, survey)
   const trafficWindow = resolveTrafficWindow(answerCode)
   const noPublic = answerCode('service_mode') === 'no_public'
 
@@ -144,6 +150,7 @@ export async function buildAnalysisReport(id, userId) {
   const criteria = CRITERIA.map((buildCriterion) =>
     buildCriterion({
       answerCode,
+      answerCodes,
       answerOption,
       answerLabel,
       subcategoryName: analysis.subcategory.name,
