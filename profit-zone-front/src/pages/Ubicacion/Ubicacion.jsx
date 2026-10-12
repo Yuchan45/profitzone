@@ -6,6 +6,7 @@ import { useFlowSteps } from '../../hooks/useFlowSteps.js'
 import { useNeighborhoods } from '../../hooks/useNeighborhoods.js'
 import { useAddressSearch } from '../../hooks/useAddressSearch.js'
 import { useReverseGeocode } from '../../hooks/useReverseGeocode.js'
+import { useNearbyPlaces } from '../../hooks/useNearbyPlaces.js'
 import { useSaveLocation } from '../../hooks/useSaveLocation.js'
 import { useSubcategorySurvey } from '../../hooks/useSubcategorySurvey.js'
 import Stepper from '../../components/organisms/Stepper/Stepper.jsx'
@@ -69,6 +70,24 @@ function buildSummaryRows(survey, answers) {
   return rows
 }
 
+/**
+ * Criterio de competencia directa para la vista previa: la opción elegida que tiene
+ * etiquetas de OSM asociadas (`metadata.osmCuisine`, ej. "Asiática") como "pregunta:opción".
+ */
+function directMatch(survey, answers) {
+  for (const question of visibleQuestions(survey, answers)) {
+    for (const code of answers[question.code] ?? []) {
+      const option = question.options.find((o) => o.code === code)
+      if (option?.metadata?.osmCuisine?.length) return `${question.code}:${option.code}`
+    }
+  }
+  return null
+}
+
+function pluralize(count, singular, plural) {
+  return count === 1 ? `1 ${singular}` : `${count} ${plural}`
+}
+
 function Ubicacion() {
   const flow = useAnalysisFlow()
   const { categoryCode, subcategoryCode, answers, location, setLocation } = flow
@@ -98,6 +117,16 @@ function Ubicacion() {
       setLocation({ ...location, radius: radiusLimit })
     }
   }, [authStatus, location, radiusLimit, setLocation])
+
+  // Vista previa de la competencia: negocios del rubro dentro del círculo (OSM, gratis)
+  const nearbyPlaces = useNearbyPlaces({
+    lat: location?.lat ?? null,
+    lng: location?.lng ?? null,
+    radius: Math.min(location?.radius ?? RADIUS.initial, radiusLimit),
+    category: categoryCode,
+    subcategory: subcategoryCode,
+    match: survey.status === 'ok' ? directMatch(survey.data, answers) : null,
+  })
 
   // Autocompletado: busca sugerencias de Palermo 300 ms después de dejar de escribir
   const { search: searchSuggestions } = addressSearch
@@ -220,6 +249,7 @@ function Ubicacion() {
             radius={radius}
             onPointChange={handlePointChange}
             onOutsidePick={() => setOutsidePick(true)}
+            places={nearbyPlaces.data?.places}
             focusKey={focusKey}
             outside={isOutside}
           />
@@ -275,6 +305,36 @@ function Ubicacion() {
                 </StatusMessage>
               )}
             </div>
+
+            {point && !isOutside && (
+              <div className="ubicacion-preview" aria-live="polite">
+                <p className="ubicacion-preview-title">Competencia en el radio</p>
+                {nearbyPlaces.status === 'error' && (
+                  <p className="ubicacion-preview-text">No pudimos cargar los negocios cercanos.</p>
+                )}
+                {nearbyPlaces.status !== 'error' && !nearbyPlaces.data && (
+                  <p className="ubicacion-preview-text">Buscando negocios del rubro…</p>
+                )}
+                {nearbyPlaces.status !== 'error' && nearbyPlaces.data && (
+                  <>
+                    <p className="ubicacion-preview-text">
+                      <span className="ubicacion-preview-dot" aria-hidden="true" />
+                      {pluralize(nearbyPlaces.data.total, 'negocio del rubro', 'negocios del rubro')}
+                    </p>
+                    {nearbyPlaces.data.directLabel && (
+                      <p className="ubicacion-preview-text">
+                        <span className="ubicacion-preview-dot ubicacion-preview-dot--direct" aria-hidden="true" />
+                        {nearbyPlaces.data.directTotal} de cocina {nearbyPlaces.data.directLabel.toLowerCase()}
+                      </p>
+                    )}
+                    <p className="ubicacion-preview-note">
+                      Vista previa con datos de OpenStreetMap: puede no estar completa. El análisis usa datos
+                      actualizados.
+                    </p>
+                  </>
+                )}
+              </div>
+            )}
 
             {(isOutside || outsidePick) && (
               <StatusMessage variant="error">Elegí un punto dentro de {neighborhood.name}.</StatusMessage>

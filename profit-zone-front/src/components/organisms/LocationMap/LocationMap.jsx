@@ -1,10 +1,12 @@
-import { useEffect, useMemo, useRef } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import {
   Circle,
+  CircleMarker,
   MapContainer,
   Marker,
   Polygon,
   TileLayer,
+  Tooltip,
   ZoomControl,
   useMap,
   useMapEvents,
@@ -14,9 +16,15 @@ import 'leaflet/dist/leaflet.css'
 import { isPointInPolygons } from '../../../utils/geo.js'
 import './LocationMap.css'
 
-// Tiles estándar de OpenStreetMap, a color (gratis, sin clave; requieren atribución).
-const TILES_URL = 'https://tile.openstreetmap.org/{z}/{x}/{y}.png'
-const TILES_ATTRIBUTION = '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+// Tiles "World Street Map" de Esri: a color y sin íconos de lugares (hospitales,
+// iglesias, supermercados…), así solo se ven los competidores. Sin clave; requieren
+// atribución. Los negocios del rubro son datos de OpenStreetMap: también se atribuye.
+const TILES_URL = 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}'
+const TILES_ATTRIBUTION =
+  'Tiles &copy; Esri &mdash; Esri, HERE, Garmin, USGS | Negocios &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+// Desde este zoom los nombres de los competidores quedan fijos sobre el mapa;
+// más lejos se ven al pasar el mouse (con cientos de puntos taparían todo)
+const PLACE_NAMES_ZOOM = 17
 const DEFAULT_ZOOM = 15
 // Margen mínimo alrededor del barrio: el mapa no muestra más que Palermo
 const BOUNDS_PADDING = 0.02
@@ -40,6 +48,12 @@ function PickOnClick({ onPick }) {
   useMapEvents({
     click: (event) => onPick({ lat: event.latlng.lat, lng: event.latlng.lng }),
   })
+  return null
+}
+
+// Avisa el zoom actual (para mostrar u ocultar los nombres de los competidores)
+function WatchZoom({ onZoom }) {
+  const map = useMapEvents({ zoomend: () => onZoom(map.getZoom()) })
   return null
 }
 
@@ -71,6 +85,8 @@ function FollowPoint({ point, focusKey }) {
  * Solo se aceptan puntos dentro del barrio: un click o un arrastre afuera no mueve
  * el punto y llama a `onOutsidePick`.
  * `focusKey` cambia cuando el punto viene del buscador, para centrar el mapa ahí.
+ * `places` (opcional): negocios del rubro en el radio, como puntos; los de
+ * competencia directa (`direct`) se destacan.
  */
 function LocationMap({
   center,
@@ -82,6 +98,7 @@ function LocationMap({
   onOutsidePick,
   focusKey,
   outside = false,
+  places = [],
 }) {
   // Memo: FitMinZoom depende de este objeto
   const maxBounds = useMemo(
@@ -91,6 +108,8 @@ function LocationMap({
         : undefined,
     [bounds],
   )
+  const [zoom, setZoom] = useState(DEFAULT_ZOOM)
+  const showPlaceNames = zoom >= PLACE_NAMES_ZOOM
   const isInside = (candidate) => !boundary || isPointInPolygons(candidate, boundary)
 
   const handlePick = (candidate) => {
@@ -128,6 +147,28 @@ function LocationMap({
               pathOptions={{ className: 'location-map-radius' }}
               interactive={false}
             />
+            {places.map((place) => (
+              <CircleMarker
+                // La key cambia con showPlaceNames: Leaflet no actualiza "permanent" de un tooltip ya creado
+                key={`${place.id}-${showPlaceNames}`}
+                center={[place.lat, place.lng]}
+                radius={place.direct ? 6 : 4}
+                pathOptions={{
+                  className: place.direct ? 'location-map-place location-map-place--direct' : 'location-map-place',
+                }}
+              >
+                {place.name && (
+                  <Tooltip
+                    direction="top"
+                    offset={[0, -4]}
+                    permanent={showPlaceNames}
+                    className={`location-map-place-label${place.direct ? ' location-map-place-label--direct' : ''}`}
+                  >
+                    {place.name}
+                  </Tooltip>
+                )}
+              </CircleMarker>
+            ))}
             <Marker
               position={[point.lat, point.lng]}
               icon={markerIcon}
@@ -150,6 +191,7 @@ function LocationMap({
         )}
         <PickOnClick onPick={handlePick} />
         <FitMinZoom bounds={maxBounds} />
+        <WatchZoom onZoom={setZoom} />
         <FollowPoint point={point} focusKey={focusKey} />
       </MapContainer>
       <p className="location-map-hint">Hacé click en el mapa o arrastrá el marcador</p>

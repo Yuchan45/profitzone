@@ -17,3 +17,14 @@ export async function reverseGeocode({ lat, lng }) {
   const { data } = await api.get('/geocode/reverse', { params: { lat, lng } })
   return data
 }
+
+/**
+ * Negocios del rubro dentro del círculo (vista previa, datos de OpenStreetMap):
+ * { total, directTotal, directLabel, places: [{ id, name, lat, lng, direct }] }.
+ */
+export async function fetchNearbyPlaces({ lat, lng, radius, category, subcategory, match }) {
+  const { data } = await api.get('/places/nearby', {
+    params: { lat, lng, radius, category, subcategory, match: match ?? undefined },
+  })
+  return data
+}
