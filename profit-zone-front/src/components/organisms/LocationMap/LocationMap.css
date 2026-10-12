@@ -28,11 +28,6 @@
   pointer-events: none;
 }
 
-/* Mapa base en grises: el turquesa del círculo resalta como en el Figma */
-.location-map .leaflet-tile-pane {
-  filter: grayscale(1) contrast(0.9) brightness(1.04);
-}
-
 /* Fuera del barrio el mapa se oscurece: así se ve que solo se analiza ahí */
 .location-map-outside {
   fill: var(--color-text);

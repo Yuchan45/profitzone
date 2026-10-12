@@ -7,7 +7,17 @@ import './AddressSearch.css'
  * Buscador de direcciones: se busca al enviar (Enter o la lupa) y los resultados
  * se eligen de una lista. status: 'idle' | 'loading' | 'ok' | 'error'.
  */
-function AddressSearch({ value, onChange, onSearch, onSelect, status, results, error, areaName }) {
+function AddressSearch({
+  value,
+  onChange,
+  onSearch,
+  onSelect,
+  status,
+  results,
+  error,
+  areaName,
+  placeholder = 'Ej.: Gurruchaga 1600',
+}) {
   const inputRef = useRef(null)
 
   // Al elegir una calle (sin altura) el usuario sigue escribiendo el número:
@@ -38,7 +48,7 @@ function AddressSearch({ value, onChange, onSearch, onSelect, status, results, e
           id="address-search-input"
           type="search"
           className="address-search-input"
-          placeholder="Ej.: Gurruchaga 1600"
+          placeholder={placeholder}
           autoComplete="off"
           value={value}
           onChange={(event) => onChange(event.target.value)}

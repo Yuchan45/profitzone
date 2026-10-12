@@ -1,8 +1,20 @@
 import './RangeSlider.css'
 
-// Slider nativo (input range) con el tramo elegido pintado en turquesa.
-function RangeSlider({ min, max, step = 1, value, onChange, className = '', ...rest }) {
-  const progress = ((value - min) / (max - min)) * 100
+const percentOf = (value, min, max) => ((value - min) / (max - min)) * 100
+
+/**
+ * Slider nativo (input range) con el tramo elegido pintado en turquesa.
+ * `limit` (opcional): valor máximo permitido; el tramo de `limit` a `max` se pinta
+ * bloqueado y el valor no lo pasa. `onChange(value, blocked)` avisa con `blocked`
+ * si el usuario intentó ir más allá del límite.
+ */
+function RangeSlider({ min, max, step = 1, value, onChange, limit, className = '', ...rest }) {
+  const maxAllowed = limit ?? max
+  const handleChange = (event) => {
+    const raw = Number(event.target.value)
+    onChange(Math.min(raw, maxAllowed), raw > maxAllowed)
+  }
+
   return (
     <input
       type="range"
@@ -11,8 +23,11 @@ function RangeSlider({ min, max, step = 1, value, onChange, className = '', ...r
       max={max}
       step={step}
       value={value}
-      onChange={(event) => onChange(Number(event.target.value))}
-      style={{ '--range-progress': `${progress}%` }}
+      onChange={handleChange}
+      style={{
+        '--range-progress': `${percentOf(value, min, max)}%`,
+        '--range-limit': `${percentOf(maxAllowed, min, max)}%`,
+      }}
       {...rest}
     />
   )

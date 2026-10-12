@@ -5,6 +5,13 @@ export function walkingMinutes(meters) {
   return Math.max(1, Math.round(meters / WALKING_METERS_PER_MINUTE))
 }
 
+const kilometers = new Intl.NumberFormat('es-AR', { maximumFractionDigits: 2 })
+
+/** Distancia para mostrar: "300 m", "1,25 km", "2 km". */
+export function formatDistance(meters) {
+  return meters < 1000 ? `${meters} m` : `${kilometers.format(meters / 1000)} km`
+}
+
 // Ray casting sobre un anillo de [lat, lng]
 function isInRing({ lat, lng }, ring) {
   let inside = false

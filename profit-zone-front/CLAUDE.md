@@ -47,7 +47,9 @@ src/pages/     vistas ruteadas; arman la pantalla con organisms/molecules/atoms
 
 ## Mapa
 
-- El mapa es Leaflet (`react-leaflet`) con tiles de OpenStreetMap, en `components/organisms/LocationMap`. Reusar ese componente en vez de sumar otra librería de mapas.
+- El mapa es Leaflet (`react-leaflet`) con tiles de OpenStreetMap, en `components/organisms/LocationMap`. Es una decisión tomada (se evaluó Google Maps y se descartó: pide API key con facturación). Reusar ese componente en vez de sumar otra librería de mapas.
+- El mapa queda limitado al barrio: no se puede mover ni alejar fuera de sus límites, y un click o un arrastre fuera del polígono no mueve el punto (`onOutsidePick`).
+- Radio de análisis: de 100 m a 2 km. Hasta 600 m es para todos; más allá, solo los roles `premium` y `admin` (constantes en `pages/Ubicacion/Ubicacion.jsx`; el tramo bloqueado lo pinta `RangeSlider` con la prop `limit`).
 - Los colores de círculos, polígonos y marcadores van por `className` (`pathOptions={{ className }}`) y CSS con tokens: los atributos SVG no resuelven `var(--…)`.
 - Las páginas con Leaflet se cargan con `React.lazy` desde `App.jsx`.
 
