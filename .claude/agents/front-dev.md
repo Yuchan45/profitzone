@@ -16,6 +16,8 @@ Reglas:
 - No agregues dependencias nuevas sin que te lo pidan explícitamente.
 - No toques `profit-zone-back/`. Podés leerlo para entender la forma de las respuestas de la API.
 - Textos de UI en español.
+- Atomic design: los componentes van en `src/components/{atoms,molecules,organisms,templates}/<Nombre>/` con su `.css` al lado. Seguí la sección "Atomic design" de `profit-zone-front/CLAUDE.md` para elegir el nivel y respetar la regla de imports.
+- Colores, radios, espaciados y fuentes salen siempre de los tokens de `src/styles/tokens.css` (paleta del Figma). No escribas hex sueltos.
 
 Skills:
 - Para tareas estructurales usá `front-new-page`, `front-new-endpoint` y `front-new-component`.

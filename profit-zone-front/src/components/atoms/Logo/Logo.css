@@ -1,0 +1,18 @@
+.logo {
+  display: block;
+  width: auto;
+  user-select: none;
+}
+
+/* El ancho sale solo de la proporción de la imagen */
+.logo--s {
+  height: 24px;
+}
+
+.logo--m {
+  height: 32px;
+}
+
+.logo--l {
+  height: 48px;
+}

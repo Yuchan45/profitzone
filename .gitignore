@@ -18,3 +18,10 @@ npm-debug.log*
 Thumbs.db
 .vscode/
 .idea/
+
+
+.antigravity
+GEMINI.md
+.agents
+
+scrap

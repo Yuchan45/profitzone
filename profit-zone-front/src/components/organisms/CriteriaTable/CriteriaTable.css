@@ -1,0 +1,122 @@
+.criteria-table {
+  padding: var(--space-28);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-xl);
+  background-color: var(--color-surface);
+}
+
+.criteria-table-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-12);
+  padding-bottom: var(--space-16);
+}
+
+.criteria-table-title {
+  margin: 0;
+  font-size: var(--text-20);
+  font-weight: 700;
+}
+
+.criteria-table-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-6);
+}
+
+.criteria-table-grid {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--text-14);
+}
+
+.criteria-table-grid th,
+.criteria-table-grid td {
+  padding: var(--space-14) var(--space-16) var(--space-14) 0;
+  border-bottom: 1px solid var(--color-border);
+  text-align: left;
+  vertical-align: middle;
+}
+
+.criteria-table-grid tbody tr:last-child th,
+.criteria-table-grid tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.criteria-table-grid thead th {
+  color: var(--color-text-tertiary);
+  font-size: var(--text-12);
+  font-weight: 500;
+  text-transform: uppercase;
+}
+
+.criteria-table-label {
+  width: 170px;
+  color: var(--color-text);
+  font-weight: 600;
+}
+
+.criteria-table-business {
+  width: 250px;
+  color: var(--color-text-secondary);
+}
+
+.criteria-table-zone {
+  color: var(--color-text);
+}
+
+.criteria-table-estimated {
+  color: var(--color-text-tertiary);
+}
+
+.criteria-table-grid .criteria-table-reading {
+  padding-right: 0;
+  text-align: right;
+  white-space: nowrap;
+}
+
+/* En mobile cada criterio pasa a ser una tarjeta apilada */
+@media (max-width: 720px) {
+  .criteria-table {
+    padding: var(--space-20);
+  }
+
+  .criteria-table-grid thead {
+    display: none;
+  }
+
+  .criteria-table-grid tr {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: var(--space-4) var(--space-12);
+    padding: var(--space-14) 0;
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .criteria-table-grid tbody tr:last-child {
+    border-bottom: 0;
+  }
+
+  .criteria-table-grid th,
+  .criteria-table-grid td {
+    width: auto;
+    padding: 0;
+    border-bottom: 0;
+  }
+
+  .criteria-table-label {
+    grid-column: 1;
+  }
+
+  .criteria-table-grid .criteria-table-reading {
+    grid-column: 2;
+    grid-row: 1;
+  }
+
+  .criteria-table-business,
+  .criteria-table-zone {
+    grid-column: 1 / -1;
+  }
+}

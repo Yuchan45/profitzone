@@ -1,0 +1,49 @@
+.checkbox {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-10);
+  color: var(--color-text);
+  font-size: var(--text-13);
+  line-height: 1.4;
+  cursor: pointer;
+}
+
+/* El input real queda invisible encima de la caja: mantiene teclado y foco nativos */
+.checkbox-input {
+  position: absolute;
+  width: 18px;
+  height: 18px;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.checkbox-box {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 18px;
+  height: 18px;
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-xs);
+  background-color: var(--color-surface);
+  color: transparent;
+  transition:
+    background-color 0.15s ease,
+    border-color 0.15s ease;
+}
+
+.checkbox-input:checked + .checkbox-box {
+  border-color: var(--color-primary);
+  background-color: var(--color-primary);
+  color: var(--color-white);
+}
+
+.checkbox-input:focus-visible + .checkbox-box {
+  box-shadow: var(--focus-ring);
+}
+
+.checkbox--invalid .checkbox-box {
+  border-color: var(--color-error);
+}

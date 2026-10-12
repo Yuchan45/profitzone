@@ -1,0 +1,4 @@
+/* Alto aproximado de la card con 5 preguntas, para que no salte el layout al cargar */
+.negocio-skeleton {
+  min-height: 560px;
+}
