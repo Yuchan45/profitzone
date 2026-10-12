@@ -68,6 +68,7 @@ si dice **"API conectada"**, el front está hablando con el back correctamente.
 | `npm run db:seed:catalog` | Carga/actualiza el catálogo base (idempotente) |
 | `npm run db:seed:catalog:verify` | Verifica el seed (conteos, idempotencia) |
 | `npm run db:seed:rentals` | Carga locales comerciales en alquiler en SQL Server (idempotente) |
+| `npm run db:seed:osm-places` | Carga los negocios de OpenStreetMap del barrio (+2 km) para la vista previa del paso 3 (idempotente) |
 
 ### `profit-zone-front`
 
@@ -138,20 +139,23 @@ acepta únicamente los orígenes de `CORS_ORIGINS`; cualquier otro recibe **403*
 | `GET`  | `/api/health`      | Estado del servicio y de la DB (503 si la DB no responde)       |
 | `GET`  | `/api/density`     | Densidad censal y demografía en un radio de CABA (query: `lat`, `lng`, `radius`) |
 | `GET`  | `/api/rentals`     | Estadísticas de precios y locales en alquiler en un radio de CABA (query: `lat`, `lng`, `radius`; 503 si no hay avisos cargados) |
-| `GET`  | `/api/competition` | Competidores directos/indirectos en el radio con Google Places  |
+| `GET`  | `/api/competition` | Competidores directos/indirectos en el radio con Google Places. **Requiere sesión** (consume una API paga) |
+| `GET`  | `/api/places/nearby?lat=&lng=&radius=&category=&subcategory=&match=` | Vista previa del paso 3: negocios del rubro dentro del círculo (radio de 100 a 2000 m), desde OpenStreetMap (`osm_data.places`, gratis, sin sesión). `match` (opcional, `pregunta:opción`, ej. `cuisine_type:asian`) marca como `direct` los que coinciden con la cocina elegida. Responde `{ source, updatedAt, total, directTotal, directLabel, places: [{ id, name, lat, lng, direct }] }`. 400 si los parámetros son inválidos |
+| `GET`  | `/api/places/:id` | Ficha de un negocio de la vista previa (datos de OpenStreetMap, sin sesión): `{ id, kind, name, cuisines, lat, lng, details, source, updatedAt }`. `details` trae solo lo que el local tenga cargado en OSM (`street`, `houseNumber`, `openingHours`, `phone`, `website`, `instagram`, `facebook`, `outdoorSeating`, `delivery`, `takeaway`, `wheelchair`). 404 si no existe |
 | `GET`  | `/api/traffic`     | Afluencia horaria (7h-23h) y score por franja horaria           |
 | `GET`  | `/api/categories`  | Categorías (rubros) con subcategorías y términos de búsqueda (query: `active`) |
 | `GET`  | `/api/categories/:code` | Una categoría con sus subcategorías (404 si no existe)     |
 | `GET`  | `/api/categories/:categoryCode/subcategories/:subcategoryCode/questions` | Encuesta completa de un rubro (`business` y `details`) |
 | `GET`  | `/api/questions`   | Banco de preguntas con opciones y asignaciones (query: `scope`, `active`) |
 | `GET`  | `/api/questions/:code` | Una pregunta con sus opciones en orden (404 si no existe)   |
-| `POST` | `/api/analyses` | Crea un análisis en borrador con el rubro y las respuestas (`{ categoryCode, subcategoryCode, answers }`). 201; 400 si faltan obligatorias o hay respuestas inválidas. Sin sesión queda sin dueño; con sesión, a nombre del usuario. Un análisis con dueño solo lo ve su dueño (404 para el resto) |
+| `POST` | `/api/analyses` | Crea un análisis en borrador con el rubro y las respuestas (`{ categoryCode, subcategoryCode, answers }`). 201; 400 si faltan obligatorias o hay respuestas inválidas. Queda a nombre del usuario. **Todos los endpoints de `/api/analyses` requieren sesión** (401 sin ella) y cada análisis solo lo ve su dueño (404 para el resto) |
 | `GET`  | `/api/analyses/:id` | Un análisis con su rubro, ubicación y respuestas (404 si no existe) |
 | `GET`  | `/api/analyses/:id/report` | Reporte de zona: indicadores del punto y radio, cuadro de fortalezas y debilidades cruzado con las respuestas y resumen (409 si el análisis no tiene ubicación) |
 | `PUT`  | `/api/analyses/:id/answers` | Reemplaza todas las respuestas (`{ answers }`), con las mismas validaciones que el alta |
-| `PATCH` | `/api/analyses/:id/location` | Guarda el punto y el radio (`{ lat, lng, radius }`, radio entero entre 200 y 600 m, dentro de Palermo; 422 si cae afuera). **Requiere sesión**: el análisis queda a nombre del usuario |
+| `PATCH` | `/api/analyses/:id/location` | Guarda el punto y el radio (`{ lat, lng, radius }`, radio entero entre 200 y 600 m, dentro de Palermo; 422 si cae afuera). Se llama al tocar "Analizar zona" |
 | `GET`  | `/api/neighborhoods` | Barrios donde se puede analizar (MVP: Palermo) con su contorno `[lat, lng]`, sus límites (`bounds`) y un centro ponderado por población, calculados desde el censo |
 | `GET`  | `/api/geocode?q=` | Autocompletado de direcciones dentro de Palermo: `[{ type, label, lat?, lng?, detail? }]`. Sin número sugiere calles (`street`, sin coordenadas) y lugares (`place`); con número ("gurruchaga 16") completa la altura (`address`: Gurruchaga 1600). Combina Photon (OSM) y el normalizador del GCBA (USIG). 400 si la búsqueda tiene menos de 3 o más de 120 caracteres; 502 si los servicios externos no responden |
+| `GET`  | `/api/geocode/reverse?lat=&lng=` | Dirección más cercana a un punto de Palermo, para completar el buscador cuando el punto se elige en el mapa: `{ label }` (`label: null` si no hay una dirección cerca o el punto cae fuera del barrio). Usa la búsqueda inversa de USIG y, si falla, Photon. 400 si las coordenadas son inválidas; 502 si los dos servicios fallan |
 | `POST` | `/api/auth/register` | Crea la cuenta (`firstName`, `lastName`, `email`, `password`). 201 `{ user, accessToken }` + cookie de refresh; 409 si el correo existe |
 | `POST` | `/api/auth/login` | Inicia sesión. 200 `{ user, accessToken }` + cookie de refresh; 401 genérico si falla |
 | `POST` | `/api/auth/refresh` | Renueva la sesión con la cookie `pz_refresh` (rotación). 200 `{ user, accessToken }`; 401 si venció o fue revocada |

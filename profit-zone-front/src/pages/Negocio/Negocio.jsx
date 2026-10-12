@@ -1,6 +1,7 @@
 import { useEffect } from 'react'
 import { Navigate, useNavigate, useSearchParams } from 'react-router-dom'
 import { useAnalysisFlow } from '../../hooks/useAnalysisFlow.js'
+import { useAuth } from '../../hooks/useAuth.js'
 import { useFlowSteps } from '../../hooks/useFlowSteps.js'
 import { useSubcategorySurvey } from '../../hooks/useSubcategorySurvey.js'
 import { useSaveAnalysis } from '../../hooks/useSaveAnalysis.js'
@@ -30,8 +31,9 @@ function isAnswered(answers, questions) {
 }
 
 function Negocio() {
-  const { categoryCode, subcategoryCode, answers, setAnswer, setRequiredQuestions } =
+  const { categoryCode, subcategoryCode, answers, setAnswer, setRequiredQuestions, setAnalysisId } =
     useAnalysisFlow()
+  const { status: authStatus } = useAuth()
   const navigate = useNavigate()
   const saveAnalysis = useSaveAnalysis()
   const steps = useFlowSteps()
@@ -74,9 +76,16 @@ function Negocio() {
 
   const showDetails = wantsDetails && status === 'ok'
 
-  // Al terminar el paso se guarda el análisis en la API y se avanza al paso 3
+  // Al terminar el paso se avanza al paso 3. Con sesión, el análisis se guarda antes en la
+  // API; sin sesión las respuestas quedan solo en el front hasta "Analizar zona", que pide cuenta
   const handleFinish = async () => {
-    const saved = await saveAnalysis.save(visibleQuestions.map((q) => q.code))
+    let saved = true
+    if (authStatus === 'authenticated') {
+      saved = await saveAnalysis.save(visibleQuestions.map((q) => q.code))
+    } else {
+      // Un análisis guardado antes (con otra sesión) ya no tiene estas respuestas: se crea otro
+      setAnalysisId(null)
+    }
     // El paso 3 (Ubicación) todavía no tiene vista: se avanza cuando tenga ruta
     const nextPath = FLOW_STEPS.find((step) => step.id === 'ubicacion').path
     if (saved && nextPath) navigate(nextPath)
