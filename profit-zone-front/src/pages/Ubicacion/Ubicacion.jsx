@@ -22,6 +22,7 @@ import Button from '../../components/atoms/Button/Button.jsx'
 import Divider from '../../components/atoms/Divider/Divider.jsx'
 import { isPointInPolygons, walkingMinutes } from '../../utils/geo.js'
 import { toAuthFormError } from '../../utils/apiErrors.js'
+import { FLOW_STEPS } from '../../utils/flowSteps.js'
 import { visibleQuestions } from '../../utils/hiddenQuestions.js'
 import './Ubicacion.css'
 
@@ -62,8 +63,8 @@ function buildSummaryRows(survey, answers) {
 }
 
 function Ubicacion() {
-  const { analysisId, categoryCode, subcategoryCode, answers, location, setLocation } =
-    useAnalysisFlow()
+  const flow = useAnalysisFlow()
+  const { categoryCode, subcategoryCode, answers, location, setLocation } = flow
   const { status: authStatus, register, login } = useAuth()
   const navigate = useNavigate()
   const steps = useFlowSteps()
@@ -85,8 +86,9 @@ function Ubicacion() {
     return () => clearTimeout(timer)
   }, [query, suggestionsEnabled, searchSuggestions])
 
-  // Sin análisis guardado (paso 2 sin terminar) no se puede elegir la zona
-  if (!analysisId) {
+  // Con el paso 2 sin terminar no se puede elegir la zona. Sin sesión el análisis
+  // todavía no existe en la API: se crea recién en "Analizar zona"
+  if (!FLOW_STEPS.find((step) => step.id === 'negocio').isComplete(flow)) {
     return <Navigate to="/analizar/negocio" replace />
   }
 

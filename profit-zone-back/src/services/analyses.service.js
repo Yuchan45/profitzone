@@ -62,9 +62,8 @@ function sameId(a, b) {
 }
 
 /**
- * Busca el análisis y verifica el acceso: un análisis con dueño solo lo ve su
- * dueño. Para cualquier otro (o sin sesión) responde 404, sin revelar que existe.
- * `userId` es el usuario de la sesión o null.
+ * Busca el análisis y verifica el acceso: solo lo ve su dueño. Para cualquier
+ * otro usuario responde 404, sin revelar que existe. `userId` es el usuario de la sesión.
  */
 async function findAnalysis(id, userId, { transaction } = {}) {
   // Un id con otro formato haría fallar la conversión a uniqueidentifier en SQL Server
@@ -91,7 +90,7 @@ async function findAnalysis(id, userId, { transaction } = {}) {
   })
 
   if (!analysis) throw notFound(id)
-  if (analysis.userId && !(userId && sameId(analysis.userId, userId))) throw notFound(id)
+  if (!sameId(analysis.userId, userId)) throw notFound(id)
   return analysis
 }
 
@@ -169,8 +168,8 @@ export async function getAnalysis(id, userId) {
 }
 
 /**
- * Crea un análisis en borrador con el rubro y las respuestas del paso 2.
- * Con sesión queda a nombre del usuario; sin sesión se asigna al guardar la ubicación.
+ * Crea un análisis en borrador, a nombre del usuario, con el rubro y las respuestas
+ * del paso 2. Sin sesión no se crea: el flujo anónimo vive solo en el front.
  */
 export async function createAnalysis({ categoryCode, subcategoryCode, answers }, userId) {
   const answerRows = await buildAnswerRows(categoryCode, subcategoryCode, answers)
@@ -182,7 +181,7 @@ export async function createAnalysis({ categoryCode, subcategoryCode, answers },
 
   const id = await sequelize.transaction(async (transaction) => {
     const analysis = await Analysis.create(
-      { subcategoryId: subcategory.id, userId: userId ?? null },
+      { subcategoryId: subcategory.id, userId },
       { transaction },
     )
     await AnalysisAnswer.bulkCreate(
@@ -219,8 +218,7 @@ export async function replaceAnalysisAnswers(id, answers, userId) {
 }
 
 /**
- * Guarda el punto y el radio elegidos en el paso 3 ("Analizar zona"). Requiere
- * sesión: si el análisis todavía no tiene dueño, queda a nombre del usuario.
+ * Guarda el punto y el radio elegidos en el paso 3 ("Analizar zona").
  */
 export async function updateAnalysisLocation(id, { lat, lng, radius }, userId) {
   if (!Number.isInteger(radius) || radius < RADIUS_MIN_M || radius > RADIUS_MAX_M) {
@@ -234,7 +232,6 @@ export async function updateAnalysisLocation(id, { lat, lng, radius }, userId) {
     centerLat: lat,
     centerLng: lng,
     radiusM: radius,
-    userId: analysis.userId ?? userId,
   })
   return getAnalysis(id, userId)
 }
