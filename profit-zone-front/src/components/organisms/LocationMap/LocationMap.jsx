@@ -90,6 +90,7 @@ function FollowPoint({ point, focusKey }) {
  * `places` (opcional): negocios del rubro en el radio, como puntos; los de
  * competencia directa (`direct`) se destacan. Un click en un negocio llama a
  * `onPlaceSelect(id)` (no mueve el punto) y `selectedPlaceId` lo marca en el mapa.
+ * `readOnly`: solo muestra el punto y el radio, sin moverlos (paso 4, Análisis).
  */
 function LocationMap({
   center,
@@ -105,6 +106,7 @@ function LocationMap({
   places = [],
   selectedPlaceId = null,
   onPlaceSelect,
+  readOnly = false,
 }) {
   // Memo: FitMinZoom depende de este objeto
   const maxBounds = useMemo(
@@ -193,7 +195,7 @@ function LocationMap({
             <Marker
               position={[point.lat, point.lng]}
               icon={markerIcon}
-              draggable
+              draggable={!readOnly}
               keyboard={false}
               eventHandlers={{
                 dragend: (event) => {
@@ -210,14 +212,16 @@ function LocationMap({
             />
           </>
         )}
-        <PickOnClick onPick={handleMapClick} />
+        {!readOnly && <PickOnClick onPick={handleMapClick} />}
         <FitMinZoom bounds={maxBounds} />
         <WatchZoom onZoom={setZoom} />
         <FollowPoint point={point} focusKey={focusKey} />
       </MapContainer>
-      <p className="location-map-hint">
-        {point ? 'Arrastrá el marcador para mover el punto' : 'Hacé click en el mapa para marcar tu punto'}
-      </p>
+      {!readOnly && (
+        <p className="location-map-hint">
+          {point ? 'Arrastrá el marcador para mover el punto' : 'Hacé click en el mapa para marcar tu punto'}
+        </p>
+      )}
     </div>
   )
 }

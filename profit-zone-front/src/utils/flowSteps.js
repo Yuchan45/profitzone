@@ -1,6 +1,13 @@
 // Pasos del flujo de análisis que muestra el Stepper en cada página de /analizar.
-// `path: null` = el paso todavía no tiene vista. `isComplete` recibe el estado del
-// AnalysisFlowContext y dice si el paso quedó listo para avanzar.
+// `path` es la vista del paso: un string, o una función que recibe el estado del
+// AnalysisFlowContext y devuelve null mientras no se puede entrar. `isComplete` recibe
+// ese mismo estado y dice si el paso quedó listo para avanzar.
+
+// El análisis (paso 4) y el reporte (paso 5) se arman con el mismo pedido a la API: se puede
+// volver a ellos una vez que salió bien, hasta que cambie algo de lo que respondió el usuario.
+const isReportReady = (flow) => Boolean(flow.analysisId) && flow.reportReadyFor === flow.analysisId
+const readyPath = (prefix) => (flow) => (isReportReady(flow) ? `${prefix}/${flow.analysisId}` : null)
+
 export const FLOW_STEPS = [
   {
     id: 'rubro',
@@ -24,6 +31,6 @@ export const FLOW_STEPS = [
     path: '/analizar/ubicacion',
     isComplete: (flow) => Boolean(flow.analysisId && flow.location),
   },
-  { id: 'analisis', label: 'Análisis', path: null, isComplete: () => false },
-  { id: 'reporte', label: 'Reporte', path: null, isComplete: () => false },
+  { id: 'analisis', label: 'Análisis', path: readyPath('/analizar/analisis'), isComplete: isReportReady },
+  { id: 'reporte', label: 'Reporte', path: readyPath('/analizar/reporte'), isComplete: isReportReady },
 ]

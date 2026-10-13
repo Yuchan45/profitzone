@@ -1,0 +1,156 @@
+.indicator-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-16);
+  padding: var(--space-24);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-xl);
+  background-color: var(--color-surface);
+}
+
+.indicator-card-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-10);
+}
+
+.indicator-card-title {
+  flex: 1;
+  margin: 0;
+  font-size: var(--text-16);
+  font-weight: 700;
+}
+
+.indicator-card-headline {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-4) var(--space-10);
+  margin: 0;
+}
+
+.indicator-card-value {
+  font-family: var(--font-heading);
+  font-size: var(--text-32);
+  font-weight: 700;
+  line-height: 1.1;
+  color: var(--color-text);
+}
+
+.indicator-card-caption {
+  flex: 1;
+  min-width: 160px;
+  color: var(--color-text-secondary);
+  font-size: var(--text-14);
+  line-height: 1.45;
+}
+
+.indicator-card-callout {
+  margin: 0;
+  padding: var(--space-12) var(--space-14);
+  border-radius: var(--radius-md);
+  background-color: var(--color-surface-subtle);
+  color: var(--color-text);
+  font-size: var(--text-14);
+  font-weight: 500;
+  line-height: 1.45;
+}
+
+.indicator-card-source {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-6);
+  margin: 0;
+  color: var(--color-text-tertiary);
+  font-size: var(--text-12);
+  line-height: 1.4;
+}
+
+.indicator-card-source .icon {
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+/* Error y sin datos */
+.indicator-card-message {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-6);
+}
+
+.indicator-card-message-title {
+  margin: 0;
+  font-family: var(--font-heading);
+  font-size: var(--text-16);
+  font-weight: 700;
+}
+
+.indicator-card-message-text {
+  margin: 0;
+  color: var(--color-text-secondary);
+  font-size: var(--text-14);
+  line-height: 1.5;
+}
+
+.indicator-card-retry {
+  margin-top: var(--space-10);
+}
+
+/* Cargando */
+.indicator-card-skeleton {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-12);
+}
+
+.indicator-card-skeleton-value,
+.indicator-card-skeleton-line,
+.indicator-card-skeleton-block {
+  display: block;
+  border-radius: var(--radius-sm);
+  background: linear-gradient(
+    90deg,
+    var(--color-surface-subtle) 0%,
+    var(--color-border) 50%,
+    var(--color-surface-subtle) 100%
+  );
+  background-size: 200% 100%;
+  animation: indicator-card-shimmer 1.4s ease-in-out infinite;
+}
+
+.indicator-card-skeleton-value {
+  width: 120px;
+  height: 28px;
+}
+
+.indicator-card-skeleton-line {
+  width: 75%;
+  height: 12px;
+}
+
+.indicator-card-skeleton-line--short {
+  width: 50%;
+}
+
+.indicator-card-skeleton-block {
+  height: 80px;
+  border-radius: var(--radius-md);
+}
+
+@keyframes indicator-card-shimmer {
+  from {
+    background-position: 100% 0;
+  }
+  to {
+    background-position: -100% 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .indicator-card-skeleton-value,
+  .indicator-card-skeleton-line,
+  .indicator-card-skeleton-block {
+    animation: none;
+  }
+}

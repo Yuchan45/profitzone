@@ -11,9 +11,10 @@ export function useFlowSteps() {
 
   return FLOW_STEPS.map((step, index) => {
     const previousComplete = FLOW_STEPS.slice(0, index).every((s) => s.isComplete(flow))
+    const path = typeof step.path === 'function' ? step.path(flow) : step.path
     return {
       label: step.label,
-      to: step.path && previousComplete ? step.path : null,
+      to: path && previousComplete ? path : null,
     }
   })
 }
