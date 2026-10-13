@@ -13,6 +13,7 @@ import Negocio from './pages/Negocio/Negocio.jsx'
 import Registro from './pages/Registro/Registro.jsx'
 import Login from './pages/Login/Login.jsx'
 import Reporte from './pages/Reporte/Reporte.jsx'
+import Terminos from './pages/Terminos/Terminos.jsx'
 import NotFound from './pages/NotFound.jsx'
 
 // Los pasos de ubicación y análisis traen Leaflet (~150 kB): se cargan recién al entrar al paso
@@ -61,6 +62,7 @@ function App() {
         <Route path="/" element={<Home />} />
       </Route>
       <Route element={<MainLayout />}>
+        <Route path="/terminos" element={<Terminos />} />
         {/* Requieren sesión */}
         <Route element={<ProtectedRoute />}>
           <Route path="/dashboard" element={<Dashboard />} />

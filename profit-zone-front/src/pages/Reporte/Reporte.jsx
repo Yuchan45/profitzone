@@ -6,6 +6,7 @@ import CriteriaTable from '../../components/organisms/CriteriaTable/CriteriaTabl
 import StepHeading from '../../components/molecules/StepHeading/StepHeading.jsx'
 import StatusMessage from '../../components/molecules/StatusMessage/StatusMessage.jsx'
 import StatTile from '../../components/molecules/StatTile/StatTile.jsx'
+import DisclaimerCard from '../../components/molecules/DisclaimerCard/DisclaimerCard.jsx'
 import Button from '../../components/atoms/Button/Button.jsx'
 import { formatCurrency, formatDate, formatNumber } from '../../utils/formatters.js'
 import './Reporte.css'
@@ -120,6 +121,8 @@ function Reporte() {
               ))}
             </ul>
           </section>
+
+          <DisclaimerCard />
         </>
       )}
 

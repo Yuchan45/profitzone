@@ -1,0 +1,98 @@
+.disclaimer-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-12);
+  padding: var(--space-28);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-xl);
+  background-color: var(--color-surface);
+}
+
+.disclaimer-card__header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-10);
+}
+
+.disclaimer-card__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-warning-dark);
+  flex-shrink: 0;
+}
+
+.disclaimer-card__title {
+  margin: 0;
+  font-size: var(--text-20);
+  font-weight: 700;
+  color: var(--color-text);
+}
+
+.disclaimer-card__body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-8);
+}
+
+.disclaimer-card__text {
+  margin: 0;
+  font-size: var(--text-13);
+  line-height: 1.55;
+  color: var(--color-text-secondary);
+}
+
+.disclaimer-card__link {
+  align-self: flex-start;
+  font-size: var(--text-13);
+  font-weight: 600;
+  color: var(--color-primary-dark);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  transition: opacity 0.15s ease;
+}
+
+.disclaimer-card__link:hover {
+  opacity: 0.8;
+}
+
+/* Modificador compacto (para vistas intermedias o flujos acotados) */
+.disclaimer-card--compact {
+  flex-direction: row;
+  align-items: flex-start;
+  gap: var(--space-12);
+  padding: var(--space-12) var(--space-16);
+  border: 1px solid var(--color-border);
+  border-left: 3px solid var(--color-warning);
+  border-radius: var(--radius-lg);
+  background-color: var(--color-surface-subtle);
+}
+
+.disclaimer-card--compact .disclaimer-card__icon {
+  margin-top: 2px;
+}
+
+.disclaimer-card__compact-body {
+  flex: 1;
+}
+
+.disclaimer-card--compact .disclaimer-card__text {
+  font-size: var(--text-13);
+  line-height: 1.55;
+}
+
+.disclaimer-card--compact .disclaimer-card__link {
+  display: inline;
+  margin-left: var(--space-6);
+}
+
+@media (max-width: 720px) {
+  .disclaimer-card {
+    padding: var(--space-20);
+  }
+
+  .disclaimer-card--compact {
+    padding: var(--space-12);
+  }
+}
+
