@@ -227,10 +227,11 @@ export async function updateAnalysisLocation(id, { lat, lng, radius }, { id: use
   if (!Number.isInteger(radius) || radius < RADIUS_MIN_M || radius > RADIUS_MAX_M) {
     throw badRequest(`El radio debe ser un número entero entre ${RADIUS_MIN_M} y ${RADIUS_MAX_M} metros.`)
   }
+  // Primero el dueño: un análisis ajeno o inexistente responde 404, no el límite del plan
+  const analysis = await findAnalysis(id, userId)
   if (radius > RADIUS_FREE_MAX_M && !UNLIMITED_RADIUS_ROLES.includes(role)) {
     throw httpError(403, `Los radios de más de ${RADIUS_FREE_MAX_M} m son para planes pagos.`)
   }
-  const analysis = await findAnalysis(id, userId)
   if (!(await findAvailableNeighborhood(lat, lng))) {
     throw httpError(422, `Elegí un punto dentro de ${availableNeighborhoodNames()}.`)
   }

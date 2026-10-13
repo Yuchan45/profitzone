@@ -17,18 +17,18 @@ const reportCache = new Map()
  */
 export function useAnalysisReport(analysisId, { reuse = false } = {}) {
   const [attempt, setAttempt] = useState(0)
-  // `forKey` evita mostrar el resultado anterior mientras carga el de otro análisis
-  // (React Router reutiliza la página al cambiar el :id) o mientras se reintenta
-  const key = `${analysisId}:${attempt}`
-  const [state, setState] = useState({ ...LOADING, forKey: key })
   const { user } = useAuth()
   const cacheKey = `${user?.id}:${analysisId}`
+  // `forKey` evita mostrar el resultado anterior mientras carga el de otro análisis
+  // (React Router reutiliza la página al cambiar el :id), el de otro usuario o mientras se reintenta
+  const key = `${cacheKey}:${attempt}`
+  const [state, setState] = useState({ ...LOADING, forKey: key })
   const useCached = reuse && attempt === 0 && reportCache.has(cacheKey)
 
   useEffect(() => {
     if (useCached) return undefined
     let cancelled = false
-    const forKey = `${analysisId}:${attempt}`
+    const forKey = `${cacheKey}:${attempt}`
 
     fetchAnalysisReport(analysisId)
       .then((data) => {
