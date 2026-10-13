@@ -103,7 +103,7 @@ headers `Content-Type` y `Authorization`, y cachea el preflight 24 h.
 
 ### `GET /api/density`
 
-Calcula la densidad poblacional, viviendas, hogares y nivel socioeconómico (% NBI) para un círculo definido por un punto central y un radio de influencia sobre la Ciudad Autónoma de Buenos Aires (CABA).
+Calcula la densidad poblacional, viviendas, hogares, nivel socioeconómico (% NBI), distribución por rangos de edad (`kids`, `young`, `adults`, `seniors`) y distribución por sexo (`mujeres` / `varones`, índice de feminidad y predominio) para un círculo definido por un punto central y un radio de influencia sobre la Ciudad Autónoma de Buenos Aires (CABA).
 
 #### Parámetros de consulta (Query Params)
 
@@ -113,11 +113,48 @@ Calcula la densidad poblacional, viviendas, hogares y nivel socioeconómico (% N
 | `lng`     | `number` | Sí        | —       | Longitud en grados decimales (rango: `-180` a `180`). Ej: `-58.4300`. |
 | `radius`  | `number` | No        | `500`   | Radio de búsqueda en metros (entero entre `10` y `20000`). Ej: `1000`. |
 
-#### Ejemplo de solicitud
+#### Ejemplo de solicitud y respuesta
 
 ```http
-GET /api/density?lat=-34.5880&lng=-58.4300&radius=1000 HTTP/1.1
+GET /api/density?lat=-34.5880&lng=-58.4300&radius=500 HTTP/1.1
 Host: localhost:8080
+```
+
+```json
+{
+  "center": { "lat": -34.588, "lng": -58.43 },
+  "radiusInMeters": 500,
+  "bufferAreaKm2": 0.7854,
+  "bufferAreaHa": 78.54,
+  "radiosInterceptados": 26,
+  "poblacionEstimada": 9042,
+  "densidadHabKm2": 11513,
+  "densidadHabHa": 115.13,
+  "viviendasEstimadas": 5172,
+  "hogaresEstimados": 3868,
+  "hogaresNbiEstimados": 269,
+  "porcentajeNbi": 6.95,
+  "distribucionPorEdad": {
+    "kids": { "code": "kids", "label": "Familias / niños (0–14)", "range": "0-14", "poblacionEstimada": 957, "porcentaje": 10.58 },
+    "young": { "code": "young", "label": "Jóvenes (15–34)", "range": "15-34", "poblacionEstimada": 2849, "porcentaje": 31.51 },
+    "adults": { "code": "adults", "label": "Adultos (35–59)", "range": "35-59", "poblacionEstimada": 3096, "porcentaje": 34.24 },
+    "seniors": { "code": "seniors", "label": "Adultos mayores (60+)", "range": "60+", "poblacionEstimada": 2141, "porcentaje": 23.68 },
+    "grupoPredominante": { "code": "adults", "label": "Adultos (35–59)", "porcentaje": 34.24 }
+  },
+  "distribucionPorSexo": {
+    "mujeresEstimadas": 4926,
+    "varonesEstimados": 4116,
+    "porcentajeMujeres": 54.48,
+    "porcentajeVarones": 45.52,
+    "indiceFeminidad": 119.7,
+    "diferencia": 810,
+    "predominio": "mujeres",
+    "callout": "En la zona hay más mujeres que varones (54,48% vs. 45,52%, 119,7 mujeres cada 100 varones)."
+  },
+  "barrios": ["PALERMO"],
+  "comunas": [14],
+  "inCoverage": true
+}
 ```
 
 #### Metodología de cálculo (Ponderación Areal)
@@ -126,7 +163,7 @@ El cálculo se ejecuta en el motor espacial nativo de SQL Server 2022 (`geograph
 1. Se genera un buffer circular con `geography::Point(@lat, @lng, 4326).STBuffer(@radius)`.
 2. Se detectan los radios censales intersectados con `geom.STIntersects(@buffer) = 1`.
 3. Para cada radio censal, se calcula la fracción de área contenida dentro del círculo con `geom.STIntersection(@buffer).STArea() / geom.STArea()`.
-4. Los habitantes, viviendas y hogares se ponderan proporcionalmente a dicha fracción, garantizando precisión sin sobreestimar radios censales parcialmente intersectados.
+4. Los habitantes, viviendas, hogares, rangos etarios (`edad_0_14`, `edad_15_34`, `edad_35_59`, `edad_60_mas`) y población por sexo (`mujeres`, `varones`) se ponderan proporcionalmente a dicha fracción, garantizando precisión sin sobreestimar radios censales parcialmente intersectados.
 
 ### `GET /api/competition`
 
@@ -368,7 +405,7 @@ borra: lo que se saca del archivo queda en la DB (el catálogo usado se
 desactiva con `is_active = 0`). Corre todo en una transacción.
 
 ### Densidad Base (seed)
-`npm run db:seed:census` carga en la base datos iniciales radiales para calcular la densidad poblacional. Los datos lo carga desde `src\db\seeders\data\caba_census_radios.geojson` que fue descargado desde `https://cdn.buenosaires.gob.ar/datosabiertos/datasets/informacion-censal-por-radio/CABA_rc.geojson` 
+`npm run db:seed:census` carga en la base datos iniciales radiales para calcular la densidad poblacional y demografía. Los datos se cargan desde `src\db\seeders\data\caba_census_radios.geojson` (descargado desde `https://cdn.buenosaires.gob.ar/datosabiertos/datasets/informacion-censal-por-radio/CABA_rc.geojson` y enriquecido con los Indicadores 182, 514 y 174 del Censo 2022 del Geoportal INDEC mediante `node scripts/fetch-indec-demographics.js`).
 
 |Variable|Tipo|Significado|
 |--------|----|-----------|
@@ -379,6 +416,12 @@ POBLACION|	Conteo real|	Cantidad exacta de personas censadas en esas manzanas.|
 VIVIENDAS|	Conteo real|	Total de unidades habitacionales particulares y colectivas.|
 HOGARES|	Conteo real|	Total de hogares censados en el radio.|
 HOGARES_NBI|	Indicador| INDEC	Hogares con Necesidades Básicas Insatisfechas (mide hacinamiento, calidad de vivienda, saneamiento y escolaridad).|
+EDAD_0_14|	Conteo estimado|	Población de 0 a 14 años en el radio (`kids`, INDEC Censo 2022).|
+EDAD_15_34|	Conteo estimado|	Población de 15 a 34 años en el radio (`young`, INDEC Censo 2022).|
+EDAD_35_59|	Conteo estimado|	Población de 35 a 59 años en el radio (`adults`, INDEC Censo 2022).|
+EDAD_60_MAS|	Conteo estimado|	Población de 60 años y más en el radio (`seniors`, INDEC Censo 2022).|
+MUJERES|	Conteo estimado|	Población femenina en el radio (INDEC Censo 2022 Indicador 174).|
+VARONES|	Conteo estimado|	Población masculina en el radio (INDEC Censo 2022 Indicador 174).|
 AREA_KM2|	Geometría|Superficie real del polígono calculada por la cartografía oficial.|
 geometry|	MultiPolygon|	Coordenadas vectoriales exactas de los límites de las manzanas en WGS84.|
 
