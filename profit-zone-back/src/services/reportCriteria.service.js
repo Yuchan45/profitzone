@@ -254,6 +254,11 @@ export function accessibilityCriterion({ answerLabel }) {
   return noSourceCriterion('accessibility', 'Accesibilidad', answerLabel('arrival_type'))
 }
 
+/** Lugares de interés según el público (ej. institutos educativos): sin fuente todavía. */
+export function placesForAudienceCriterion({ answerLabel }) {
+  return noSourceCriterion('places_for_audience', 'Según tu público', answerLabel('target_age'))
+}
+
 export const CRITERIA = [
   costCriterion,
   audienceCriterion,
@@ -261,6 +266,7 @@ export const CRITERIA = [
   arrivalCriterion,
   competitionCriterion,
   accessibilityCriterion,
+  placesForAudienceCriterion,
 ]
 
 // good = fortaleza, alert = alerta, bad = debilidad
@@ -286,6 +292,11 @@ const SUMMARY_PHRASES = {
     bad: 'competencia directa alta',
   },
   accessibility: { good: 'buena accesibilidad', alert: 'accesibilidad regular', bad: 'accesibilidad limitada' },
+  places_for_audience: {
+    good: 'lugares cerca que atraen a tu público',
+    alert: 'algunos lugares cerca que atraen a tu público',
+    bad: 'pocos lugares cerca que atraigan a tu público',
+  },
 }
 
 const READING_PHRASE = { weakness: 'bad', alert: 'alert' }

@@ -106,7 +106,7 @@ function buildSources({ competition, traffic, density, rent }) {
     )
   }
   if (rent.status === 'ok') sources.push('Alquiler: avisos de locales comerciales en alquiler publicados en ZonaProp.')
-  sources.push('Accesibilidad: todavía sin fuente de datos.')
+  sources.push('Accesibilidad y lugares según tu público: todavía sin fuente de datos.')
   return sources
 }
 
