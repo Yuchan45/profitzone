@@ -16,6 +16,7 @@ const COLUMNS = [
       { label: 'Sobre nosotros', href: '/sobre-nosotros' },
       { label: 'Contacto', href: '/contacto' },
       { label: 'Privacidad', href: '/privacidad' },
+      { label: 'Términos y condiciones', href: '/terminos' },
     ],
   },
 ]

@@ -12,6 +12,7 @@ import StepHeading from '../../components/molecules/StepHeading/StepHeading.jsx'
 import StatusMessage from '../../components/molecules/StatusMessage/StatusMessage.jsx'
 import IndicatorCard from '../../components/molecules/IndicatorCard/IndicatorCard.jsx'
 import HourlyBars from '../../components/atoms/HourlyBars/HourlyBars.jsx'
+import DisclaimerCard from '../../components/molecules/DisclaimerCard/DisclaimerCard.jsx'
 import Button from '../../components/atoms/Button/Button.jsx'
 import Icon from '../../components/atoms/Icon/Icon.jsx'
 import { formatCurrency, formatDate, formatNumber } from '../../utils/formatters.js'
@@ -323,6 +324,8 @@ function Analisis() {
           </div>
         )}
       </div>
+
+      {report.status === 'ok' && <DisclaimerCard compact />}
 
       <div className="flow-step-actions">
         {/* Un análisis de fuera del flujo en curso (ej. desde Mis reportes) no tiene paso anterior */}
