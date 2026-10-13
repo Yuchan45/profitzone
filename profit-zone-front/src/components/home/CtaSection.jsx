@@ -12,7 +12,7 @@ function CtaSection() {
           Elegí un punto en Palermo y obtené tu reporte en minutos.
         </p>
         <Button asChild size="lg" className="mt-8 h-11 px-6 font-semibold">
-          <Link to="/analizar/rubro">Analizar una zona</Link>
+          <Link to="/analizar/rubro" state={{ newAnalysis: true }}>Analizar una zona</Link>
         </Button>
       </div>
     </section>

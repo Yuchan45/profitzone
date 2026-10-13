@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { AnalysisFlowContext } from './analysisFlowContextValue.js'
 
 // Se guarda en sessionStorage: sobrevive a un refresh y se borra al cerrar la pestaña.
@@ -33,6 +34,22 @@ function readStoredState() {
 /** Estado compartido entre los pasos del flujo de análisis (rubro → negocio → …). */
 export function AnalysisFlowProvider({ children }) {
   const [state, setState] = useState(readStoredState)
+  const location = useLocation()
+  const navigate = useNavigate()
+  const startsNewAnalysis = Boolean(location.state?.newAnalysis)
+  const [resetForKey, setResetForKey] = useState(null)
+
+  // Los botones de "Analizar una zona" y "Nuevo análisis" navegan con { newAnalysis: true }:
+  // se descarta lo guardado del análisis anterior. Se hace en el render para no mostrar los datos viejos.
+  if (startsNewAnalysis && resetForKey !== location.key) {
+    setResetForKey(location.key)
+    setState(INITIAL_STATE)
+  }
+
+  // Se limpia el flag del historial para que un refresh no vuelva a resetear
+  useEffect(() => {
+    if (startsNewAnalysis) navigate(location.pathname, { replace: true, state: null })
+  }, [startsNewAnalysis, location.pathname, navigate])
 
   useEffect(() => {
     try {
