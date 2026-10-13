@@ -4,6 +4,7 @@ import Logo from '../../atoms/Logo/Logo.jsx'
 import Button from '../../atoms/Button/Button.jsx'
 import UserMenu from '../../molecules/UserMenu/UserMenu.jsx'
 import { getInitials } from '../../../utils/userDisplay.js'
+import { NEW_ANALYSIS_LINK } from '../../../utils/flowSteps.js'
 import './Navbar.css'
 
 function Navbar() {
@@ -20,7 +21,7 @@ function Navbar() {
             Iniciar sesión
           </Button>
         )}
-        <Button variant="primary" size="m" to="/analizar/rubro">
+        <Button variant="primary" size="m" {...NEW_ANALYSIS_LINK}>
           Analizar una zona
         </Button>
         {status === 'authenticated' && (

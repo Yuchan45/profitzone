@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
-import { useLocation } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { AnalysisFlowContext } from './analysisFlowContextValue.js'
-import { FLOW_STEPS, isReportReady } from '../utils/flowSteps.js'
+import { isReportReady } from '../utils/flowSteps.js'
 
 // Se guarda en sessionStorage: sobrevive a un refresh y se borra al cerrar la pestaña.
 const STORAGE_KEY = 'profitzone_analysis_flow_v1'
@@ -23,15 +23,10 @@ const INITIAL_STATE = {
   reportReadyFor: null,
 }
 
-const FIRST_STEP_PATH = FLOW_STEPS[0].path
-
-// Entrar al flujo por el paso 1 ("Analizar una zona") retoma un análisis a medio hacer,
-// pero si el guardado ya tiene su reporte, ese análisis terminó: se arranca uno nuevo
-function readStoredState(pathname) {
+function readStoredState() {
   try {
     const raw = sessionStorage.getItem(STORAGE_KEY)
-    const stored = raw ? { ...INITIAL_STATE, ...JSON.parse(raw) } : INITIAL_STATE
-    return pathname === FIRST_STEP_PATH && isReportReady(stored) ? INITIAL_STATE : stored
+    return raw ? { ...INITIAL_STATE, ...JSON.parse(raw) } : INITIAL_STATE
   } catch {
     return INITIAL_STATE
   }
@@ -39,9 +34,26 @@ function readStoredState(pathname) {
 
 /** Estado compartido entre los pasos del flujo de análisis (rubro → negocio → …). */
 export function AnalysisFlowProvider({ children }) {
-  const { pathname } = useLocation()
-  // Solo se lee al montar: es cuando se entra al flujo desde afuera (home, Navbar)
-  const [state, setState] = useState(() => readStoredState(pathname))
+  const [state, setState] = useState(readStoredState)
+  const location = useLocation()
+  const navigate = useNavigate()
+  const startsNewAnalysis = Boolean(location.state?.newAnalysis)
+  const [handledLocationKey, setHandledLocationKey] = useState(null)
+
+  // Los links de NEW_ANALYSIS_LINK ("Analizar una zona", "Nuevo análisis") retoman un análisis
+  // a medio hacer, pero si el guardado ya tiene su reporte, terminó: se arranca uno nuevo.
+  // Se resuelve en el render de la ruta nueva: el reporte ya no está montado y no vuelve a pedirse.
+  if (startsNewAnalysis && handledLocationKey !== location.key) {
+    setHandledLocationKey(location.key)
+    if (isReportReady(state)) setState(INITIAL_STATE)
+  }
+
+  // Se saca el flag del historial para que un refresh no vuelva a aplicarlo
+  useEffect(() => {
+    if (!startsNewAnalysis) return
+    const { pathname, search, hash } = location
+    navigate({ pathname, search, hash }, { replace: true, state: null })
+  }, [startsNewAnalysis, location, navigate])
 
   useEffect(() => {
     try {
@@ -89,8 +101,6 @@ export function AnalysisFlowProvider({ children }) {
       setReportReady: (analysisId) => {
         setState((prev) => (prev.reportReadyFor === analysisId ? prev : { ...prev, reportReadyFor: analysisId }))
       },
-      // "Nuevo análisis": descarta todo lo del análisis anterior
-      reset: () => setState(INITIAL_STATE),
       setRequiredQuestions: (stepId, questionCodes) => {
         setState((prev) => {
           // Evita un render de más si no cambió
