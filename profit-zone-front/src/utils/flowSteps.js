@@ -5,7 +5,7 @@
 
 // El análisis (paso 4) y el reporte (paso 5) se arman con el mismo pedido a la API: se puede
 // volver a ellos una vez que salió bien, hasta que cambie algo de lo que respondió el usuario.
-const isReportReady = (flow) => Boolean(flow.analysisId) && flow.reportReadyFor === flow.analysisId
+export const isReportReady = (flow) => Boolean(flow.analysisId) && flow.reportReadyFor === flow.analysisId
 const readyPath = (prefix) => (flow) => (isReportReady(flow) ? `${prefix}/${flow.analysisId}` : null)
 
 export const FLOW_STEPS = [

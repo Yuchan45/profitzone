@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
-import { useLocation, useNavigate } from 'react-router-dom'
+import { useLocation } from 'react-router-dom'
 import { AnalysisFlowContext } from './analysisFlowContextValue.js'
+import { FLOW_STEPS, isReportReady } from '../utils/flowSteps.js'
 
 // Se guarda en sessionStorage: sobrevive a un refresh y se borra al cerrar la pestaña.
 const STORAGE_KEY = 'profitzone_analysis_flow_v1'
@@ -22,10 +23,15 @@ const INITIAL_STATE = {
   reportReadyFor: null,
 }
 
-function readStoredState() {
+const FIRST_STEP_PATH = FLOW_STEPS[0].path
+
+// Entrar al flujo por el paso 1 ("Analizar una zona") retoma un análisis a medio hacer,
+// pero si el guardado ya tiene su reporte, ese análisis terminó: se arranca uno nuevo
+function readStoredState(pathname) {
   try {
     const raw = sessionStorage.getItem(STORAGE_KEY)
-    return raw ? { ...INITIAL_STATE, ...JSON.parse(raw) } : INITIAL_STATE
+    const stored = raw ? { ...INITIAL_STATE, ...JSON.parse(raw) } : INITIAL_STATE
+    return pathname === FIRST_STEP_PATH && isReportReady(stored) ? INITIAL_STATE : stored
   } catch {
     return INITIAL_STATE
   }
@@ -33,23 +39,9 @@ function readStoredState() {
 
 /** Estado compartido entre los pasos del flujo de análisis (rubro → negocio → …). */
 export function AnalysisFlowProvider({ children }) {
-  const [state, setState] = useState(readStoredState)
-  const location = useLocation()
-  const navigate = useNavigate()
-  const startsNewAnalysis = Boolean(location.state?.newAnalysis)
-  const [resetForKey, setResetForKey] = useState(null)
-
-  // Los botones de "Analizar una zona" y "Nuevo análisis" navegan con { newAnalysis: true }:
-  // se descarta lo guardado del análisis anterior. Se hace en el render para no mostrar los datos viejos.
-  if (startsNewAnalysis && resetForKey !== location.key) {
-    setResetForKey(location.key)
-    setState(INITIAL_STATE)
-  }
-
-  // Se limpia el flag del historial para que un refresh no vuelva a resetear
-  useEffect(() => {
-    if (startsNewAnalysis) navigate(location.pathname, { replace: true, state: null })
-  }, [startsNewAnalysis, location.pathname, navigate])
+  const { pathname } = useLocation()
+  // Solo se lee al montar: es cuando se entra al flujo desde afuera (home, Navbar)
+  const [state, setState] = useState(() => readStoredState(pathname))
 
   useEffect(() => {
     try {
@@ -97,6 +89,8 @@ export function AnalysisFlowProvider({ children }) {
       setReportReady: (analysisId) => {
         setState((prev) => (prev.reportReadyFor === analysisId ? prev : { ...prev, reportReadyFor: analysisId }))
       },
+      // "Nuevo análisis": descarta todo lo del análisis anterior
+      reset: () => setState(INITIAL_STATE),
       setRequiredQuestions: (stepId, questionCodes) => {
         setState((prev) => {
           // Evita un render de más si no cambió

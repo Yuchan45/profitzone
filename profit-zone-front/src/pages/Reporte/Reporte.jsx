@@ -1,4 +1,5 @@
 import { useParams } from 'react-router-dom'
+import { useAnalysisFlow } from '../../hooks/useAnalysisFlow.js'
 import { useFlowSteps } from '../../hooks/useFlowSteps.js'
 import { useFlowAnalysisReport } from '../../hooks/useFlowAnalysisReport.js'
 import Stepper from '../../components/organisms/Stepper/Stepper.jsx'
@@ -52,6 +53,7 @@ function Reporte() {
   const steps = useFlowSteps()
   // Reusa el reporte que ya trajo el paso 4 (Análisis) si no cambió nada desde entonces
   const { status, data: report, error, retry, isCurrentAnalysis } = useFlowAnalysisReport(id)
+  const { reset } = useAnalysisFlow()
 
   return (
     <div className="flow-step reporte">
@@ -133,7 +135,7 @@ function Reporte() {
             Volver al análisis
           </Button>
         )}
-        <Button variant="text" to="/analizar/rubro" state={{ newAnalysis: true }}>
+        <Button variant="text" to="/analizar/rubro" onClick={reset}>
           Nuevo análisis
         </Button>
       </div>
