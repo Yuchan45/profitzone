@@ -1,3 +1,4 @@
+import { Op } from 'sequelize'
 import { sequelize } from '../db/sequelize.js'
 import {
   Analysis,
@@ -28,14 +29,8 @@ function notFound(id) {
   return httpError(404, `No existe el análisis "${id}".`)
 }
 
-function toAnalysisDto(analysis) {
-  // Una fila por opción elegida: se agrupan por pregunta
-  const answers = {}
-  for (const answer of analysis.answers) {
-    const questionCode = answer.question.code
-    answers[questionCode] = [...(answers[questionCode] ?? []), answer.option.code]
-  }
-
+/** Datos del análisis sin las respuestas: alcanza para listarlo. */
+function toAnalysisSummaryDto(analysis) {
   return {
     // SQL Server devuelve los uniqueidentifier en mayúsculas
     id: analysis.id.toLowerCase(),
@@ -53,10 +48,20 @@ function toAnalysisDto(analysis) {
             lng: Number(analysis.centerLng),
             radius: analysis.radiusM,
           },
-    answers,
     createdAt: analysis.createdAt,
     updatedAt: analysis.updatedAt,
   }
+}
+
+function toAnalysisDto(analysis) {
+  // Una fila por opción elegida: se agrupan por pregunta
+  const answers = {}
+  for (const answer of analysis.answers) {
+    const questionCode = answer.question.code
+    answers[questionCode] = [...(answers[questionCode] ?? []), answer.option.code]
+  }
+
+  return { ...toAnalysisSummaryDto(analysis), answers }
 }
 
 function sameId(a, b) {
@@ -163,6 +168,25 @@ async function buildAnswerRows(categoryCode, subcategoryCode, rawAnswers) {
       optionId: question.options.find((option) => option.code === optionCode).id,
     })),
   )
+}
+
+/**
+ * Análisis del usuario para "Mis reportes", del más reciente al más viejo. Solo
+ * los que tienen ubicación: sin ella no hay reporte para abrir (GET /report da 409).
+ */
+export async function listUserAnalyses(userId) {
+  const analyses = await Analysis.findAll({
+    where: { userId, radiusM: { [Op.ne]: null } },
+    include: [
+      {
+        model: Subcategory,
+        as: 'subcategory',
+        include: [{ model: Category, as: 'category' }],
+      },
+    ],
+    order: [['updatedAt', 'DESC']],
+  })
+  return analyses.map(toAnalysisSummaryDto)
 }
 
 /** Devuelve un análisis con su rubro, ubicación y respuestas. Lanza 404 si no existe. */

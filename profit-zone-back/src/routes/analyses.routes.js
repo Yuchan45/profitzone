@@ -1,6 +1,7 @@
 import { Router } from 'express'
 import { requireAuth } from '../middlewares/requireAuth.js'
 import {
+  getMyAnalyses,
   getAnalysisById,
   getAnalysisReport,
   postAnalysis,
@@ -12,6 +13,7 @@ const router = Router()
 
 // Todo requiere sesión: sin cuenta, el flujo (pasos 1 a 3) vive solo en el front y
 // el análisis se crea recién al registrarse o iniciar sesión. Cada análisis solo lo ve su dueño.
+router.get('/', requireAuth, getMyAnalyses)
 router.post('/', requireAuth, postAnalysis)
 router.get('/:id', requireAuth, getAnalysisById)
 router.get('/:id/report', requireAuth, getAnalysisReport)

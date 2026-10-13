@@ -1,0 +1,66 @@
+.report-card {
+  display: flex;
+  align-items: center;
+  gap: var(--space-16);
+  padding: var(--space-16) var(--space-20);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background-color: var(--color-surface);
+  color: var(--color-text);
+  text-decoration: none;
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+.report-card:hover {
+  border-color: var(--color-border-strong);
+  box-shadow: var(--shadow-sm);
+}
+
+.report-card-body {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: var(--space-4);
+  min-width: 0;
+}
+
+.report-card-title {
+  font-family: var(--font-heading);
+  font-size: var(--text-16);
+  font-weight: 700;
+}
+
+.report-card-details,
+.report-card-date {
+  color: var(--color-text-secondary);
+  font-size: var(--text-13);
+}
+
+.report-card-date {
+  white-space: nowrap;
+}
+
+.report-card-arrow {
+  flex-shrink: 0;
+  color: var(--color-text-tertiary);
+  transition: color 0.15s ease;
+}
+
+.report-card:hover .report-card-arrow {
+  color: var(--color-primary-dark);
+}
+
+@media (max-width: 560px) {
+  .report-card {
+    flex-wrap: wrap;
+  }
+
+  .report-card-date {
+    order: 1;
+    width: 100%;
+    /* Alinea la fecha con el título: ancho del IconTile "m" (36px) + el gap */
+    padding-left: calc(36px + var(--space-16));
+  }
+}

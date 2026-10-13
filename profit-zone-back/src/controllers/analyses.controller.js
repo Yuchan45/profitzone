@@ -1,4 +1,5 @@
 import {
+  listUserAnalyses,
   getAnalysis,
   createAnalysis,
   replaceAnalysisAnswers,
@@ -40,6 +41,10 @@ function parseCoordinate(value, name, limit) {
     throw badRequest(`El campo "${name}" debe ser un número entre -${limit} y ${limit}.`)
   }
   return value
+}
+
+export async function getMyAnalyses(req, res) {
+  res.json(await listUserAnalyses(req.user.id))
 }
 
 export async function getAnalysisById(req, res) {

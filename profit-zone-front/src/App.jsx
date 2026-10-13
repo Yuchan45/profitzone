@@ -8,6 +8,7 @@ import ProtectedRoute from './components/templates/ProtectedRoute/ProtectedRoute
 import Home from './pages/Home.jsx'
 import Dashboard from './pages/Dashboard.jsx'
 import Perfil from './pages/Perfil/Perfil.jsx'
+import MisReportes from './pages/MisReportes/MisReportes.jsx'
 import Rubro from './pages/Rubro/Rubro.jsx'
 import Negocio from './pages/Negocio/Negocio.jsx'
 import Registro from './pages/Registro/Registro.jsx'
@@ -67,6 +68,7 @@ function App() {
         <Route element={<ProtectedRoute />}>
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/perfil" element={<Perfil />} />
+          <Route path="/mis-reportes" element={<MisReportes />} />
         </Route>
         <Route path="*" element={<NotFound />} />
       </Route>
