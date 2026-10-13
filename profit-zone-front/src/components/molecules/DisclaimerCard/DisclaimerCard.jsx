@@ -13,20 +13,24 @@ const COMPACT_TEXT =
  * Tarjeta o aviso de descargo de responsabilidad (Disclaimer legal).
  * compact: boolean - Versión reducida en una sola línea/banner (ideal para vistas previas como Análisis).
  * showLink: boolean - Muestra el enlace a los Términos y Condiciones completos.
+ * showIcon: boolean - Muestra el ícono de escudo de advertencia junto al título o texto.
  */
 function DisclaimerCard({
   title = DEFAULT_TITLE,
   text,
   compact = false,
   showLink = true,
+  showIcon = true,
   className = '',
 }) {
   if (compact) {
     return (
       <aside className={`disclaimer-card disclaimer-card--compact ${className}`.trim()} aria-label="Aviso legal">
-        <span className="disclaimer-card__icon" aria-hidden="true">
-          <Icon name="shield-alert" size={16} />
-        </span>
+        {showIcon && (
+          <span className="disclaimer-card__icon" aria-hidden="true">
+            <Icon name="shield-alert" size={16} />
+          </span>
+        )}
         <div className="disclaimer-card__compact-body">
           <p className="disclaimer-card__text">
             <strong>Aviso:</strong> {text || COMPACT_TEXT}{' '}
@@ -47,9 +51,11 @@ function DisclaimerCard({
       aria-labelledby="disclaimer-card-title"
     >
       <header className="disclaimer-card__header">
-        <span className="disclaimer-card__icon" aria-hidden="true">
-          <Icon name="shield-alert" size={22} />
-        </span>
+        {showIcon && (
+          <span className="disclaimer-card__icon" aria-hidden="true">
+            <Icon name="shield-alert" size={22} />
+          </span>
+        )}
         <h2 id="disclaimer-card-title" className="disclaimer-card__title">
           {title}
         </h2>
