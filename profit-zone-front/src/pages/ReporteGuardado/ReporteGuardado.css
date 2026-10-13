@@ -1,0 +1,43 @@
+.reporte-guardado {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-28);
+}
+
+.reporte-guardado-back {
+  display: inline-flex;
+  align-items: center;
+  align-self: flex-start;
+  gap: var(--space-8);
+  font-size: var(--text-14);
+  font-weight: 500;
+  color: var(--color-text-secondary);
+  text-decoration: none;
+  transition: color 0.15s ease;
+}
+
+.reporte-guardado-back:hover {
+  color: var(--color-text);
+}
+
+.reporte-guardado-loading {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-28);
+}
+
+.reporte-guardado-skeleton-tall {
+  min-height: 360px;
+}
+
+.reporte-guardado-error {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-12);
+}
+
+.reporte-guardado-error .status-message {
+  flex: 1;
+  min-width: 240px;
+}

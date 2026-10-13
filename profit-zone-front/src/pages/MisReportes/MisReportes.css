@@ -30,32 +30,7 @@
   gap: var(--space-16);
 }
 
-/* Placeholder con la altura de una ReportCard mientras carga la lista */
-.mis-reportes-skeleton {
+/* El placeholder es .flow-skeleton (FlowLayout.css): acá solo va la altura de una ReportCard */
+.flow-skeleton.mis-reportes-skeleton {
   min-height: 70px;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-lg);
-  background: linear-gradient(
-    90deg,
-    var(--color-surface) 0%,
-    var(--color-surface-subtle) 50%,
-    var(--color-surface) 100%
-  );
-  background-size: 200% 100%;
-  animation: mis-reportes-shimmer 1.4s ease-in-out infinite;
-}
-
-@keyframes mis-reportes-shimmer {
-  from {
-    background-position: 100% 0;
-  }
-  to {
-    background-position: -100% 0;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .mis-reportes-skeleton {
-    animation: none;
-  }
 }

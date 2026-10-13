@@ -27,9 +27,9 @@ function MisReportes() {
 
       {status === 'loading' && (
         <div className="mis-reportes-list" aria-busy="true" aria-label="Cargando tus reportes">
-          <div className="mis-reportes-skeleton" />
-          <div className="mis-reportes-skeleton" />
-          <div className="mis-reportes-skeleton" />
+          <div className="flow-skeleton mis-reportes-skeleton" />
+          <div className="flow-skeleton mis-reportes-skeleton" />
+          <div className="flow-skeleton mis-reportes-skeleton" />
         </div>
       )}
 
@@ -58,7 +58,7 @@ function MisReportes() {
                 title={analysis.subcategory.name}
                 details={`${analysis.category.name} · radio ${analysis.location.radius} m`}
                 date={formatDate(analysis.updatedAt)}
-                to={`/analizar/reporte/${analysis.id}`}
+                to={`/mis-reportes/${analysis.id}`}
               />
             </li>
           ))}
