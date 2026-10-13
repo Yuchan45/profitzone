@@ -23,7 +23,7 @@ function HeroSection() {
         </p>
         <div className="mt-8 flex flex-wrap justify-center gap-3">
           <Button asChild size="lg" className="h-11 px-6 font-semibold">
-            <Link to="/analizar/rubro" state={{ newAnalysis: true }}>Analizar una zona</Link>
+            <Link to="/analizar/rubro">Analizar una zona</Link>
           </Button>
           <Button asChild variant="outline" size="lg" className="h-11 bg-card px-6 font-semibold">
             <Link to="/reporte-ejemplo">Ver reporte de ejemplo</Link>
