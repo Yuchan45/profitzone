@@ -1,4 +1,6 @@
+import { useEffect } from 'react'
 import { useParams } from 'react-router-dom'
+import { useAnalysisFlow } from '../../hooks/useAnalysisFlow.js'
 import { useFlowSteps } from '../../hooks/useFlowSteps.js'
 import { useAnalysisReport } from '../../hooks/useAnalysisReport.js'
 import Stepper from '../../components/organisms/Stepper/Stepper.jsx'
@@ -48,8 +50,18 @@ function rentTile({ status, data }) {
 
 function Reporte() {
   const { id } = useParams()
+  const { analysisId, setReportReady } = useAnalysisFlow()
   const steps = useFlowSteps()
-  const { status, data: report, error } = useAnalysisReport(id)
+  // Reusa el reporte que ya trajo el paso 4 (Análisis): no vuelve a consultar las fuentes
+  const { status, data: report, error, retry } = useAnalysisReport(id, { reuse: true })
+
+  // Con el reporte listo, los pasos 4 y 5 quedan completos y navegables en el Stepper.
+  // Solo si es el análisis en curso: un reporte viejo (ej. desde Mis reportes) no toca el flujo.
+  // SQL Server devuelve los UUID en mayúsculas: se comparan sin distinguir mayúsculas
+  const isCurrentAnalysis = Boolean(analysisId) && analysisId.toLowerCase() === id.toLowerCase()
+  useEffect(() => {
+    if (status === 'ok' && isCurrentAnalysis) setReportReady(analysisId)
+  }, [status, isCurrentAnalysis, analysisId, setReportReady])
 
   return (
     <div className="flow-step reporte">
@@ -77,11 +89,17 @@ function Reporte() {
       )}
 
       {status === 'error' && (
-        <StatusMessage variant="error">No pudimos generar el reporte: {error}</StatusMessage>
+        <div className="reporte-error">
+          <StatusMessage variant="error">No pudimos generar el reporte: {error}</StatusMessage>
+          <Button variant="secondary" size="m" onClick={retry}>
+            Reintentar
+          </Button>
+        </div>
       )}
 
       {status === 'ok' && (
         <>
+
           <section className="reporte-card" aria-labelledby="reporte-summary-title">
             <h2 id="reporte-summary-title" className="reporte-card-title">
               Resumen
@@ -118,8 +136,8 @@ function Reporte() {
       )}
 
       <div className="flow-step-actions">
-        <Button variant="secondary" to="/analizar/negocio">
-          Editar respuestas
+        <Button variant="secondary" to={`/analizar/analisis/${id}`}>
+          Volver al análisis
         </Button>
         <Button variant="text" to="/analizar/rubro">
           Nuevo análisis

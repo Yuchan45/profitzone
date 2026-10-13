@@ -53,6 +53,18 @@
   min-height: 360px;
 }
 
+.reporte-error {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-12);
+}
+
+.reporte-error .status-message {
+  flex: 1;
+  min-width: 240px;
+}
+
 @media (max-width: 720px) {
   .reporte-card {
     padding: var(--space-20);

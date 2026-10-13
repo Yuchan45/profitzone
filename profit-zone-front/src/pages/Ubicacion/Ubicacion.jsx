@@ -29,6 +29,7 @@ import { distanceMeters, formatDistance, isPointInPolygons, walkingMinutes } fro
 import { toAuthFormError } from '../../utils/apiErrors.js'
 import { FLOW_STEPS } from '../../utils/flowSteps.js'
 import { visibleQuestions } from '../../utils/hiddenQuestions.js'
+import { buildSummaryRows, directMatch } from '../../utils/surveySummary.js'
 import './Ubicacion.css'
 
 // Rango del radio en metros. Hasta FREE_MAX es para todos; más allá, solo planes pagos.
@@ -43,48 +44,6 @@ const AUTH_TAB_ITEMS = [
   { label: 'Crear cuenta', value: 'register' },
   { label: 'Iniciar sesión', value: 'login' },
 ]
-
-// Etiquetas cortas del panel "Tu negocio" para las preguntas generales
-const SUMMARY_LABELS = {
-  service_mode: 'Atención',
-  target_age: 'Público',
-  schedule: 'Horario',
-  arrival_type: 'Cliente',
-  budget: 'Presupuesto',
-}
-
-function buildSummaryRows(survey, answers) {
-  // Respuestas de preguntas ocultas (ej. con "Sin atención al público") no se muestran
-  const visible = visibleQuestions(survey, answers)
-  const labelOf = (question) =>
-    (answers[question.code] ?? [])
-      .map((code) => question.options.find((option) => option.code === code)?.label)
-      .filter(Boolean)
-      .join(', ')
-
-  const rows = [{ label: 'Rubro', value: `${survey.category.name} · ${survey.subcategory.name}` }]
-  for (const question of visible.filter((q) => q.section === 'business')) {
-    const value = labelOf(question)
-    if (value) rows.push({ label: SUMMARY_LABELS[question.code] ?? question.prompt, value })
-  }
-  const details = visible.filter((q) => q.section === 'details').map(labelOf).filter(Boolean).join(' · ')
-  if (details) rows.push({ label: 'Detalles', value: details })
-  return rows
-}
-
-/**
- * Criterio de competencia directa para la vista previa: la opción elegida que tiene
- * etiquetas de OSM asociadas (`metadata.osmCuisine`, ej. "Asiática") como "pregunta:opción".
- */
-function directMatch(survey, answers) {
-  for (const question of visibleQuestions(survey, answers)) {
-    for (const code of answers[question.code] ?? []) {
-      const option = question.options.find((o) => o.code === code)
-      if (option?.metadata?.osmCuisine?.length) return `${question.code}:${option.code}`
-    }
-  }
-  return null
-}
 
 function pluralize(count, singular, plural) {
   return count === 1 ? `1 ${singular}` : `${count} ${plural}`
@@ -202,8 +161,7 @@ function Ubicacion() {
       ? visibleQuestions(survey.data, answers).map((q) => q.code)
       : Object.keys(answers)
     const savedId = await saveLocation.save(questionCodes)
-    // El paso 4 (Análisis) todavía no tiene vista: se va directo al reporte
-    if (savedId) navigate(`/analizar/reporte/${savedId}`)
+    if (savedId) navigate(`/analizar/analisis/${savedId}`)
   }
 
   // "Analizar zona" pide cuenta: sin sesión se abre el modal y se sigue al entrar
