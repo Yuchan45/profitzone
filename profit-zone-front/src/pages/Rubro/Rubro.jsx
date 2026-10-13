@@ -8,14 +8,8 @@ import StatusMessage from '../../components/molecules/StatusMessage/StatusMessag
 import CategoryCard from '../../components/molecules/CategoryCard/CategoryCard.jsx'
 import Chip from '../../components/atoms/Chip/Chip.jsx'
 import Button from '../../components/atoms/Button/Button.jsx'
+import { categoryIcon } from '../../utils/categoryIcons.js'
 import './Rubro.css'
-
-// La API no trae íconos: se asignan por code de categoría.
-const CATEGORY_ICONS = {
-  gastronomia: 'store',
-  fitness: 'dumbbell',
-}
-const DEFAULT_CATEGORY_ICON = 'store'
 
 function Rubro() {
   const navigate = useNavigate()
@@ -66,7 +60,7 @@ function Rubro() {
             {categories.map((c) => (
               <CategoryCard
                 key={c.code}
-                icon={CATEGORY_ICONS[c.code] ?? DEFAULT_CATEGORY_ICON}
+                icon={categoryIcon(c.code)}
                 title={c.name}
                 description={c.description}
                 selected={c.code === category.code}

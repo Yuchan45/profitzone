@@ -62,7 +62,7 @@ src/pages/     vistas ruteadas; arman la pantalla con organisms/molecules/atoms
 ## Rutas y layout
 
 - Las rutas se definen en `src/App.jsx`, dentro del template que corresponda y siempre antes de la ruta `*`:
-  - `<Route element={<MainLayout />}>` (Navbar + Footer): Home, Dashboard, Perfil.
+  - `<Route element={<MainLayout />}>` (Navbar + Footer): Home, Dashboard, Perfil, Mis reportes.
   - `<Route element={<FlowLayout />}>` (Header simple): pasos del flujo de análisis bajo `/analizar/*` (ej. `/analizar/rubro`).
 - Los links de navegación van en `src/components/organisms/Navbar/Navbar.jsx` con `NavLink`.
 - Ancho de las vistas del flujo: lo define solo `FlowLayout.css` con `--flow-max-width` y `--flow-gutter` (desde 1366 px el margen lateral baja a 48 px y el contenido llega a 1600 px). El `Header` usa las mismas variables para quedar alineado. Las páginas del flujo no ponen su propio `max-width` ni padding lateral.

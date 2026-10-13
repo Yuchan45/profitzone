@@ -12,6 +12,12 @@ export async function replaceAnalysisAnswers(analysisId, answers) {
   return data
 }
 
+/** Análisis del usuario con sesión que ya tienen reporte, del más reciente al más viejo. */
+export async function fetchMyAnalyses() {
+  const { data } = await api.get('/analyses')
+  return data
+}
+
 /** Reporte de zona de un análisis con ubicación: resumen, criterios e indicadores. */
 export async function fetchAnalysisReport(analysisId) {
   const { data } = await api.get(`/analyses/${analysisId}/report`)
