@@ -2,15 +2,17 @@ import { useState } from 'react'
 import { createAnalysis, saveAnalysisLocation } from '../services/analyses.service.js'
 import { useAnalysisFlow } from './useAnalysisFlow.js'
 
-// Guarda la ubicación; si el análisis ya no es accesible (404: se borró o quedó a
-// nombre de otra cuenta, por ejemplo tras cambiar de usuario), crea uno nuevo
-// con las mismas respuestas y la guarda ahí.
-async function saveOrRecreate({ analysisId, location, categoryCode, subcategoryCode, answers }) {
-  try {
-    await saveAnalysisLocation(analysisId, location)
-    return analysisId
-  } catch (error) {
-    if (error.response?.status !== 404) throw error
+// Guarda la ubicación. Crea el análisis con las respuestas si todavía no existe en la API
+// (el usuario llegó sin sesión y recién ahora tiene cuenta) o si ya no es accesible
+// (404: se borró o quedó a nombre de otra cuenta, por ejemplo tras cambiar de usuario).
+async function saveOrCreate({ analysisId, location, categoryCode, subcategoryCode, answers }) {
+  if (analysisId) {
+    try {
+      await saveAnalysisLocation(analysisId, location)
+      return analysisId
+    } catch (error) {
+      if (error.response?.status !== 404) throw error
+    }
   }
   const analysis = await createAnalysis({ categoryCode, subcategoryCode, answers })
   await saveAnalysisLocation(analysis.id, location)
@@ -20,7 +22,7 @@ async function saveOrRecreate({ analysisId, location, categoryCode, subcategoryC
 /**
  * Guarda en la API el punto y el radio del análisis en curso ("Analizar zona").
  * Requiere sesión. `save(questionCodes)` manda solo las respuestas de esas
- * preguntas si tiene que recrear el análisis, y devuelve el id guardado (o null).
+ * preguntas si tiene que crear el análisis, y devuelve el id guardado (o null).
  */
 export function useSaveLocation() {
   const { analysisId, categoryCode, subcategoryCode, answers, location, setAnalysisId } =
@@ -34,7 +36,7 @@ export function useSaveLocation() {
       Object.entries(answers).filter(([code]) => questionCodes.includes(code)),
     )
     try {
-      const savedId = await saveOrRecreate({
+      const savedId = await saveOrCreate({
         analysisId,
         location,
         categoryCode,

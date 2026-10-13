@@ -1,8 +1,9 @@
 import { Router } from 'express'
-import { getGeocode } from '../controllers/geocode.controller.js'
+import { getGeocode, getReverseGeocode } from '../controllers/geocode.controller.js'
 
 const router = Router()
 
 router.get('/', getGeocode)
+router.get('/reverse', getReverseGeocode)
 
 export default router

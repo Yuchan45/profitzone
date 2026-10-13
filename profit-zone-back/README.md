@@ -39,6 +39,7 @@ con un error que indica cómo levantarlo.
 | `npm run db:seed:catalog:verify` | Corre el seed y verifica conteos, idempotencia y preguntas por subcategoría |
 | `npm run db:seed:census` | Carga los 3.554 radios censales de CABA en `census_data.census_radios` con geometrías e índice espacial |
 | `npm run db:seed:rentals` | Carga los 3.800 locales comerciales en alquiler de CABA en `commercial_data.commercial_rentals` con geometrías e índice espacial |
+| `npm run db:seed:osm-places` | Carga en `osm_data.places` los restaurantes, cafés, gimnasios y estudios de pilates de OpenStreetMap del barrio disponible (+2 km), para la vista previa del paso 3 |
 
 ## Variables de entorno
 
@@ -76,7 +77,9 @@ headers `Content-Type` y `Authorization`, y cachea el preflight 24 h.
 | ------ | ------------- | ---------------------------- |
 | `GET`  | `/api/health` | Estado del servicio y de la DB (`database: up/down`; 503 si la DB no responde) |
 | `GET`  | `/api/density` | Densidad poblacional y demografía en un punto con radio en CABA (query: `lat`, `lng`, `radius`) |
-| `GET`  | `/api/competition` | Análisis de competidores directos e indirectos en un radio con Google Places |
+| `GET`  | `/api/competition` | Análisis de competidores directos e indirectos en un radio con Google Places. **Requiere sesión** (consume una API paga) |
+| `GET`  | `/api/places/nearby?lat=&lng=&radius=&category=&subcategory=&match=` | Vista previa del paso 3: negocios del rubro dentro del círculo (radio de 100 a 2000 m), desde OpenStreetMap (`osm_data.places`, gratis, sin sesión). `match` (opcional, `pregunta:opción`, ej. `cuisine_type:asian`) marca como `direct` los que coinciden con la cocina elegida. Responde `{ source, updatedAt, total, directTotal, directLabel, places: [{ id, name, lat, lng, direct }] }`. 400 si los parámetros son inválidos |
+| `GET`  | `/api/places/:id` | Ficha de un negocio de la vista previa (datos de OpenStreetMap, sin sesión): `{ id, kind, name, cuisines, lat, lng, details, source, updatedAt }`. `details` trae solo lo que el local tenga cargado en OSM (`street`, `houseNumber`, `openingHours`, `phone`, `website`, `instagram`, `facebook`, `outdoorSeating`, `delivery`, `takeaway`, `wheelchair`). 404 si no existe |
 | `GET`  | `/api/traffic` | Estimación de afluencia horaria (7h a 23h) y score por franja horaria |
 | `GET`  | `/api/rentals` | Promedio y estadísticas de alquileres comerciales en un radio (query: `lat`, `lng`, `radius`; 503 si no hay avisos cargados) |
 | `GET`  | `/api/categories` | Categorías (rubros) con sus subcategorías y términos de búsqueda (query: `active`) |
@@ -84,13 +87,14 @@ headers `Content-Type` y `Authorization`, y cachea el preflight 24 h.
 | `GET`  | `/api/categories/:categoryCode/subcategories/:subcategoryCode/questions` | Encuesta completa de un rubro (solo activas), separada en `business` y `details` |
 | `GET`  | `/api/questions` | Banco de preguntas con opciones y asignaciones (query: `scope`, `active`) |
 | `GET`  | `/api/questions/:code` | Una pregunta por code con sus opciones en orden (404 si no existe; query: `active`) |
-| `POST` | `/api/analyses` | Crea un análisis en borrador con el rubro y las respuestas (`{ categoryCode, subcategoryCode, answers }`). 201; 400 si faltan obligatorias o hay respuestas inválidas. Sin sesión queda sin dueño; con sesión, a nombre del usuario. Un análisis con dueño solo lo ve su dueño (404 para el resto) |
+| `POST` | `/api/analyses` | Crea un análisis en borrador con el rubro y las respuestas (`{ categoryCode, subcategoryCode, answers }`). 201; 400 si faltan obligatorias o hay respuestas inválidas. Queda a nombre del usuario. **Todos los endpoints de `/api/analyses` requieren sesión** (401 sin ella) y cada análisis solo lo ve su dueño (404 para el resto) |
 | `GET`  | `/api/analyses/:id` | Un análisis con su rubro, ubicación y respuestas (404 si no existe) |
 | `GET`  | `/api/analyses/:id/report` | Reporte de zona: indicadores del punto y radio, cuadro de fortalezas y debilidades cruzado con las respuestas y resumen (409 si el análisis no tiene ubicación) |
 | `PUT`  | `/api/analyses/:id/answers` | Reemplaza todas las respuestas (`{ answers }`), con las mismas validaciones que el alta |
-| `PATCH` | `/api/analyses/:id/location` | Guarda el punto y el radio (`{ lat, lng, radius }`, radio entero entre 200 y 600 m, dentro de Palermo; 422 si cae afuera). **Requiere sesión**: el análisis queda a nombre del usuario |
+| `PATCH` | `/api/analyses/:id/location` | Guarda el punto y el radio (`{ lat, lng, radius }`, radio entero entre 100 y 2000 m, dentro de Palermo; 422 si cae afuera; más de 600 m solo para los roles `premium` y `admin`, si no 403). Se llama al tocar "Analizar zona" |
 | `GET`  | `/api/neighborhoods` | Barrios donde se puede analizar (MVP: Palermo) con su contorno `[lat, lng]`, sus límites (`bounds`) y un centro ponderado por población, calculados desde el censo |
 | `GET`  | `/api/geocode?q=` | Autocompletado de direcciones dentro de Palermo: `[{ type, label, lat?, lng?, detail? }]`. Sin número sugiere calles (`street`, sin coordenadas) y lugares (`place`); con número ("gurruchaga 16") completa la altura (`address`: Gurruchaga 1600). Combina Photon (OSM) y el normalizador del GCBA (USIG). 400 si la búsqueda tiene menos de 3 o más de 120 caracteres; 502 si los servicios externos no responden |
+| `GET`  | `/api/geocode/reverse?lat=&lng=` | Dirección más cercana a un punto de Palermo, para completar el buscador cuando el punto se elige en el mapa: `{ label }` (`label: null` si no hay una dirección cerca o el punto cae fuera del barrio). Usa la búsqueda inversa de USIG y, si falla, Photon. 400 si las coordenadas son inválidas; 502 si los dos servicios fallan |
 | `POST` | `/api/auth/register` | Crea la cuenta (`firstName`, `lastName`, `email`, `password`). 201 `{ user, accessToken }` + cookie de refresh; 409 si el correo existe |
 | `POST` | `/api/auth/login` | Inicia sesión. 200 `{ user, accessToken }` + cookie de refresh; 401 genérico si falla |
 | `POST` | `/api/auth/refresh` | Renueva la sesión con la cookie `pz_refresh` (rotación). 200 `{ user, accessToken }`; 401 si venció o fue revocada |
@@ -394,6 +398,22 @@ geometry|	MultiPolygon|	Coordenadas vectoriales exactas de los límites de las m
 | `price_per_m2_ars` | `decimal(14,2)` | Valor locativo mensual por metro cuadrado en ARS. |
 | `price_per_m2_usd` | `decimal(14,2)` | Valor locativo mensual por metro cuadrado en USD. |
 | `geom` | `geography` | Coordenadas vectoriales puntuales WGS84 (`Point(lat, lng, 4326)`). |
+
+### Negocios de OpenStreetMap (seed)
+
+`npm run db:seed:osm-places` baja de Overpass (OpenStreetMap, gratis y sin clave) los restaurantes, locales de comida rápida, cafés, gimnasios y estudios de pilates del barrio disponible con 2 km de margen (el radio máximo del paso 3), y los guarda en `osm_data.places` con índice espacial (`IX_places_geom`). Los servidores públicos de Overpass suelen estar saturados: el script prueba varios espejos y reintenta. Es idempotente (actualiza por `osm_type` + `osm_id`) y no borra: los negocios que dejan de aparecer en OSM quedan con `is_active = 0`. Conviene correrlo cada tanto para refrescar los datos. Requiere el censo cargado.
+
+| Variable | Tipo | Significado |
+| -------- | ---- | ----------- |
+| `osm_type` / `osm_id` | `char(1)` / `bigint` | Identificador del elemento en OSM (`n` nodo, `w` vía, `r` relación). |
+| `kind` | `varchar(20)` | Tipo normalizado: `restaurant`, `fast_food`, `cafe`, `fitness` o `pilates`. |
+| `name` | `nvarchar(200)` | Nombre del negocio (puede faltar). |
+| `cuisine` | `varchar(200)` | Etiqueta `cuisine` de OSM (ej. `sushi;japanese`); en Palermo la tiene cerca del 38% de los restaurantes. |
+| `geom` | `geography` | Punto del negocio (centro, si es un edificio). |
+| `is_active` / `last_seen_at` | `bit` / `datetime2` | Si apareció en la última carga, y cuándo. |
+| `details` | `nvarchar(max)` (JSON) | Datos para la ficha del local que tenga cargados en OSM: dirección, horarios, teléfono, web, redes y servicios (mesas afuera, delivery, take away, accesibilidad). |
+
+Datos © colaboradores de OpenStreetMap, licencia ODbL: el mapa del front muestra la atribución.
 
 ## Estructura
 

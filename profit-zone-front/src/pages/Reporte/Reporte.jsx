@@ -1,6 +1,6 @@
 import { useParams } from 'react-router-dom'
 import { useFlowSteps } from '../../hooks/useFlowSteps.js'
-import { useAnalysisReport } from '../../hooks/useAnalysisReport.js'
+import { useFlowAnalysisReport } from '../../hooks/useFlowAnalysisReport.js'
 import Stepper from '../../components/organisms/Stepper/Stepper.jsx'
 import CriteriaTable from '../../components/organisms/CriteriaTable/CriteriaTable.jsx'
 import StepHeading from '../../components/molecules/StepHeading/StepHeading.jsx'
@@ -49,7 +49,8 @@ function rentTile({ status, data }) {
 function Reporte() {
   const { id } = useParams()
   const steps = useFlowSteps()
-  const { status, data: report, error } = useAnalysisReport(id)
+  // Reusa el reporte que ya trajo el paso 4 (Análisis) si no cambió nada desde entonces
+  const { status, data: report, error, retry, isCurrentAnalysis } = useFlowAnalysisReport(id)
 
   return (
     <div className="flow-step reporte">
@@ -77,7 +78,12 @@ function Reporte() {
       )}
 
       {status === 'error' && (
-        <StatusMessage variant="error">No pudimos generar el reporte: {error}</StatusMessage>
+        <div className="reporte-error">
+          <StatusMessage variant="error">No pudimos generar el reporte: {error}</StatusMessage>
+          <Button variant="secondary" size="m" onClick={retry}>
+            Reintentar
+          </Button>
+        </div>
       )}
 
       {status === 'ok' && (
@@ -118,9 +124,12 @@ function Reporte() {
       )}
 
       <div className="flow-step-actions">
-        <Button variant="secondary" to="/analizar/negocio">
-          Editar respuestas
-        </Button>
+        {/* Un reporte de otro análisis (ej. desde Mis reportes) no es parte del flujo en curso */}
+        {isCurrentAnalysis && (
+          <Button variant="secondary" to={`/analizar/analisis/${id}`}>
+            Volver al análisis
+          </Button>
+        )}
         <Button variant="text" to="/analizar/rubro">
           Nuevo análisis
         </Button>

@@ -1,0 +1,35 @@
+.hourly-bars {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+  margin: 0;
+}
+
+.hourly-bars-plot,
+.hourly-bars-axis {
+  display: grid;
+  grid-auto-columns: 1fr;
+  grid-auto-flow: column;
+  gap: var(--space-6);
+}
+
+.hourly-bars-plot {
+  align-items: end;
+  height: 96px;
+}
+
+.hourly-bars-bar {
+  border-radius: var(--radius-xs) var(--radius-xs) 0 0;
+  background-color: var(--color-border-strong);
+}
+
+.hourly-bars-bar--highlighted {
+  background-color: var(--color-primary);
+}
+
+.hourly-bars-label {
+  overflow: visible;
+  color: var(--color-text-tertiary);
+  font-size: var(--text-11);
+  white-space: nowrap;
+}

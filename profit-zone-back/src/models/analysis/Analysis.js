@@ -9,8 +9,8 @@ export const Analysis = sequelize.define(
   'Analysis',
   {
     id: sequentialUuidPk,
-    // Pendiente: NOT NULL si se exige login para analizar
-    userId: { type: DataTypes.UUID, allowNull: true },
+    // El análisis se crea con sesión: siempre tiene dueño
+    userId: { type: DataTypes.UUID, allowNull: false },
     // La categoría se obtiene desde la subcategoría
     subcategoryId: { type: DataTypes.INTEGER, allowNull: false },
     status: {

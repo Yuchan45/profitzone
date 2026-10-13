@@ -1,0 +1,166 @@
+/* Sin "Anterior", "Ver reporte" queda a la derecha */
+.analisis .flow-step-actions > :only-child {
+  margin-left: auto;
+}
+
+.analisis-error {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-12);
+}
+
+.analisis-error .status-message {
+  flex: 1;
+  min-width: 240px;
+}
+
+.analisis-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr);
+  gap: var(--space-24);
+  align-items: start;
+}
+
+/* El mapa acompaña el scroll de las tarjetas */
+.analisis-map-column {
+  position: sticky;
+  top: var(--space-24);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-12);
+}
+
+.analisis-map-skeleton {
+  min-height: 560px;
+}
+
+.analisis-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-8) var(--space-20);
+  margin: 0;
+  padding: 0;
+  color: var(--color-text-secondary);
+  font-size: var(--text-12);
+  list-style: none;
+}
+
+.analisis-legend-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-6);
+}
+
+/* Mismos colores que los puntos de LocationMap */
+.analisis-legend-item::before {
+  content: '';
+  width: 8px;
+  height: 8px;
+  border-radius: var(--radius-full);
+  background-color: var(--color-info);
+  opacity: 0.6;
+}
+
+.analisis-legend-item--direct::before {
+  background-color: var(--color-warning);
+  opacity: 1;
+}
+
+.analisis-cards {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-20);
+}
+
+.analisis-notice {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-10);
+  margin: 0;
+  padding: var(--space-16) var(--space-20);
+  border-radius: var(--radius-lg);
+  background-color: var(--color-surface-subtle);
+  color: var(--color-text);
+  font-size: var(--text-14);
+  line-height: 1.45;
+}
+
+.analisis-notice .icon {
+  flex-shrink: 0;
+  color: var(--color-text-secondary);
+}
+
+/* Tabla de competencia */
+.analisis-table-wrap {
+  overflow-x: auto;
+}
+
+.analisis-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--text-13);
+}
+
+.analisis-table th,
+.analisis-table td {
+  padding: var(--space-8) var(--space-12) var(--space-8) 0;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.analisis-table thead th {
+  color: var(--color-text-tertiary);
+  font-size: var(--text-12);
+  font-weight: 500;
+}
+
+.analisis-table tbody th {
+  max-width: 200px;
+  overflow: hidden;
+  font-weight: 500;
+  text-overflow: ellipsis;
+}
+
+.analisis-table td {
+  color: var(--color-text-secondary);
+}
+
+/* Filas de detalle (población, alquiler) */
+.analisis-rows {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-10);
+  margin: 0;
+}
+
+.analisis-row {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-16);
+  font-size: var(--text-14);
+}
+
+.analisis-row dt {
+  color: var(--color-text);
+}
+
+.analisis-row dd {
+  margin: 0;
+  color: var(--color-text-secondary);
+  text-align: right;
+}
+
+@media (max-width: 960px) {
+  .analisis-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .analisis-map-column {
+    position: static;
+  }
+
+  .analisis-map-skeleton {
+    min-height: 380px;
+  }
+}

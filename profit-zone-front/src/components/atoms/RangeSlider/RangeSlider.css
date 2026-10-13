@@ -7,20 +7,27 @@
   appearance: none;
 }
 
+/* Tramos del track: elegido (turquesa), libre (gris) y bloqueado más allá de --range-limit */
+.range-slider {
+  --range-limit: 100%;
+  --range-track: linear-gradient(
+    to right,
+    var(--color-primary) var(--range-progress),
+    var(--color-border) var(--range-progress) var(--range-limit),
+    var(--color-border-strong) var(--range-limit)
+  );
+}
+
 .range-slider::-webkit-slider-runnable-track {
   height: 6px;
   border-radius: 3px;
-  background: linear-gradient(
-    to right,
-    var(--color-primary) var(--range-progress),
-    var(--color-border) var(--range-progress)
-  );
+  background: var(--range-track);
 }
 
 .range-slider::-moz-range-track {
   height: 6px;
   border-radius: 3px;
-  background: var(--color-border);
+  background: var(--range-track);
 }
 
 .range-slider::-moz-range-progress {

@@ -1,6 +1,5 @@
 import { Router } from 'express'
 import { requireAuth } from '../middlewares/requireAuth.js'
-import { optionalAuth } from '../middlewares/optionalAuth.js'
 import {
   getAnalysisById,
   getAnalysisReport,
@@ -11,12 +10,12 @@ import {
 
 const router = Router()
 
-// Los pasos 1 y 2 se hacen sin sesión; "Analizar zona" (la ubicación) la exige
-// y deja el análisis a nombre del usuario. Un análisis con dueño solo lo ve él.
-router.post('/', optionalAuth, postAnalysis)
-router.get('/:id', optionalAuth, getAnalysisById)
-router.get('/:id/report', optionalAuth, getAnalysisReport)
-router.put('/:id/answers', optionalAuth, putAnalysisAnswers)
+// Todo requiere sesión: sin cuenta, el flujo (pasos 1 a 3) vive solo en el front y
+// el análisis se crea recién al registrarse o iniciar sesión. Cada análisis solo lo ve su dueño.
+router.post('/', requireAuth, postAnalysis)
+router.get('/:id', requireAuth, getAnalysisById)
+router.get('/:id/report', requireAuth, getAnalysisReport)
+router.put('/:id/answers', requireAuth, putAnalysisAnswers)
 router.patch('/:id/location', requireAuth, patchAnalysisLocation)
 
 export default router
