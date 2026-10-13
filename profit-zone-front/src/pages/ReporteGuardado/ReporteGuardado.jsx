@@ -15,8 +15,9 @@ import './ReporteGuardado.css'
  */
 function ReporteGuardado() {
   const { id } = useParams()
-  // Si el reporte ya se trajo en esta pestaña, se reusa: armarlo consulta fuentes pagas
-  const { status, data: report, error, retry } = useAnalysisReport(id, { reuse: true })
+  // Sin reusar la caché de la pestaña: si el análisis se editó en el flujo, la copia
+  // guardada quedaría vieja (la caché no se invalida al guardar respuestas o ubicación)
+  const { status, data: report, error, retry } = useAnalysisReport(id)
 
   return (
     <section className="reporte-guardado">
