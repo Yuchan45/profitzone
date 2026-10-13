@@ -33,7 +33,7 @@ import { buildSummaryRows, directMatch } from '../../utils/surveySummary.js'
 import './Ubicacion.css'
 
 // Rango del radio en metros. Hasta FREE_MAX es para todos; más allá, solo planes pagos.
-// Pendiente: la API todavía valida 200 a 600 m (fase 2 del paso 3).
+// La API valida el mismo rango (PATCH /api/analyses/:id/location).
 const RADIUS = { min: 100, max: 2000, step: 50, initial: 300 }
 const FREE_MAX_RADIUS = 600
 const UNLIMITED_RADIUS_ROLES = ['premium', 'admin']

@@ -1,10 +1,13 @@
 import { useCallback, useEffect, useState } from 'react'
 import { fetchAnalysisReport } from '../services/analyses.service.js'
+import { useAuth } from './useAuth.js'
 
 const LOADING = { status: 'loading', data: null, error: null }
 
 // Último reporte traído de cada análisis (en memoria, por pestaña). El paso 5 reusa el
 // del paso 4: armar el reporte consulta fuentes pagas (Google Places) y no hace falta repetirlo.
+// La clave incluye al usuario: si otra cuenta entra en la misma pestaña, no ve el reporte
+// guardado de la anterior (se pide a la API, que controla el dueño).
 const reportCache = new Map()
 
 /**
@@ -14,22 +17,24 @@ const reportCache = new Map()
  */
 export function useAnalysisReport(analysisId, { reuse = false } = {}) {
   const [attempt, setAttempt] = useState(0)
+  const { user } = useAuth()
+  const cacheKey = `${user?.id}:${analysisId}`
   // `forKey` evita mostrar el resultado anterior mientras carga el de otro análisis
-  // (React Router reutiliza la página al cambiar el :id) o mientras se reintenta
-  const key = `${analysisId}:${attempt}`
+  // (React Router reutiliza la página al cambiar el :id), el de otro usuario o mientras se reintenta
+  const key = `${cacheKey}:${attempt}`
   const [state, setState] = useState({ ...LOADING, forKey: key })
-  const useCached = reuse && attempt === 0 && reportCache.has(analysisId)
+  const useCached = reuse && attempt === 0 && reportCache.has(cacheKey)
 
   useEffect(() => {
     if (useCached) return undefined
     let cancelled = false
-    const forKey = `${analysisId}:${attempt}`
+    const forKey = `${cacheKey}:${attempt}`
 
     fetchAnalysisReport(analysisId)
       .then((data) => {
         if (cancelled) return
         // Una respuesta descartada (llegó tarde) no pisa en la caché a una más nueva
-        reportCache.set(analysisId, data)
+        reportCache.set(cacheKey, data)
         setState({ status: 'ok', data, error: null, forKey })
       })
       .catch((error) => {
@@ -46,11 +51,11 @@ export function useAnalysisReport(analysisId, { reuse = false } = {}) {
     return () => {
       cancelled = true
     }
-  }, [analysisId, attempt, useCached])
+  }, [analysisId, attempt, useCached, cacheKey])
 
   const retry = useCallback(() => setAttempt((n) => n + 1), [])
 
-  if (useCached) return { status: 'ok', data: reportCache.get(analysisId), error: null, retry }
+  if (useCached) return { status: 'ok', data: reportCache.get(cacheKey), error: null, retry }
   if (state.forKey !== key) return { ...LOADING, retry }
   const { status, data, error } = state
   return { status, data, error, retry }
