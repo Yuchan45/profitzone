@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom'
 import { Button } from '../ui/button.jsx'
+import { NEW_ANALYSIS_LINK } from '../../utils/flowSteps.js'
 import HeroFigures from './HeroFigures.jsx'
 import FlipWords from './FlipWords.jsx'
 
@@ -23,7 +24,7 @@ function HeroSection() {
         </p>
         <div className="mt-8 flex flex-wrap justify-center gap-3">
           <Button asChild size="lg" className="h-11 px-6 font-semibold">
-            <Link to="/analizar/rubro">Analizar una zona</Link>
+            <Link {...NEW_ANALYSIS_LINK}>Analizar una zona</Link>
           </Button>
           <Button asChild variant="outline" size="lg" className="h-11 bg-card px-6 font-semibold">
             <Link to="/reporte-ejemplo">Ver reporte de ejemplo</Link>

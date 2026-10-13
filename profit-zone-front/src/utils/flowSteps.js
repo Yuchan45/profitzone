@@ -34,3 +34,7 @@ export const FLOW_STEPS = [
   { id: 'analisis', label: 'Análisis', path: readyPath('/analizar/analisis'), isComplete: isReportReady },
   { id: 'reporte', label: 'Reporte', path: readyPath('/analizar/reporte'), isComplete: isReportReady },
 ]
+
+// Destino de "Analizar una zona" y "Nuevo análisis": el AnalysisFlowProvider lee el flag
+// y, si el análisis guardado ya terminó, arranca uno nuevo
+export const NEW_ANALYSIS_LINK = { to: FLOW_STEPS[0].path, state: { newAnalysis: true } }

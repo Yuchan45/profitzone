@@ -1,7 +1,6 @@
 import { lazy, Suspense } from 'react'
 import { Routes, Route } from 'react-router-dom'
 import { AnalysisFlowProvider } from './context/AnalysisFlowContext.jsx'
-import { useScrollToTop } from './hooks/useScrollToTop.js'
 import MainLayout from './components/templates/MainLayout/MainLayout.jsx'
 import FlowLayout from './components/templates/FlowLayout/FlowLayout.jsx'
 import AuthLayout from './components/templates/AuthLayout/AuthLayout.jsx'
@@ -22,8 +21,6 @@ const Ubicacion = lazy(() => import('./pages/Ubicacion/Ubicacion.jsx'))
 const Analisis = lazy(() => import('./pages/Analisis/Analisis.jsx'))
 
 function App() {
-  useScrollToTop()
-
   return (
     <Routes>
       <Route
