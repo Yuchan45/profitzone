@@ -130,7 +130,7 @@ function Reporte() {
             Volver al análisis
           </Button>
         )}
-        <Button variant="text" to="/analizar/rubro">
+        <Button variant="text" to="/analizar/rubro" state={{ newAnalysis: true }}>
           Nuevo análisis
         </Button>
       </div>

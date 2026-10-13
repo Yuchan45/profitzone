@@ -20,7 +20,7 @@ function Navbar() {
             Iniciar sesión
           </Button>
         )}
-        <Button variant="primary" size="m" to="/analizar/rubro">
+        <Button variant="primary" size="m" to="/analizar/rubro" state={{ newAnalysis: true }}>
           Analizar una zona
         </Button>
         {status === 'authenticated' && (
