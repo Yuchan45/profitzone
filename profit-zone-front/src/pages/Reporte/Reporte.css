@@ -43,6 +43,11 @@
   line-height: 1.55;
 }
 
+/* Sin "Volver al análisis", "Nuevo análisis" queda a la derecha */
+.reporte .flow-step-actions > :only-child {
+  margin-left: auto;
+}
+
 .reporte-loading {
   display: flex;
   flex-direction: column;

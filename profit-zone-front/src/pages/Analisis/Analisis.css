@@ -1,3 +1,8 @@
+/* Sin "Anterior", "Ver reporte" queda a la derecha */
+.analisis .flow-step-actions > :only-child {
+  margin-left: auto;
+}
+
 .analisis-error {
   display: flex;
   flex-wrap: wrap;

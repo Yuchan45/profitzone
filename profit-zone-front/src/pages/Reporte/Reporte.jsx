@@ -88,7 +88,6 @@ function Reporte() {
 
       {status === 'ok' && (
         <>
-
           <section className="reporte-card" aria-labelledby="reporte-summary-title">
             <h2 id="reporte-summary-title" className="reporte-card-title">
               Resumen

@@ -38,6 +38,7 @@ const INDICATOR_ERROR = 'El resto del análisis no se ve afectado.'
 function cardState(report, indicator) {
   if (report.status !== 'ok') return { status: report.status }
   if (indicator?.status === 'ok') return { status: 'ok' }
+  if (indicator?.status === 'not_applicable') return { status: 'empty', empty: { title: 'No aplica para tu negocio.' } }
   return { status: 'error', error: INDICATOR_ERROR, onRetry: report.retry }
 }
 
@@ -303,27 +304,33 @@ function Analisis() {
           </ul>
         </div>
 
-        <div className="analisis-cards">
-          {noPublic ? (
-            <p className="analisis-notice">
-              <Icon name="info" size={18} />
-              Como elegiste “Sin atención al público”, no mostramos competencia ni afluencia.
-            </p>
-          ) : (
-            <>
-              <CompetitionCard report={report} />
-              <TrafficCard report={report} />
-            </>
-          )}
-          <PopulationCard report={report} />
-          <RentCard report={report} />
-        </div>
+        {/* Si falló el pedido entero, el error ya se muestra arriba una sola vez */}
+        {report.status !== 'error' && (
+          <div className="analisis-cards">
+            {noPublic ? (
+              <p className="analisis-notice">
+                <Icon name="info" size={18} />
+                Como elegiste “Sin atención al público”, no mostramos competencia ni afluencia.
+              </p>
+            ) : (
+              <>
+                <CompetitionCard report={report} />
+                <TrafficCard report={report} />
+              </>
+            )}
+            <PopulationCard report={report} />
+            <RentCard report={report} />
+          </div>
+        )}
       </div>
 
       <div className="flow-step-actions">
-        <Button variant="secondary" to="/analizar/ubicacion">
-          Anterior
-        </Button>
+        {/* Un análisis de fuera del flujo en curso (ej. desde Mis reportes) no tiene paso anterior */}
+        {isCurrentAnalysis && (
+          <Button variant="secondary" to="/analizar/ubicacion">
+            Anterior
+          </Button>
+        )}
         {report.status === 'ok' ? (
           <Button to={`/analizar/reporte/${id}`}>Ver reporte</Button>
         ) : (

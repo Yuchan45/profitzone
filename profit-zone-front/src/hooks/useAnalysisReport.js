@@ -27,8 +27,10 @@ export function useAnalysisReport(analysisId, { reuse = false } = {}) {
 
     fetchAnalysisReport(analysisId)
       .then((data) => {
+        if (cancelled) return
+        // Una respuesta descartada (llegó tarde) no pisa en la caché a una más nueva
         reportCache.set(analysisId, data)
-        if (!cancelled) setState({ status: 'ok', data, error: null, forKey })
+        setState({ status: 'ok', data, error: null, forKey })
       })
       .catch((error) => {
         if (!cancelled) {
