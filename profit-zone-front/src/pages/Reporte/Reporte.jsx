@@ -47,6 +47,23 @@ function rentTile({ status, data }) {
   }
 }
 
+function accessibilityTile(indicator) {
+  if (!indicator) return { value: null, caption: PENDING_CAPTION }
+  const { status, data } = indicator
+  if (status === 'not_applicable') return { value: null, caption: 'No aplica sin atención al público' }
+  if (status !== 'ok') return { value: null, caption: 'No pudimos cargar este dato' }
+  const value = data.total >= 20 ? '20+' : formatNumber(data.total)
+  let caption = 'paradas en el radio'
+  if (data.subwayCount > 0) {
+    caption = data.subwayCount === 1 ? '1 subte en el radio' : `${data.subwayCount} subtes en el radio`
+  } else if (data.trainCount > 0) {
+    caption = data.trainCount === 1 ? '1 tren en el radio' : `${data.trainCount} trenes en el radio`
+  } else if (data.total === 0) {
+    caption = 'sin paradas en el radio'
+  }
+  return { value, caption }
+}
+
 function Reporte() {
   const { id } = useParams()
   const steps = useFlowSteps()
@@ -107,7 +124,7 @@ function Reporte() {
               <StatTile label="Afluencia (estimada)" {...trafficTile(report.indicators.traffic)} />
               <StatTile label="Población" {...populationTile(report.indicators.density)} />
               <StatTile label="Alquiler" {...rentTile(report.indicators.rent)} />
-              <StatTile label="Accesibilidad" value={null} caption={PENDING_CAPTION} />
+              <StatTile label="Accesibilidad" {...accessibilityTile(report.indicators.accessibility)} />
             </div>
           </section>
 
