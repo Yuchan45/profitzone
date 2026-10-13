@@ -11,9 +11,12 @@ import { getSubcategorySurvey } from './questions.service.js'
 import { availableNeighborhoodNames, findAvailableNeighborhood } from './neighborhoods.service.js'
 import { httpError } from '../utils/httpErrors.js'
 
-// Rango del radio de análisis en metros (PZ-16: rango acotado, ej. 200–600 m)
-const RADIUS_MIN_M = 200
-const RADIUS_MAX_M = 600
+// Rango del radio de análisis en metros. Hasta RADIUS_FREE_MAX_M es para todos; más allá,
+// solo los roles con radio ilimitado (mismo rango que el slider del paso 3 en el front)
+const RADIUS_MIN_M = 100
+const RADIUS_MAX_M = 2000
+const RADIUS_FREE_MAX_M = 600
+const UNLIMITED_RADIUS_ROLES = ['premium', 'admin']
 
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
@@ -220,9 +223,12 @@ export async function replaceAnalysisAnswers(id, answers, userId) {
 /**
  * Guarda el punto y el radio elegidos en el paso 3 ("Analizar zona").
  */
-export async function updateAnalysisLocation(id, { lat, lng, radius }, userId) {
+export async function updateAnalysisLocation(id, { lat, lng, radius }, { id: userId, role }) {
   if (!Number.isInteger(radius) || radius < RADIUS_MIN_M || radius > RADIUS_MAX_M) {
     throw badRequest(`El radio debe ser un número entero entre ${RADIUS_MIN_M} y ${RADIUS_MAX_M} metros.`)
+  }
+  if (radius > RADIUS_FREE_MAX_M && !UNLIMITED_RADIUS_ROLES.includes(role)) {
+    throw httpError(403, `Los radios de más de ${RADIUS_FREE_MAX_M} m son para planes pagos.`)
   }
   const analysis = await findAnalysis(id, userId)
   if (!(await findAvailableNeighborhood(lat, lng))) {

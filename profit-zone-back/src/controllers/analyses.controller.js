@@ -72,6 +72,6 @@ export async function patchAnalysisLocation(req, res) {
     lat: parseCoordinate(body.lat, 'lat', 90),
     lng: parseCoordinate(body.lng, 'lng', 180),
     radius: body.radius,
-  }, req.user.id)
+  }, req.user)
   res.json(analysis)
 }
