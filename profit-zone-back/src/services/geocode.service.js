@@ -8,7 +8,10 @@ import { httpError } from '../utils/httpErrors.js'
 // - USIG (normalizador del GCBA) geolocaliza calle + altura exactas, pero
 //   necesita el nombre de la calle completo.
 const PHOTON_URL = 'https://photon.komoot.io/api/'
+const PHOTON_REVERSE_URL = 'https://photon.komoot.io/reverse'
 const USIG_URL = 'https://servicios.usig.buenosaires.gob.ar/normalizar/'
+// Búsqueda inversa de USIG: devuelve la puerta más cercana a un punto de CABA
+const USIG_REVERSE_URL = 'https://ws.usig.buenosaires.gob.ar/geocoder/2.2/reversegeocoding'
 const TIMEOUT_MS = 4000
 const MAX_SUGGESTIONS = 6
 // Calles de Photon que se prueban con la altura escrita
@@ -19,13 +22,17 @@ const MAX_STREETS_FOR_ADDRESS = 2
 const cache = new Map()
 const CACHE_MAX_ENTRIES = 300
 
-async function fetchJson(url) {
+async function fetchText(url) {
   const response = await fetch(url, {
     signal: AbortSignal.timeout(TIMEOUT_MS),
     headers: { 'user-agent': 'ProfitZone (proyecto UADE)' },
   })
   if (!response.ok) throw new Error(`respondió ${response.status}`)
-  return response.json()
+  return response.text()
+}
+
+async function fetchJson(url) {
+  return JSON.parse(await fetchText(url))
 }
 
 // USIG devuelve las calles en mayúsculas ("GURRUCHAGA 1600")
@@ -192,6 +199,67 @@ export async function suggestLocations(query) {
   if (result.length > 0) {
     if (cache.size >= CACHE_MAX_ENTRIES) cache.delete(cache.keys().next().value)
     cache.set(key, result)
+  }
+  return result
+}
+
+// Un mismo punto (redondeado a ~10 m) devuelve la misma dirección
+const reverseCache = new Map()
+const REVERSE_PRECISION = 4
+
+/** Puerta más cercana según USIG ("EL SALVADOR 4864"), o null si no hay. */
+async function reverseWithUsig({ lat, lng }) {
+  const url = new URL(USIG_REVERSE_URL)
+  url.search = new URLSearchParams({ x: String(lng), y: String(lat) })
+  // USIG responde JSONP sin callback: el JSON viene entre paréntesis
+  const body = JSON.parse((await fetchText(url)).trim().replace(/^\(/, '').replace(/\)$/, ''))
+  return body.puerta ? toTitleCase(body.puerta) : null
+}
+
+/** Calle y altura (o nombre del lugar) más cercanos según Photon, o null. */
+async function reverseWithPhoton({ lat, lng }) {
+  const url = new URL(PHOTON_REVERSE_URL)
+  url.search = new URLSearchParams({ lat: String(lat), lon: String(lng) })
+  const body = await fetchJson(url)
+  const properties = body.features?.[0]?.properties
+  if (!properties) return null
+  if (properties.street) return [properties.street, properties.housenumber].filter(Boolean).join(' ')
+  return properties.name ?? null
+}
+
+/**
+ * Dirección más cercana a un punto del barrio, para mostrarla en el buscador
+ * cuando el usuario elige el punto en el mapa: `{ label }` (`label: null` si no
+ * hay una dirección cerca o el punto cae fuera del barrio). Usa USIG y, si falla
+ * o no encuentra nada, Photon. Si fallan los dos responde 502.
+ */
+export async function reverseGeocode(point) {
+  const [neighborhood] = await listNeighborhoods()
+  if (!neighborhood || !isPointInPolygons(point, neighborhood.boundary)) return { label: null }
+
+  const key = `${point.lat.toFixed(REVERSE_PRECISION)},${point.lng.toFixed(REVERSE_PRECISION)}`
+  if (reverseCache.has(key)) return reverseCache.get(key)
+
+  let label = null
+  let failures = 0
+  for (const reverse of [reverseWithUsig, reverseWithPhoton]) {
+    try {
+      label = await reverse(point)
+      if (label) break
+    } catch (error) {
+      failures += 1
+      console.warn(`[ProfitZone] Búsqueda inversa de dirección falló: ${error.message}`)
+    }
+  }
+  if (!label && failures === 2) {
+    throw httpError(502, 'No pudimos buscar la dirección del punto en este momento.')
+  }
+
+  const result = { label }
+  // Un vacío con algún servicio caído puede ser temporal: no se guarda
+  if (label || failures === 0) {
+    if (reverseCache.size >= CACHE_MAX_ENTRIES) reverseCache.delete(reverseCache.keys().next().value)
+    reverseCache.set(key, result)
   }
   return result
 }

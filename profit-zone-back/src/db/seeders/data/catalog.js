@@ -147,11 +147,27 @@ export const questions = [
     prompt: '¿Qué tipo de cocina?',
     inputType: 'single_choice',
     assignments: [sub('gastronomia', 'restaurante', 'details', 1)],
+    // osmCuisine: valores de la etiqueta cuisine de OpenStreetMap que cuentan como
+    // competencia directa en la vista previa del mapa (paso 3). "Otra" no destaca ninguno.
     options: [
-      { code: 'italian', label: 'Italiana / pizzería' },
-      { code: 'grill', label: 'Parrilla' },
-      { code: 'asian', label: 'Asiática' },
-      { code: 'international', label: 'Internacional / de autor' },
+      { code: 'italian', label: 'Italiana / pizzería', metadata: { osmCuisine: ['italian', 'pizza', 'pasta'] } },
+      {
+        code: 'grill',
+        label: 'Parrilla',
+        metadata: { osmCuisine: ['steak_house', 'barbecue', 'grill', 'parrilla'] },
+      },
+      {
+        code: 'asian',
+        label: 'Asiática',
+        metadata: {
+          osmCuisine: ['asian', 'sushi', 'japanese', 'chinese', 'korean', 'thai', 'vietnamese', 'indian', 'ramen', 'poke', 'wok', 'noodle'],
+        },
+      },
+      {
+        code: 'international',
+        label: 'Internacional / de autor',
+        metadata: { osmCuisine: ['international', 'fusion', 'fine_dining', 'french', 'mediterranean', 'spanish'] },
+      },
       { code: 'other', label: 'Otra' },
     ],
   },

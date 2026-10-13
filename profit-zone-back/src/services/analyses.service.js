@@ -11,9 +11,12 @@ import { getSubcategorySurvey } from './questions.service.js'
 import { availableNeighborhoodNames, findAvailableNeighborhood } from './neighborhoods.service.js'
 import { httpError } from '../utils/httpErrors.js'
 
-// Rango del radio de análisis en metros (PZ-16: rango acotado, ej. 200–600 m)
-const RADIUS_MIN_M = 200
-const RADIUS_MAX_M = 600
+// Rango del radio de análisis en metros. Hasta RADIUS_FREE_MAX_M es para todos; más allá,
+// solo los roles con radio ilimitado (mismo rango que el slider del paso 3 en el front)
+const RADIUS_MIN_M = 100
+const RADIUS_MAX_M = 2000
+const RADIUS_FREE_MAX_M = 600
+const UNLIMITED_RADIUS_ROLES = ['premium', 'admin']
 
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
@@ -62,9 +65,8 @@ function sameId(a, b) {
 }
 
 /**
- * Busca el análisis y verifica el acceso: un análisis con dueño solo lo ve su
- * dueño. Para cualquier otro (o sin sesión) responde 404, sin revelar que existe.
- * `userId` es el usuario de la sesión o null.
+ * Busca el análisis y verifica el acceso: solo lo ve su dueño. Para cualquier
+ * otro usuario responde 404, sin revelar que existe. `userId` es el usuario de la sesión.
  */
 async function findAnalysis(id, userId, { transaction } = {}) {
   // Un id con otro formato haría fallar la conversión a uniqueidentifier en SQL Server
@@ -91,7 +93,7 @@ async function findAnalysis(id, userId, { transaction } = {}) {
   })
 
   if (!analysis) throw notFound(id)
-  if (analysis.userId && !(userId && sameId(analysis.userId, userId))) throw notFound(id)
+  if (!sameId(analysis.userId, userId)) throw notFound(id)
   return analysis
 }
 
@@ -169,8 +171,8 @@ export async function getAnalysis(id, userId) {
 }
 
 /**
- * Crea un análisis en borrador con el rubro y las respuestas del paso 2.
- * Con sesión queda a nombre del usuario; sin sesión se asigna al guardar la ubicación.
+ * Crea un análisis en borrador, a nombre del usuario, con el rubro y las respuestas
+ * del paso 2. Sin sesión no se crea: el flujo anónimo vive solo en el front.
  */
 export async function createAnalysis({ categoryCode, subcategoryCode, answers }, userId) {
   const answerRows = await buildAnswerRows(categoryCode, subcategoryCode, answers)
@@ -182,7 +184,7 @@ export async function createAnalysis({ categoryCode, subcategoryCode, answers },
 
   const id = await sequelize.transaction(async (transaction) => {
     const analysis = await Analysis.create(
-      { subcategoryId: subcategory.id, userId: userId ?? null },
+      { subcategoryId: subcategory.id, userId },
       { transaction },
     )
     await AnalysisAnswer.bulkCreate(
@@ -219,14 +221,17 @@ export async function replaceAnalysisAnswers(id, answers, userId) {
 }
 
 /**
- * Guarda el punto y el radio elegidos en el paso 3 ("Analizar zona"). Requiere
- * sesión: si el análisis todavía no tiene dueño, queda a nombre del usuario.
+ * Guarda el punto y el radio elegidos en el paso 3 ("Analizar zona").
  */
-export async function updateAnalysisLocation(id, { lat, lng, radius }, userId) {
+export async function updateAnalysisLocation(id, { lat, lng, radius }, { id: userId, role }) {
   if (!Number.isInteger(radius) || radius < RADIUS_MIN_M || radius > RADIUS_MAX_M) {
     throw badRequest(`El radio debe ser un número entero entre ${RADIUS_MIN_M} y ${RADIUS_MAX_M} metros.`)
   }
+  // Primero el dueño: un análisis ajeno o inexistente responde 404, no el límite del plan
   const analysis = await findAnalysis(id, userId)
+  if (radius > RADIUS_FREE_MAX_M && !UNLIMITED_RADIUS_ROLES.includes(role)) {
+    throw httpError(403, `Los radios de más de ${RADIUS_FREE_MAX_M} m son para planes pagos.`)
+  }
   if (!(await findAvailableNeighborhood(lat, lng))) {
     throw httpError(422, `Elegí un punto dentro de ${availableNeighborhoodNames()}.`)
   }
@@ -234,7 +239,6 @@ export async function updateAnalysisLocation(id, { lat, lng, radius }, userId) {
     centerLat: lat,
     centerLng: lng,
     radiusM: radius,
-    userId: analysis.userId ?? userId,
   })
   return getAnalysis(id, userId)
 }

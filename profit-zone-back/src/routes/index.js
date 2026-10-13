@@ -8,6 +8,7 @@ import questionsRoutes from './questions.routes.js'
 import analysesRoutes from './analyses.routes.js'
 import neighborhoodsRoutes from './neighborhoods.routes.js'
 import geocodeRoutes from './geocode.routes.js'
+import placesRoutes from './places.routes.js'
 import authRoutes from './auth.routes.js'
 import rentalsRoutes from './rentals.routes.js'
 
@@ -22,6 +23,7 @@ router.use('/questions', questionsRoutes)
 router.use('/analyses', analysesRoutes)
 router.use('/neighborhoods', neighborhoodsRoutes)
 router.use('/geocode', geocodeRoutes)
+router.use('/places', placesRoutes)
 router.use('/auth', authRoutes)
 router.use('/rentals', rentalsRoutes)
 

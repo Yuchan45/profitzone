@@ -1,8 +1,15 @@
+/* 70% mapa, 30% panel; el panel no baja de 300 px para que entren el buscador y el resumen */
 .ubicacion-layout {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 300px;
+  grid-template-columns: minmax(0, 7fr) minmax(300px, 3fr);
   gap: var(--space-24);
   align-items: start;
+}
+
+/* Contenedor del mapa: la ficha del competidor se posiciona sobre él */
+.ubicacion-map {
+  position: relative;
+  min-width: 0;
 }
 
 .ubicacion-panel {
@@ -35,10 +42,72 @@
 }
 
 .ubicacion-radius-scale {
+  position: relative;
   display: flex;
   justify-content: space-between;
   color: var(--color-text-tertiary);
   font-size: var(--text-12);
+}
+
+/* Tope del plan: marca debajo del slider, en el punto donde empieza el tramo bloqueado */
+.ubicacion-radius-limit {
+  position: absolute;
+  left: var(--limit-position);
+  transform: translateX(-50%);
+  color: var(--color-text-secondary);
+  font-weight: 600;
+}
+
+.ubicacion-radius-max {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-4);
+}
+
+/* Vista previa de la competencia (puntos del mapa) */
+.ubicacion-preview {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+}
+
+.ubicacion-preview-title {
+  margin: 0;
+  color: var(--color-text);
+  font-size: var(--text-13);
+  font-weight: 600;
+}
+
+.ubicacion-preview-text {
+  display: flex;
+  align-items: center;
+  gap: var(--space-8);
+  margin: 0;
+  color: var(--color-text-secondary);
+  font-size: var(--text-13);
+}
+
+/* Mismos colores que los puntos del mapa (LocationMap.css) */
+.ubicacion-preview-dot {
+  width: 10px;
+  height: 10px;
+  flex-shrink: 0;
+  border: 1px solid var(--color-surface);
+  border-radius: var(--radius-full);
+  background-color: var(--color-info);
+  opacity: 0.7;
+}
+
+.ubicacion-preview-dot--direct {
+  background-color: var(--color-warning);
+  opacity: 1;
+}
+
+.ubicacion-preview-note {
+  margin: 0;
+  color: var(--color-text-tertiary);
+  font-size: var(--text-12);
+  line-height: 1.4;
 }
 
 .ubicacion-actions {

@@ -16,6 +16,9 @@ const INITIAL_STATE = {
   // { [stepId]: string[] } codes de las preguntas obligatorias de cada paso con encuesta.
   // Lo registra cada paso al cargar sus preguntas y sirve para saber si está completo.
   requiredQuestions: {},
+  // id del análisis cuyo reporte se generó bien (paso 4). Cualquier cambio en el rubro,
+  // las respuestas o la ubicación lo invalida: hay que volver a "Analizar zona".
+  reportReadyFor: null,
 }
 
 function readStoredState() {
@@ -55,6 +58,7 @@ export function AnalysisFlowProvider({ children }) {
             subcategoryCode,
             answers: sameRubro ? prev.answers : {},
             requiredQuestions: sameRubro ? prev.requiredQuestions : {},
+            reportReadyFor: sameRubro ? prev.reportReadyFor : null,
             // El punto no depende del rubro: se mantiene para no volver a marcarlo
             location: prev.location,
           }
@@ -64,13 +68,17 @@ export function AnalysisFlowProvider({ children }) {
         setState((prev) => ({
           ...prev,
           answers: { ...prev.answers, [questionCode]: optionCodes },
+          reportReadyFor: null,
         }))
       },
       setLocation: (location) => {
-        setState((prev) => ({ ...prev, location }))
+        setState((prev) => ({ ...prev, location, reportReadyFor: null }))
       },
       setAnalysisId: (analysisId) => {
         setState((prev) => ({ ...prev, analysisId }))
+      },
+      setReportReady: (analysisId) => {
+        setState((prev) => (prev.reportReadyFor === analysisId ? prev : { ...prev, reportReadyFor: analysisId }))
       },
       setRequiredQuestions: (stepId, questionCodes) => {
         setState((prev) => {
