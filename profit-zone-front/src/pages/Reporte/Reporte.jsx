@@ -9,6 +9,7 @@ import StatTile from '../../components/molecules/StatTile/StatTile.jsx'
 import DisclaimerCard from '../../components/molecules/DisclaimerCard/DisclaimerCard.jsx'
 import Button from '../../components/atoms/Button/Button.jsx'
 import { formatCurrency, formatDate, formatNumber } from '../../utils/formatters.js'
+import { NEW_ANALYSIS_LINK } from '../../utils/flowSteps.js'
 import './Reporte.css'
 
 // Google Places devuelve como máximo 20 locales por consulta
@@ -133,7 +134,7 @@ function Reporte() {
             Volver al análisis
           </Button>
         )}
-        <Button variant="text" to="/analizar/rubro">
+        <Button variant="text" {...NEW_ANALYSIS_LINK}>
           Nuevo análisis
         </Button>
       </div>

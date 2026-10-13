@@ -95,7 +95,6 @@ function Negocio() {
 
   const goToSection = (section) => {
     setSearchParams(section ? { seccion: section } : {})
-    window.scrollTo({ top: 0 })
   }
 
   // Con preguntas específicas el paso tiene 2 partes: se indica en qué parte está el

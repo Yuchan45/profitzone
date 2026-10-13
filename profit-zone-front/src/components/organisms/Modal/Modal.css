@@ -1,6 +1,8 @@
 .modal {
   width: min(480px, calc(100vw - 2 * var(--space-16)));
   max-height: calc(100vh - 2 * var(--space-16));
+  /* El preflight de Tailwind pone margin: 0 y pisa el margin: auto con el que el navegador centra el <dialog> */
+  margin: auto;
   padding: 0;
   border: 0;
   border-radius: var(--radius-2xl);

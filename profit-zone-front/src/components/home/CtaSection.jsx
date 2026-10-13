@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom'
 import { Button } from '../ui/button.jsx'
+import { NEW_ANALYSIS_LINK } from '../../utils/flowSteps.js'
 
 function CtaSection() {
   return (
@@ -12,7 +13,7 @@ function CtaSection() {
           Elegí un punto en Palermo y obtené tu reporte en minutos.
         </p>
         <Button asChild size="lg" className="mt-8 h-11 px-6 font-semibold">
-          <Link to="/analizar/rubro">Analizar una zona</Link>
+          <Link {...NEW_ANALYSIS_LINK}>Analizar una zona</Link>
         </Button>
       </div>
     </section>

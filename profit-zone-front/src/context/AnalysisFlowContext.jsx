@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { AnalysisFlowContext } from './analysisFlowContextValue.js'
+import { isReportReady } from '../utils/flowSteps.js'
 
 // Se guarda en sessionStorage: sobrevive a un refresh y se borra al cerrar la pestaña.
 const STORAGE_KEY = 'profitzone_analysis_flow_v1'
@@ -33,6 +35,25 @@ function readStoredState() {
 /** Estado compartido entre los pasos del flujo de análisis (rubro → negocio → …). */
 export function AnalysisFlowProvider({ children }) {
   const [state, setState] = useState(readStoredState)
+  const location = useLocation()
+  const navigate = useNavigate()
+  const startsNewAnalysis = Boolean(location.state?.newAnalysis)
+  const [handledLocationKey, setHandledLocationKey] = useState(null)
+
+  // Los links de NEW_ANALYSIS_LINK ("Analizar una zona", "Nuevo análisis") retoman un análisis
+  // a medio hacer, pero si el guardado ya tiene su reporte, terminó: se arranca uno nuevo.
+  // Se resuelve en el render de la ruta nueva: el reporte ya no está montado y no vuelve a pedirse.
+  if (startsNewAnalysis && handledLocationKey !== location.key) {
+    setHandledLocationKey(location.key)
+    if (isReportReady(state)) setState(INITIAL_STATE)
+  }
+
+  // Se saca el flag del historial para que un refresh no vuelva a aplicarlo
+  useEffect(() => {
+    if (!startsNewAnalysis) return
+    const { pathname, search, hash } = location
+    navigate({ pathname, search, hash }, { replace: true, state: null })
+  }, [startsNewAnalysis, location, navigate])
 
   useEffect(() => {
     try {

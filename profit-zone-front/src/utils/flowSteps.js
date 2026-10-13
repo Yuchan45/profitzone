@@ -5,7 +5,7 @@
 
 // El análisis (paso 4) y el reporte (paso 5) se arman con el mismo pedido a la API: se puede
 // volver a ellos una vez que salió bien, hasta que cambie algo de lo que respondió el usuario.
-const isReportReady = (flow) => Boolean(flow.analysisId) && flow.reportReadyFor === flow.analysisId
+export const isReportReady = (flow) => Boolean(flow.analysisId) && flow.reportReadyFor === flow.analysisId
 const readyPath = (prefix) => (flow) => (isReportReady(flow) ? `${prefix}/${flow.analysisId}` : null)
 
 export const FLOW_STEPS = [
@@ -34,3 +34,7 @@ export const FLOW_STEPS = [
   { id: 'analisis', label: 'Análisis', path: readyPath('/analizar/analisis'), isComplete: isReportReady },
   { id: 'reporte', label: 'Reporte', path: readyPath('/analizar/reporte'), isComplete: isReportReady },
 ]
+
+// Destino de "Analizar una zona" y "Nuevo análisis": el AnalysisFlowProvider lee el flag
+// y, si el análisis guardado ya terminó, arranca uno nuevo
+export const NEW_ANALYSIS_LINK = { to: FLOW_STEPS[0].path, state: { newAnalysis: true } }
