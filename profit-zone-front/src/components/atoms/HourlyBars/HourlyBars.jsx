@@ -9,8 +9,8 @@ const LABEL_EVERY = 4
  * lectores de pantalla.
  */
 function HourlyBars({ hours, summary }) {
-  const first = hours[0]?.hour
-  const last = hours.at(-1)?.hour
+  // Por posición y no por hora: la franja puede cruzar la medianoche (ej. 22, 23, 0, 1)
+  const showLabel = (index) => index === 0 || index === hours.length - 1 || index % LABEL_EVERY === 0
 
   return (
     <figure className="hourly-bars" role="img" aria-label={summary}>
@@ -24,9 +24,9 @@ function HourlyBars({ hours, summary }) {
         ))}
       </div>
       <div className="hourly-bars-axis" aria-hidden="true">
-        {hours.map(({ hour, label }) => (
+        {hours.map(({ hour, label }, index) => (
           <span key={hour} className="hourly-bars-label">
-            {hour === first || hour === last || (hour - first) % LABEL_EVERY === 0 ? label : ''}
+            {showLabel(index) ? label : ''}
           </span>
         ))}
       </div>

@@ -1,8 +1,7 @@
-import { useEffect } from 'react'
 import { useParams } from 'react-router-dom'
 import { useAnalysisFlow } from '../../hooks/useAnalysisFlow.js'
 import { useFlowSteps } from '../../hooks/useFlowSteps.js'
-import { useAnalysisReport } from '../../hooks/useAnalysisReport.js'
+import { useFlowAnalysisReport } from '../../hooks/useFlowAnalysisReport.js'
 import { useNeighborhoods } from '../../hooks/useNeighborhoods.js'
 import { useNearbyPlaces } from '../../hooks/useNearbyPlaces.js'
 import { useSubcategorySurvey } from '../../hooks/useSubcategorySurvey.js'
@@ -38,7 +37,7 @@ const INDICATOR_ERROR = 'El resto del análisis no se ve afectado.'
  */
 function cardState(report, indicator) {
   if (report.status !== 'ok') return { status: report.status }
-  if (indicator.status === 'ok') return { status: 'ok' }
+  if (indicator?.status === 'ok') return { status: 'ok' }
   return { status: 'error', error: INDICATOR_ERROR, onRetry: report.retry }
 }
 
@@ -83,7 +82,12 @@ function CompetitionCard({ report }) {
     <IndicatorCard
       {...card}
       value={total}
-      caption={`locales del rubro: ${data.directCount} directos y ${data.indirectCount} indirectos. Rating promedio ${formatNumber(data.averageRating)}.`}
+      caption={[
+        `locales del rubro: ${data.directCount} directos y ${data.indirectCount} indirectos.`,
+        data.averageRating ? `Rating promedio ${formatNumber(data.averageRating)}.` : null,
+      ]
+        .filter(Boolean)
+        .join(' ')}
       callout={data.callout}
       source={`${data.source} · en vivo · ${formatDate(data.queryDate)} · se muestran ${places.length} de ${total}`}
     >
@@ -168,7 +172,7 @@ function PopulationCard({ report }) {
           { label: 'Densidad', value: `${formatNumber(data.densidadHabKm2)} hab/km²` },
           { label: 'Hogares', value: formatNumber(data.hogaresEstimados) },
           { label: 'Hogares con NBI', value: `${formatNumber(data.porcentajeNbi)} %` },
-          { label: 'Barrios', value: data.barrios.map(titleCase).join(', ') || null },
+          { label: 'Barrios', value: data.barrios?.map(titleCase).join(', ') || null },
         ]}
       />
     </IndicatorCard>
@@ -222,23 +226,17 @@ function RentCard({ report }) {
 function Analisis() {
   const { id } = useParams()
   const flow = useAnalysisFlow()
-  const { analysisId, categoryCode, subcategoryCode, answers, setReportReady } = flow
+  const { categoryCode, subcategoryCode, answers } = flow
   const steps = useFlowSteps()
-  const report = useAnalysisReport(id)
+  const report = useFlowAnalysisReport(id)
   const neighborhoods = useNeighborhoods()
 
   // Solo el análisis en curso tiene sus respuestas en el flujo (un reporte viejo no)
-  // SQL Server devuelve los UUID en mayúsculas: se comparan sin distinguir mayúsculas
-  const isCurrentAnalysis = Boolean(analysisId) && analysisId.toLowerCase() === id.toLowerCase()
+  const { isCurrentAnalysis } = report
   const survey = useSubcategorySurvey(
     isCurrentAnalysis ? categoryCode : null,
     isCurrentAnalysis ? subcategoryCode : null,
   )
-
-  // Con el análisis listo, los pasos 4 y 5 quedan completos y navegables en el Stepper
-  useEffect(() => {
-    if (report.status === 'ok' && isCurrentAnalysis) setReportReady(analysisId)
-  }, [report.status, isCurrentAnalysis, analysisId, setReportReady])
 
   const analysis = report.data?.analysis
   // El punto ya está en el flujo: el mapa se muestra sin esperar al reporte
@@ -258,7 +256,7 @@ function Analisis() {
   })
 
   const indicators = report.data?.indicators
-  const noPublic = indicators?.competition.status === 'not_applicable'
+  const noPublic = indicators?.competition?.status === 'not_applicable'
 
   const subtitle = analysis
     ? [analysis.subcategory.name, `radio de ${analysis.location.radius} m`, formatDate(analysis.createdAt)].join(' · ')

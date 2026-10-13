@@ -1,8 +1,6 @@
-import { useEffect } from 'react'
 import { useParams } from 'react-router-dom'
-import { useAnalysisFlow } from '../../hooks/useAnalysisFlow.js'
 import { useFlowSteps } from '../../hooks/useFlowSteps.js'
-import { useAnalysisReport } from '../../hooks/useAnalysisReport.js'
+import { useFlowAnalysisReport } from '../../hooks/useFlowAnalysisReport.js'
 import Stepper from '../../components/organisms/Stepper/Stepper.jsx'
 import CriteriaTable from '../../components/organisms/CriteriaTable/CriteriaTable.jsx'
 import StepHeading from '../../components/molecules/StepHeading/StepHeading.jsx'
@@ -50,18 +48,9 @@ function rentTile({ status, data }) {
 
 function Reporte() {
   const { id } = useParams()
-  const { analysisId, setReportReady } = useAnalysisFlow()
   const steps = useFlowSteps()
-  // Reusa el reporte que ya trajo el paso 4 (Análisis): no vuelve a consultar las fuentes
-  const { status, data: report, error, retry } = useAnalysisReport(id, { reuse: true })
-
-  // Con el reporte listo, los pasos 4 y 5 quedan completos y navegables en el Stepper.
-  // Solo si es el análisis en curso: un reporte viejo (ej. desde Mis reportes) no toca el flujo.
-  // SQL Server devuelve los UUID en mayúsculas: se comparan sin distinguir mayúsculas
-  const isCurrentAnalysis = Boolean(analysisId) && analysisId.toLowerCase() === id.toLowerCase()
-  useEffect(() => {
-    if (status === 'ok' && isCurrentAnalysis) setReportReady(analysisId)
-  }, [status, isCurrentAnalysis, analysisId, setReportReady])
+  // Reusa el reporte que ya trajo el paso 4 (Análisis) si no cambió nada desde entonces
+  const { status, data: report, error, retry, isCurrentAnalysis } = useFlowAnalysisReport(id)
 
   return (
     <div className="flow-step reporte">
@@ -136,9 +125,12 @@ function Reporte() {
       )}
 
       <div className="flow-step-actions">
-        <Button variant="secondary" to={`/analizar/analisis/${id}`}>
-          Volver al análisis
-        </Button>
+        {/* Un reporte de otro análisis (ej. desde Mis reportes) no es parte del flujo en curso */}
+        {isCurrentAnalysis && (
+          <Button variant="secondary" to={`/analizar/analisis/${id}`}>
+            Volver al análisis
+          </Button>
+        )}
         <Button variant="text" to="/analizar/rubro">
           Nuevo análisis
         </Button>
