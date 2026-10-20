@@ -40,6 +40,7 @@ con un error que indica cómo levantarlo.
 | `npm run db:seed:census` | Carga los 3.554 radios censales de CABA en `census_data.census_radios` con geometrías e índice espacial |
 | `npm run db:seed:rentals` | Carga los 3.800 locales comerciales en alquiler de CABA en `commercial_data.commercial_rentals` con geometrías e índice espacial |
 | `npm run db:seed:osm-places` | Carga en `osm_data.places` los restaurantes, cafés, gimnasios y estudios de pilates de OpenStreetMap del barrio disponible (+2 km), para la vista previa del paso 3 |
+| `npm run db:seed:all` | Aplica las migraciones y corre todos los seeds en orden (catálogo, censo, locales, OSM) con un resumen al final. Saltea los locales si falta el JSON de Zonaprop y OSM si falla el censo |
 
 ## Variables de entorno
 

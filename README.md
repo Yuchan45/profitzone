@@ -69,6 +69,7 @@ si dice **"API conectada"**, el front está hablando con el back correctamente.
 | `npm run db:seed:catalog:verify` | Verifica el seed (conteos, idempotencia) |
 | `npm run db:seed:rentals` | Carga locales comerciales en alquiler en SQL Server (idempotente) |
 | `npm run db:seed:osm-places` | Carga los negocios de OpenStreetMap del barrio (+2 km) para la vista previa del paso 3 (idempotente) |
+| `npm run db:seed:all` | Migra y corre todos los seeds en orden, con resumen final (idempotente) |
 
 ### `profit-zone-front`
 
