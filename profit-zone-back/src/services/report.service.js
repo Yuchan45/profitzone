@@ -4,6 +4,7 @@ import { getCompetitionAnalysis } from './competition.service.js'
 import { getTrafficAnalysis } from './traffic.service.js'
 import { getDensityInRadius } from './density.service.js'
 import { getRentalsInRadius } from './rentals.service.js'
+import { getAccessibilityAnalysis } from './accessibility.service.js'
 import { CRITERIA, buildSummary } from './reportCriteria.service.js'
 import { httpError } from '../utils/httpErrors.js'
 
@@ -92,7 +93,7 @@ function buildAnswerReaders(answers, survey) {
   }
 }
 
-function buildSources({ competition, traffic, density, rent }) {
+function buildSources({ competition, traffic, density, rent, accessibility }) {
   const sources = []
   if (competition.status === 'ok') {
     const date = new Date(competition.data.queryDate).toLocaleDateString('es-AR')
@@ -106,7 +107,11 @@ function buildSources({ competition, traffic, density, rent }) {
     )
   }
   if (rent.status === 'ok') sources.push('Alquiler: avisos de locales comerciales en alquiler publicados en ZonaProp.')
-  sources.push('Accesibilidad y lugares según tu público: todavía sin fuente de datos.')
+  if (accessibility?.status === 'ok') {
+    const date = new Date(accessibility.data.queryDate).toLocaleDateString('es-AR')
+    sources.push(`Accesibilidad: ${accessibility.data.source}, consultado el ${date}.`)
+  }
+  sources.push('Lugares según tu público: todavía sin fuente de datos.')
   return sources
 }
 
@@ -136,7 +141,7 @@ export async function buildAnalysisReport(id, userId) {
   const notApplicable = { status: 'not_applicable' }
 
   // Sin atención al público no se muestran competencia ni afluencia (estados-y-variantes)
-  const [competition, traffic, density, rent] = await Promise.all([
+  const [competition, traffic, density, rent, accessibility] = await Promise.all([
     noPublic ? notApplicable : settleIndicator('competencia', () => getCompetitionAnalysis({ ...point, subcategory })),
     noPublic
       ? notApplicable
@@ -145,6 +150,7 @@ export async function buildAnalysisReport(id, userId) {
         ),
     settleIndicator('densidad', () => getDensityInRadius(point)),
     settleIndicator('alquiler', () => getRentalsInRadius(point)),
+    settleIndicator('accesibilidad', () => getAccessibilityAnalysis(point)),
   ])
 
   const criteria = CRITERIA.map((buildCriterion) =>
@@ -159,6 +165,7 @@ export async function buildAnalysisReport(id, userId) {
       traffic,
       density,
       rent,
+      accessibility,
       noPublic,
     }),
   )
@@ -177,10 +184,11 @@ export async function buildAnalysisReport(id, userId) {
       competition,
       traffic,
       density,
+      accessibility,
       // Sin el listado de avisos: el reporte solo muestra el resumen del alquiler
       rent: rent.status === 'ok' ? { status: 'ok', data: summarizeRent(rent.data) } : rent,
     },
-    sources: buildSources({ competition, traffic, density, rent }),
+    sources: buildSources({ competition, traffic, density, rent, accessibility }),
     notices: NOTICES,
     generatedAt: new Date().toISOString(),
   }

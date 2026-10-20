@@ -11,6 +11,7 @@ import geocodeRoutes from './geocode.routes.js'
 import placesRoutes from './places.routes.js'
 import authRoutes from './auth.routes.js'
 import rentalsRoutes from './rentals.routes.js'
+import accessibilityRoutes from './accessibility.routes.js'
 
 const router = Router()
 
@@ -26,5 +27,6 @@ router.use('/geocode', geocodeRoutes)
 router.use('/places', placesRoutes)
 router.use('/auth', authRoutes)
 router.use('/rentals', rentalsRoutes)
+router.use('/accessibility', accessibilityRoutes)
 
 export default router

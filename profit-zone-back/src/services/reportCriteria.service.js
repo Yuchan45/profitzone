@@ -249,9 +249,45 @@ export function competitionCriterion({ answerLabel, subcategoryName, competition
   return criterion('competition', 'Competencia', yourBusiness, zone, reading)
 }
 
-/** Accesibilidad (subte, avenidas): todavía no hay fuente de datos. */
-export function accessibilityCriterion({ answerLabel }) {
-  return noSourceCriterion('accessibility', 'Accesibilidad', answerLabel('arrival_type'))
+/** Accesibilidad: estaciones de subte, tren y paradas de transporte en el radio vs. cómo llega el cliente. */
+export function accessibilityCriterion({ answerCode, answerLabel, accessibility, noPublic }) {
+  const yourBusiness = answerLabel ? answerLabel('arrival_type') : null
+  const code = answerCode ? answerCode('arrival_type') : null
+  const label = 'Accesibilidad'
+
+  if (noPublic) {
+    return notApplicableCriterion('accessibility', label, yourBusiness)
+  }
+  if (!code || code === 'unknown') {
+    return undefinedAnswerCriterion('accessibility', label, yourBusiness, 'Sin definir cómo llega tu cliente')
+  }
+  if (!accessibility || accessibility.status !== 'ok') {
+    return criterion('accessibility', label, yourBusiness, 'No pudimos obtener la accesibilidad', 'not_evaluated')
+  }
+
+  const { total, subwayCount, trainCount, busCount } = accessibility.data
+  const zoneParts = []
+  if (subwayCount > 0) {
+    zoneParts.push(`${subwayCount} ${subwayCount === 1 ? 'estación de subte' : 'estaciones de subte'}`)
+  }
+  if (trainCount > 0) {
+    zoneParts.push(`${trainCount} ${trainCount === 1 ? 'estación de tren' : 'estaciones de tren'}`)
+  }
+  if (busCount > 0) {
+    zoneParts.push(`${busCount} ${busCount === 1 ? 'parada de colectivo' : 'paradas de colectivo'}`)
+  }
+  const zone = zoneParts.length > 0 ? `${zoneParts.join(' y ')} en el radio` : 'Sin paradas registradas en el radio'
+
+  let reading
+  if (subwayCount > 0 || trainCount > 0 || total >= 6) {
+    reading = 'strength'
+  } else if (total >= 2) {
+    reading = 'alert'
+  } else {
+    reading = 'weakness'
+  }
+
+  return criterion('accessibility', label, yourBusiness, zone, reading)
 }
 
 /** Lugares de interés según el público (ej. institutos educativos): sin fuente todavía. */

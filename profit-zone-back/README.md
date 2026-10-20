@@ -214,6 +214,52 @@ Host: localhost:8080
 }
 ```
 
+### `GET /api/accessibility`
+
+Obtiene el análisis de conectividad y transporte público (estaciones de subte, tren y paradas de colectivos) en un radio alrededor de unas coordenadas usando la API de Google Places (New). **Requiere sesión** (`requireAuth`).
+
+#### Parámetros de consulta (Query Params)
+
+| Parámetro | Tipo     | Requerido | Default | Descripción / Restricciones |
+| --------- | -------- | :-------: | :-----: | --------------------------- |
+| `lat`     | `number` | Sí        | —       | Latitud en grados decimales (`-90` a `90`). Ej: `-34.5880`. |
+| `lng`     | `number` | Sí        | —       | Longitud en grados decimales (`-180` a `180`). Ej: `-58.4300`. |
+| `radius`  | `number` | No        | `1000`  | Radio en metros (`10` a `20000`). Ej: `1000`. |
+
+#### Ejemplo de solicitud y respuesta
+
+```http
+GET /api/accessibility?lat=-34.5880&lng=-58.4300&radius=1000 HTTP/1.1
+Host: localhost:8080
+```
+
+```json
+{
+  "total": 7,
+  "subwayCount": 2,
+  "trainCount": 1,
+  "busCount": 4,
+  "otherCount": 0,
+  "level": "alta",
+  "callout": "Excelente conectividad con subte a 180 m y 4 paradas de colectivo en la zona.",
+  "source": "Google Places",
+  "places": [
+    {
+      "id": "mock-place-1",
+      "name": "Estación Pueyrredón (Línea D)",
+      "category": "subway",
+      "primaryType": "subway_station",
+      "distanceMeters": 180,
+      "distanceText": "180 m",
+      "location": {
+        "lat": -34.5868,
+        "lng": -58.429
+      }
+    }
+  ]
+}
+```
+
 ### `GET /api/traffic`
 
 Provee la estimación de afluencia horaria (curva de 7 h a 23 h) y el score de actividad (0 a 100) para una franja horaria objetivo.
