@@ -31,7 +31,7 @@ SQL Server (Docker, `docker-compose.yml` en la raíz) + Sequelize.
   - **nunca DELETE**: el catálogo usado se desactiva con `is_active = 0`.
 
   `bulkCreate` con `updateOnDuplicate` no funciona en MSSQL.
-- Comandos: `npm run db:up`, `db:migrate`, `db:migrate:undo`, `db:migrate:status`, `db:seed:catalog`, `db:seed:catalog:verify` (ver README).
+- Comandos: `npm run db:up`, `db:migrate`, `db:migrate:undo`, `db:migrate:status`, `db:seed:catalog`, `db:seed:catalog:verify`, `db:seed:all` (migra y corre todos los seeds en orden; ver README).
 
 ## Autenticación y autorización
 
