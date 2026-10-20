@@ -126,6 +126,52 @@
   color: var(--color-text-secondary);
 }
 
+/* Badges de tipo de transporte en la tabla de accesibilidad */
+.analisis-transit-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px var(--space-8);
+  border-radius: var(--radius-full);
+  font-size: var(--text-12);
+  font-weight: 500;
+  line-height: 1.2;
+  background-color: var(--color-surface-subtle);
+  color: var(--color-text-secondary);
+}
+
+.analisis-transit-badge--subway {
+  background-color: var(--color-primary-12);
+  color: var(--color-navy-700);
+}
+
+.analisis-transit-badge--train {
+  background-color: var(--color-warning-12);
+  color: var(--color-warning-dark);
+}
+
+.analisis-transit-badge--bus {
+  background-color: var(--color-surface-subtle);
+  color: var(--color-text-secondary);
+}
+
+.analisis-table--transit th,
+.analisis-table--transit td {
+  white-space: normal;
+  vertical-align: top;
+}
+
+.analisis-table--transit tbody th {
+  max-width: none;
+  overflow: visible;
+  text-overflow: clip;
+}
+
+.analisis-table--transit td:first-child,
+.analisis-table--transit td:last-child,
+.analisis-table--transit thead th:last-child {
+  white-space: nowrap;
+}
+
 /* Filas de detalle (población, alquiler) */
 .analisis-rows {
   display: flex;

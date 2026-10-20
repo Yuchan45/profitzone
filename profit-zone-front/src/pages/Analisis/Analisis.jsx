@@ -23,6 +23,10 @@ import './Analisis.css'
 const COMPETITION_MAX_RESULTS = 20
 // Locales que se listan en la tarjeta de competencia (los más cercanos)
 const COMPETITION_ROWS = 5
+// Google Places devuelve como máximo 20 paradas/estaciones por consulta
+const TRANSIT_MAX_RESULTS = 20
+// Paradas que se listan en la tarjeta de accesibilidad (las más cercanas)
+const TRANSIT_ROWS = 6
 
 // El censo trae los barrios en mayúsculas ("PALERMO")
 const titleCase = (text) =>
@@ -225,6 +229,85 @@ function RentCard({ report }) {
   )
 }
 
+function AccessibilityCard({ report }) {
+  const indicator = report.data?.indicators.accessibility
+  const state = cardState(report, indicator)
+  const card = { icon: 'bus', title: 'Accesibilidad y transporte', ...state }
+  if (state.status !== 'ok') return <IndicatorCard {...card} />
+
+  const { data } = indicator
+  if (data.total === 0) {
+    return (
+      <IndicatorCard
+        {...card}
+        status="empty"
+        empty={{
+          title: 'No encontramos paradas ni estaciones en este radio.',
+          text: 'Puede ser una zona residencial interna o con poco transporte registrado. Probá ampliar el radio para comparar.',
+        }}
+      />
+    )
+  }
+
+  const places = (data.places || []).slice(0, TRANSIT_ROWS)
+  const total = data.total >= TRANSIT_MAX_RESULTS ? `${data.total}+` : formatNumber(data.total)
+
+  const breakdown = []
+  if (data.subwayCount > 0) {
+    breakdown.push(`${data.subwayCount} ${data.subwayCount === 1 ? 'subte' : 'subtes'}`)
+  }
+  if (data.trainCount > 0) {
+    breakdown.push(`${data.trainCount} ${data.trainCount === 1 ? 'tren' : 'trenes'}`)
+  }
+  if (data.busCount > 0) {
+    breakdown.push(`${data.busCount} ${data.busCount === 1 ? 'parada de colectivo' : 'paradas de colectivo'}`)
+  }
+  if (data.otherCount > 0) {
+    breakdown.push(`${data.otherCount} otros transportes`)
+  }
+
+  const caption = breakdown.length > 0
+    ? `puntos de transporte en el radio: ${breakdown.join(', ')}.`
+    : 'puntos de transporte en el radio.'
+
+  return (
+    <IndicatorCard
+      {...card}
+      value={total}
+      caption={caption}
+      callout={data.callout}
+      source={`${data.source} · en vivo · ${formatDate(data.queryDate)} · se muestran ${places.length} de ${total}`}
+    >
+      <div className="analisis-table-wrap">
+        <table className="analisis-table analisis-table--transit">
+          <thead>
+            <tr>
+              <th scope="col">Tipo</th>
+              <th scope="col">Línea / Estación</th>
+              <th scope="col">Calle / Ubicación</th>
+              <th scope="col">Dist.</th>
+            </tr>
+          </thead>
+          <tbody>
+            {places.map((place) => (
+              <tr key={place.id}>
+                <td>
+                  <span className={`analisis-transit-badge analisis-transit-badge--${place.category}`}>
+                    {place.type || 'Transporte'}
+                  </span>
+                </td>
+                <th scope="row">{place.lines || place.cleanName || '—'}</th>
+                <td>{place.street || place.address || '—'}</td>
+                <td>{place.distanceText}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </IndicatorCard>
+  )
+}
+
 function Analisis() {
   const { id } = useParams()
   const flow = useAnalysisFlow()
@@ -319,6 +402,7 @@ function Analisis() {
                 <TrafficCard report={report} />
               </>
             )}
+            <AccessibilityCard report={report} />
             <PopulationCard report={report} />
             <RentCard report={report} />
           </div>

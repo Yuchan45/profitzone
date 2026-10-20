@@ -2,7 +2,7 @@ import { env } from '../config/env.js'
 
 const PLACES_NEARBY_URL = 'https://places.googleapis.com/v1/places:searchNearby'
 const FIELD_MASK =
-  'places.id,places.displayName,places.rating,places.userRatingCount,places.location,places.types,places.primaryType'
+  'places.id,places.displayName,places.rating,places.userRatingCount,places.location,places.types,places.primaryType,places.shortFormattedAddress,places.formattedAddress'
 
 /**
  * Consulta lugares cercanos utilizando la nueva Google Places API (searchNearby).
@@ -62,6 +62,7 @@ export async function searchNearbyPlaces({
       },
       primaryType: p.primaryType || p.types?.[0] || includedTypes[0],
       types: p.types || [],
+      address: p.shortFormattedAddress || p.formattedAddress || null,
     }))
   } catch (error) {
     console.error('[ProfitZone] Falló la llamada a Google Places API:', error.message)
@@ -92,6 +93,7 @@ function getMockPlaces(centerLat, centerLng, category) {
           dLng: 0.001,
           primaryType: 'subway_station',
           types: ['subway_station', 'transit_station'],
+          address: 'Av. Santa Fe y Av. Pueyrredón',
         },
         {
           name: 'Estación Santa Fe - Carlos Jáuregui (Línea H)',
@@ -101,6 +103,7 @@ function getMockPlaces(centerLat, centerLng, category) {
           dLng: 0.0016,
           primaryType: 'subway_station',
           types: ['subway_station', 'transit_station'],
+          address: 'Av. Santa Fe 2500',
         },
         {
           name: 'Parada Av. Santa Fe y Pueyrredón (Líneas 12, 39, 68)',
@@ -110,6 +113,7 @@ function getMockPlaces(centerLat, centerLng, category) {
           dLng: 0.0007,
           primaryType: 'bus_stop',
           types: ['bus_stop', 'transit_station'],
+          address: 'Av. Santa Fe 2530',
         },
         {
           name: 'Parada Av. Córdoba y Ecuador (Líneas 29, 111, 140)',
@@ -119,6 +123,7 @@ function getMockPlaces(centerLat, centerLng, category) {
           dLng: 0.0009,
           primaryType: 'bus_stop',
           types: ['bus_stop', 'transit_station'],
+          address: 'Av. Córdoba 2700',
         },
         {
           name: 'Parada Av. Callao y Marcelo T. de Alvear (Líneas 37, 124)',
@@ -128,6 +133,7 @@ function getMockPlaces(centerLat, centerLng, category) {
           dLng: -0.0012,
           primaryType: 'bus_stop',
           types: ['bus_stop', 'transit_station'],
+          address: 'Av. Callao 1250',
         },
         {
           name: 'Parada Av. Las Heras y Pueyrredón (Líneas 41, 60, 95)',
@@ -137,6 +143,7 @@ function getMockPlaces(centerLat, centerLng, category) {
           dLng: -0.0018,
           primaryType: 'bus_stop',
           types: ['bus_stop', 'transit_station'],
+          address: 'Av. Las Heras 2300',
         },
         {
           name: 'Estación Retiro (Línea Mitre)',
@@ -146,6 +153,7 @@ function getMockPlaces(centerLat, centerLng, category) {
           dLng: 0.0028,
           primaryType: 'train_station',
           types: ['train_station', 'transit_station'],
+          address: 'Av. Dr. José María Ramos Mejía 1300',
         },
       ]
     : isCafe
@@ -181,5 +189,6 @@ function getMockPlaces(centerLat, centerLng, category) {
     },
     primaryType: t.primaryType,
     types: t.types || [t.primaryType, 'point_of_interest', 'establishment'],
+    address: t.address || null,
   }))
 }
