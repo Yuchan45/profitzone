@@ -83,7 +83,11 @@ function CompetitionCard({ report }) {
   }
 
   const places = data.places.slice(0, COMPETITION_ROWS)
-  const total = data.total >= COMPETITION_MAX_RESULTS ? `${data.total}+` : formatNumber(data.total)
+  const total = data.isExact
+    ? formatNumber(data.total)
+    : data.total >= COMPETITION_MAX_RESULTS
+      ? `${data.total}+`
+      : formatNumber(data.total)
   return (
     <IndicatorCard
       {...card}

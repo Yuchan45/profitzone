@@ -21,7 +21,11 @@ const PENDING_CAPTION = 'Dato pendiente'
 function competitionTile({ status, data }) {
   if (status === 'not_applicable') return { value: null, caption: 'No aplica sin atención al público' }
   if (status !== 'ok') return { value: null, caption: 'No pudimos cargar este dato' }
-  const value = data.total >= COMPETITION_MAX_RESULTS ? `${data.total}+` : formatNumber(data.total)
+  const value = data.isExact
+    ? formatNumber(data.total)
+    : data.total >= COMPETITION_MAX_RESULTS
+      ? `${data.total}+`
+      : formatNumber(data.total)
   return { value, caption: `${data.directCount} directos` }
 }
 
