@@ -1,3 +1,4 @@
+import { useMemo, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { useAnalysisFlow } from '../../hooks/useAnalysisFlow.js'
 import { useFlowSteps } from '../../hooks/useFlowSteps.js'
@@ -63,13 +64,27 @@ function DetailRows({ rows }) {
 }
 
 function CompetitionCard({ report }) {
+  const [isExpanded, setIsExpanded] = useState(false)
   const indicator = report.data?.indicators.competition
   const state = cardState(report, indicator)
+  const data = indicator?.data
+
+  const places = data?.places
+
+  // Ordenar primero las directas y luego por cercanía (distancia ascendente)
+  const sortedPlaces = useMemo(() => {
+    if (!places) return []
+    return [...places].sort((a, b) => {
+      if (a.type === 'Directa' && b.type !== 'Directa') return -1
+      if (a.type !== 'Directa' && b.type === 'Directa') return 1
+      return a.distanceMeters - b.distanceMeters
+    })
+  }, [places])
+
   const card = { icon: 'shield-check', title: 'Competencia', ...state }
   if (state.status !== 'ok') return <IndicatorCard {...card} />
 
-  const { data } = indicator
-  if (data.total === 0) {
+  if (!data || data.total === 0) {
     return (
       <IndicatorCard
         {...card}
@@ -82,12 +97,14 @@ function CompetitionCard({ report }) {
     )
   }
 
-  const places = data.places.slice(0, COMPETITION_ROWS)
+  const canExpand = sortedPlaces.length > COMPETITION_ROWS
+  const visiblePlaces = isExpanded ? sortedPlaces : sortedPlaces.slice(0, COMPETITION_ROWS)
   const total = data.isExact
     ? formatNumber(data.total)
     : data.total >= COMPETITION_MAX_RESULTS
       ? `${data.total}+`
       : formatNumber(data.total)
+
   return (
     <IndicatorCard
       {...card}
@@ -99,9 +116,9 @@ function CompetitionCard({ report }) {
         .filter(Boolean)
         .join(' ')}
       callout={data.callout}
-      source={`${data.source} · en vivo · ${formatDate(data.queryDate)} · se muestran ${places.length} de ${total}`}
+      source={`${data.source} · en vivo · ${formatDate(data.queryDate)} · se muestran ${visiblePlaces.length} de ${total}`}
     >
-      <div className="analisis-table-wrap">
+      <div className={`analisis-table-wrap ${isExpanded ? 'analisis-table-wrap--expanded' : ''}`}>
         <table className="analisis-table">
           <thead>
             <tr>
@@ -113,7 +130,7 @@ function CompetitionCard({ report }) {
             </tr>
           </thead>
           <tbody>
-            {places.map((place) => (
+            {visiblePlaces.map((place) => (
               <tr key={place.id}>
                 <th scope="row">{place.name}</th>
                 <td>{place.rating ? formatNumber(place.rating) : '—'}</td>
@@ -125,6 +142,20 @@ function CompetitionCard({ report }) {
           </tbody>
         </table>
       </div>
+
+      {canExpand && (
+        <div className="analisis-expand-action">
+          <button
+            type="button"
+            className="analisis-expand-btn"
+            onClick={() => setIsExpanded((prev) => !prev)}
+            aria-expanded={isExpanded}
+          >
+            <span>{isExpanded ? 'Ver menos' : `Ver todas las competencias (${sortedPlaces.length})`}</span>
+            <Icon name={isExpanded ? 'chevron-up' : 'chevron-down'} size={14} />
+          </button>
+        </div>
+      )}
     </IndicatorCard>
   )
 }

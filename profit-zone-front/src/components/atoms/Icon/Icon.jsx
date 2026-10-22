@@ -40,6 +40,7 @@ const PATHS = {
     </>
   ),
   'chevron-down': <path d="m6 9 6 6 6-6" />,
+  'chevron-up': <path d="m18 15-6-6-6 6" />,
   clock: (
     <>
       <circle cx="12" cy="12" r="10" />
