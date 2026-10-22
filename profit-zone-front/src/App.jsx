@@ -40,7 +40,7 @@ function App() {
             </Suspense>
           }
         />
-        {/* El análisis y el reporte siempre tienen dueño: esperan a recuperar la sesión y, sin sesión, piden login */}
+        {/* El análisis siempre tiene dueño: espera a recuperar la sesión y, sin sesión, pide login */}
         <Route element={<ProtectedRoute />}>
           <Route
             path="/analizar/analisis/:id"

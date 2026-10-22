@@ -3,11 +3,11 @@ import { useAnalysisFlow } from './useAnalysisFlow.js'
 import { useAnalysisReport } from './useAnalysisReport.js'
 
 /**
- * Reporte de un análisis para los pasos 4 (Análisis) y 5 (Reporte) del flujo.
+ * Reporte de un análisis para el paso 4 (Análisis) del flujo.
  * - Reusa el reporte ya traído solo si es el análisis en curso y no cambió nada desde
  *   que salió bien (`reportReadyFor`): así no repite la consulta paga a Google Places al
  *   ir y volver entre los pasos, pero nunca muestra uno armado con respuestas viejas.
- * - Con el reporte listo, marca los pasos 4 y 5 como completos en el Stepper. Un reporte
+ * - Con el reporte listo, marca el paso 4 como completo en el Stepper. Un reporte
  *   de otro análisis (ej. desde Mis reportes) no toca el flujo.
  * Devuelve lo mismo que `useAnalysisReport` más `isCurrentAnalysis`.
  */

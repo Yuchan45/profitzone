@@ -3,8 +3,8 @@
 // AnalysisFlowContext y devuelve null mientras no se puede entrar. `isComplete` recibe
 // ese mismo estado y dice si el paso quedó listo para avanzar.
 
-// El análisis (paso 4) y el reporte (paso 5) se arman con el mismo pedido a la API: se puede
-// volver a ellos una vez que salió bien, hasta que cambie algo de lo que respondió el usuario.
+// El análisis (paso 4) se arma con el pedido a la API: se puede
+// volver a él una vez que salió bien, hasta que cambie algo de lo que respondió el usuario.
 export const isReportReady = (flow) => Boolean(flow.analysisId) && flow.reportReadyFor === flow.analysisId
 const readyPath = (prefix) => (flow) => (isReportReady(flow) ? `${prefix}/${flow.analysisId}` : null)
 
@@ -32,7 +32,6 @@ export const FLOW_STEPS = [
     isComplete: (flow) => Boolean(flow.analysisId && flow.location),
   },
   { id: 'analisis', label: 'Análisis', path: readyPath('/analizar/analisis'), isComplete: isReportReady },
-  { id: 'reporte', label: 'Reporte', path: readyPath('/analizar/reporte'), isComplete: isReportReady },
 ]
 
 // Destino de "Analizar una zona" y "Nuevo análisis": el AnalysisFlowProvider lee el flag
