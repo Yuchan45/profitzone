@@ -92,6 +92,43 @@
 }
 
 /* Tabla de competencia */
+.analisis-table-wrap--expanded {
+  max-height: 440px;
+  overflow-y: auto;
+}
+
+.analisis-expand-action {
+  display: flex;
+  margin-top: var(--space-8);
+  padding-top: var(--space-8);
+  border-top: 1px solid var(--color-border-subtle, #f0f0f0);
+}
+
+.analisis-expand-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-6);
+  padding: var(--space-6) var(--space-10);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background-color: var(--color-surface);
+  color: var(--color-text-secondary);
+  font-family: inherit;
+  font-size: var(--text-12);
+  font-weight: 500;
+  cursor: pointer;
+  transition:
+    background-color 0.15s ease,
+    color 0.15s ease,
+    border-color 0.15s ease;
+}
+
+.analisis-expand-btn:hover {
+  background-color: var(--color-surface-subtle);
+  color: var(--color-text);
+  border-color: var(--color-border-strong);
+}
+
 .analisis-table-wrap {
   overflow-x: auto;
 }

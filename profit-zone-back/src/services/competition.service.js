@@ -252,7 +252,12 @@ export async function getCompetitionAnalysis({
   })
 
   // Ordenar por distancia (los más cercanos primero, como en la tabla de la imagen)
-  places.sort((a, b) => a.distanceMeters - b.distanceMeters)
+  // Ordenar primero las directas y luego por cercanía (distancia ascendente)
+  places.sort((a, b) => {
+    if (a.type === 'Directa' && b.type !== 'Directa') return -1
+    if (a.type !== 'Directa' && b.type === 'Directa') return 1
+    return a.distanceMeters - b.distanceMeters
+  })
 
   const hasOsmData = osmResult && typeof osmResult.total === 'number' && osmResult.total > 0
   const total = hasOsmData ? osmResult.total : places.length
