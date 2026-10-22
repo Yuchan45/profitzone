@@ -54,6 +54,19 @@ function resolveTrafficWindow(answerCode) {
   return { window: { schedule: 'day' }, questionCode: null }
 }
 
+function resolveDirectMatch(survey, answers) {
+  const allQuestions = [...(survey.business || []), ...(survey.details || [])]
+  for (const question of allQuestions) {
+    for (const code of answers[question.code] ?? []) {
+      const option = question.options?.find((o) => o.code === code)
+      if (option?.metadata?.osmCuisine?.length) {
+        return `${question.code}:${option.code}`
+      }
+    }
+  }
+  return null
+}
+
 /**
  * La encuesta solo da los textos de las opciones. Si el rubro se desactivó
  * después de crear el análisis, el reporte se arma igual mostrando los codes.
@@ -142,7 +155,16 @@ export async function buildAnalysisReport(id, userId) {
 
   // Sin atención al público no se muestran competencia ni afluencia (estados-y-variantes)
   const [competition, traffic, density, rent, accessibility] = await Promise.all([
-    noPublic ? notApplicable : settleIndicator('competencia', () => getCompetitionAnalysis({ ...point, subcategory })),
+    noPublic
+      ? notApplicable
+      : settleIndicator('competencia', () =>
+          getCompetitionAnalysis({
+            ...point,
+            categoryCode: analysis.category.code,
+            subcategory,
+            match: resolveDirectMatch(survey, analysis.answers),
+          }),
+        ),
     noPublic
       ? notApplicable
       : settleIndicator('afluencia', () =>

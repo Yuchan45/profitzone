@@ -18,7 +18,7 @@ const MAX_PLACES = 1500
  * elegida en la encuesta (`metadata.osmCuisine`). `match` = "pregunta:opción".
  * Devuelve null si no hay criterio (sin `match` u opción sin mapeo, ej. "Otra").
  */
-async function directCriteria(categoryCode, subcategoryCode, match) {
+export async function directCriteria(categoryCode, subcategoryCode, match) {
   if (!match) return null
   const [questionCode, optionCode] = match.split(':')
   const survey = await getSubcategorySurvey(categoryCode, subcategoryCode)
@@ -42,7 +42,7 @@ export async function findNearbyPlaces({ lat, lng, radius, categoryCode, subcate
 
   const [rows] = await sequelize.query(
     `DECLARE @point geography = geography::Point(:lat, :lng, 4326);
-     SELECT id, name, cuisine, geom.Lat AS lat, geom.Long AS lng, last_seen_at AS lastSeenAt
+     SELECT id, name, kind, cuisine, geom.Lat AS lat, geom.Long AS lng, last_seen_at AS lastSeenAt
      FROM osm_data.places
      WHERE is_active = 1 AND kind IN (:kinds) AND geom.STDistance(@point) <= :radius
      ORDER BY geom.STDistance(@point)`,
@@ -54,6 +54,8 @@ export async function findNearbyPlaces({ lat, lng, radius, categoryCode, subcate
   const places = rows.map((row) => ({
     id: row.id,
     name: row.name,
+    kind: row.kind,
+    cuisine: row.cuisine,
     lat: row.lat,
     lng: row.lng,
     direct: isDirect(row.cuisine),

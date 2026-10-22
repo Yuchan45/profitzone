@@ -1,7 +1,7 @@
 import { getCompetitionAnalysis } from '../services/competition.service.js'
 
 export async function getCompetition(req, res) {
-  const { lat, lng, radius, subcategory } = req.query
+  const { lat, lng, radius, category, subcategory, match } = req.query
 
   if (lat === undefined || lat === '' || lng === undefined || lng === '') {
     const error = new Error('Los parámetros de consulta "lat" y "lng" son obligatorios.')
@@ -36,7 +36,9 @@ export async function getCompetition(req, res) {
     lat: parsedLat,
     lng: parsedLng,
     radiusInMeters: parsedRadius,
+    categoryCode: category,
     subcategory: subcategory || 'restaurante',
+    match,
   })
 
   res.json(result)

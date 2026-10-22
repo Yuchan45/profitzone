@@ -231,7 +231,7 @@ export function competitionCriterion({ answerLabel, subcategoryName, competition
   // Sin locales con rating el servicio devuelve un promedio por defecto: no se usa
   const hasRatings = places.some((place) => place.rating)
   // Si se llegó al máximo de resultados puede haber más locales que no vinieron
-  const atLeast = total >= COMPETITION.maxResults ? 'Al menos ' : ''
+  const atLeast = total >= COMPETITION.maxResults && !competition.data.isExact ? 'Al menos ' : ''
   const ratingText = hasRatings ? `, rating promedio ${averageRating.toLocaleString('es-AR')}` : ''
   const zone =
     directCount === 0

@@ -173,6 +173,7 @@ function getMockPlaces(centerLat, centerLng, category) {
           ]
         : [
             { name: 'Don Julio Parrilla', rating: 4.7, reviews: 18200, dLat: 0.0005, dLng: 0.0006, primaryType: 'restaurant' },
+            { name: 'Mikhuna Nikkei', rating: 4.3, reviews: 2350, dLat: 0.0008, dLng: -0.0007, primaryType: 'restaurant' },
             { name: 'La Cabrera', rating: 4.5, reviews: 9400, dLat: -0.001, dLng: 0.0012, primaryType: 'restaurant' },
             { name: 'Cervecería Antares', rating: 4.3, reviews: 2100, dLat: 0.0014, dLng: -0.0015, primaryType: 'bar' },
             { name: 'Pizzería Güerrín Delivery', rating: 4.4, reviews: 1540, dLat: -0.0019, dLng: 0.0021, primaryType: 'meal_takeaway' },
