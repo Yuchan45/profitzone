@@ -7,6 +7,7 @@ import { getRentalsInRadius } from './rentals.service.js'
 import { getAccessibilityAnalysis } from './accessibility.service.js'
 import { CRITERIA, buildSummary } from './reportCriteria.service.js'
 import { httpError } from '../utils/httpErrors.js'
+import { formatArgentinaDate } from '../utils/dates.js'
 
 // Franja horaria que se le pide al servicio de afluencia según las respuestas.
 // La franja pico de la subcategoría es más precisa que el horario general.
@@ -106,11 +107,12 @@ function buildAnswerReaders(answers, survey) {
   }
 }
 
+// Las fechas van en hora de Buenos Aires: el servidor puede estar en UTC
 function buildSources({ competition, traffic, density, rent, accessibility }) {
   const sources = []
   if (competition.status === 'ok') {
-    const date = new Date(competition.data.queryDate).toLocaleDateString('es-AR')
-    sources.push(`Competencia: ${competition.data.source}, consultado el ${date}.`)
+    const date = formatArgentinaDate(competition.data.queryDate)
+    sources.push(`Competencia: ${competition.data.source}${date ? `, consultado el ${date}` : ''}.`)
   }
   // El servicio de afluencia usa un perfil por rubro, no consulta el punto
   if (traffic.status === 'ok') sources.push('Afluencia: perfil horario típico del rubro (estimado).')
@@ -119,17 +121,42 @@ function buildSources({ competition, traffic, density, rent, accessibility }) {
       'Demografía: censo nacional (INDEC) por radio censal y estructura por edad y sexo del Geoportal INDEC (Censo 2022), ponderados por área.',
     )
   }
-  if (rent.status === 'ok') sources.push('Alquiler: avisos de locales comerciales en alquiler publicados en ZonaProp.')
+  if (rent.status === 'ok') {
+    // Es la mediana de los avisos dentro del radio, no un promedio oficial del barrio
+    const surveyed = rent.data.scrapedAt && formatArgentinaDate(rent.data.scrapedAt)
+    const date = surveyed ? `, relevados el ${surveyed}` : ''
+    sources.push(
+      `Alquiler: mediana de los avisos de locales comerciales en alquiler publicados en ZonaProp dentro del radio${date}. No es un promedio del barrio.`,
+    )
+  }
   if (accessibility?.status === 'ok') {
-    const date = new Date(accessibility.data.queryDate).toLocaleDateString('es-AR')
-    sources.push(`Accesibilidad: ${accessibility.data.source}, consultado el ${date}.`)
+    const date = formatArgentinaDate(accessibility.data.queryDate)
+    sources.push(`Accesibilidad: ${accessibility.data.source}${date ? `, consultado el ${date}` : ''}.`)
   }
   sources.push('Lugares según tu público: todavía sin fuente de datos.')
   return sources
 }
 
-function summarizeRent({ totalInRadius, pricedInRadius, medianRentArs, averageRentArs, medianPricePerM2Ars, averageSurfaceM2 }) {
-  return { totalInRadius, pricedInRadius, medianRentArs, averageRentArs, medianPricePerM2Ars, averageSurfaceM2 }
+function summarizeRent({
+  radiusInMeters,
+  totalInRadius,
+  pricedInRadius,
+  medianRentArs,
+  averageRentArs,
+  medianPricePerM2Ars,
+  averageSurfaceM2,
+  scrapedAt,
+}) {
+  return {
+    radiusInMeters,
+    totalInRadius,
+    pricedInRadius,
+    medianRentArs,
+    averageRentArs,
+    medianPricePerM2Ars,
+    averageSurfaceM2,
+    scrapedAt,
+  }
 }
 
 /**

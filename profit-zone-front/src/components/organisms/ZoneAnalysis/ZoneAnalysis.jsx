@@ -91,12 +91,15 @@ function rentTile(indicator) {
   if (!indicator) return { value: null, caption: PENDING_CAPTION }
   const { status, data } = indicator
   if (status !== 'ok') return { value: null, caption: 'No pudimos cargar este dato' }
+  if (data.totalInRadius === 0) return { value: null, caption: 'Sin locales en alquiler publicados en el radio' }
   // Solo los avisos con precio forman la mediana
-  if (data.pricedInRadius === 0) return { value: null, caption: 'Sin locales en alquiler publicados en el radio' }
+  if (data.pricedInRadius === 0) return { value: null, caption: 'Hay locales publicados en el radio, pero sin precio' }
   const listings = data.pricedInRadius === 1 ? '1 aviso' : `${formatNumber(data.pricedInRadius)} avisos`
+  // Es la mediana de los avisos del radio, no un promedio del barrio
+  const surveyed = data.scrapedAt ? `, relevados el ${formatDate(data.scrapedAt)}` : ''
   return {
     value: formatCurrency(data.medianRentArs, 'ARS', { decimals: 0 }),
-    caption: `por mes, mediana de ${listings}`,
+    caption: `por mes, mediana de ${listings} en el radio${surveyed}`,
   }
 }
 
@@ -288,7 +291,10 @@ function RentCard({ report }) {
         {...card}
         status="empty"
         empty={{
-          title: 'No hay locales en alquiler publicados en el radio.',
+          title:
+            data.totalInRadius === 0
+              ? 'No hay locales en alquiler publicados en el radio.'
+              : 'Los locales publicados en el radio no informan el precio.',
           text: 'Probá ampliar el radio para comparar.',
         }}
       />
@@ -301,8 +307,10 @@ function RentCard({ report }) {
     <IndicatorCard
       {...card}
       value={money(data.medianRentArs)}
-      caption={`por mes, mediana de ${listings} en el radio.`}
-      source="ZonaProp · avisos de locales comerciales en alquiler"
+      caption={`por mes, mediana de ${listings} en el radio (no es un promedio del barrio).`}
+      source={`ZonaProp · avisos de locales comerciales en alquiler${
+        data.scrapedAt ? `, relevados el ${formatDate(data.scrapedAt)}` : ''
+      }`}
     >
       <DetailRows
         rows={[

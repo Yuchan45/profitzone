@@ -2,6 +2,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { sequelize } from '../sequelize.js'
+import { parseArgentinaDateTime } from '../../utils/dates.js'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const DATA_PATH = path.resolve(__dirname, 'data/zonaprop_locales_caba_alquiler.json')
@@ -18,6 +19,11 @@ export async function seedCommercialRentals({ batchSize = 100 } = {}) {
   const raw = fs.readFileSync(DATA_PATH, 'utf8')
   const catalog = JSON.parse(raw)
   const properties = catalog.properties || []
+  // Fecha del relevamiento: es la misma para todo el archivo
+  const scrapedAt = catalog.scraped_at ? parseArgentinaDateTime(catalog.scraped_at) : null
+  if (scrapedAt && Number.isNaN(scrapedAt.getTime())) {
+    throw new Error(`scraped_at inválido en ${DATA_PATH}: ${catalog.scraped_at}`)
+  }
 
   const stats = {
     total: properties.length,
@@ -58,6 +64,7 @@ export async function seedCommercialRentals({ batchSize = 100 } = {}) {
               :url AS url,
               :locationPrecision AS location_precision,
               :geocodingSource AS geocoding_source,
+              CAST(:scrapedAt AS datetime2) AS scraped_at,
               geography::Point(:lat, :lng, 4326) AS geom
           ) AS source
           ON target.source_id = source.source_id
@@ -79,17 +86,18 @@ export async function seedCommercialRentals({ batchSize = 100 } = {}) {
               url = source.url,
               location_precision = source.location_precision,
               geocoding_source = source.geocoding_source,
+              scraped_at = source.scraped_at,
               geom = source.geom
           WHEN NOT MATCHED THEN
             INSERT (
               source_id, operation_type, address, normalized_address, neighborhood, sub_neighborhood,
               currency_original, price_raw, price_ars, price_usd, expensas, surface_m2,
-              price_per_m2_ars, price_per_m2_usd, url, location_precision, geocoding_source, geom
+              price_per_m2_ars, price_per_m2_usd, url, location_precision, geocoding_source, scraped_at, geom
             )
             VALUES (
               source.source_id, source.operation_type, source.address, source.normalized_address, source.neighborhood, source.sub_neighborhood,
               source.currency_original, source.price_raw, source.price_ars, source.price_usd, source.expensas, source.surface_m2,
-              source.price_per_m2_ars, source.price_per_m2_usd, source.url, source.location_precision, source.geocoding_source, source.geom
+              source.price_per_m2_ars, source.price_per_m2_usd, source.url, source.location_precision, source.geocoding_source, source.scraped_at, source.geom
             );
         `
 
@@ -112,6 +120,8 @@ export async function seedCommercialRentals({ batchSize = 100 } = {}) {
             url: p.url ? String(p.url) : null,
             locationPrecision: p.location_precision ? String(p.location_precision) : null,
             geocodingSource: p.geocoding_source ? String(p.geocoding_source) : null,
+            // ISO sin zona: datetime2 guarda UTC
+            scrapedAt: scrapedAt ? scrapedAt.toISOString().slice(0, 23) : null,
             lat: Number(p.lat),
             lng: Number(p.lng),
           },
