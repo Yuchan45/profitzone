@@ -209,6 +209,19 @@ function escapeHtml(value) {
   return value.replace(/[&<>"']/g, (char) => `&#${char.charCodeAt(0)};`)
 }
 
+/**
+ * Bloquea la fila del usuario hasta el fin de la transacción. Los flujos de
+ * recuperación la toman primero, siempre en el mismo orden, para no trabarse
+ * entre sí (deadlock) al tocar después sus tokens.
+ */
+async function lockUserRow(userId, transaction) {
+  await sequelize.query('SELECT id FROM users.users WITH (UPDLOCK, ROWLOCK) WHERE id = :id', {
+    replacements: { id: userId },
+    type: QueryTypes.SELECT,
+    transaction,
+  })
+}
+
 /** Invalida los links anteriores, crea uno nuevo y manda el correo. */
 async function issuePasswordReset(email, meta) {
   const user = await User.findOne({ where: { email } })
@@ -216,13 +229,9 @@ async function issuePasswordReset(email, meta) {
 
   const token = generateOpaqueToken()
   await sequelize.transaction(async (transaction) => {
-    // Bloquea la fila del usuario: dos pedidos a la vez se ejecutan uno detrás del
-    // otro y no dejan dos links válidos (con READ COMMITTED la transacción sola no alcanza)
-    await sequelize.query('SELECT id FROM users.users WITH (UPDLOCK, ROWLOCK) WHERE id = :id', {
-      replacements: { id: user.id },
-      type: QueryTypes.SELECT,
-      transaction,
-    })
+    // Dos pedidos a la vez se ejecutan uno detrás del otro y no dejan dos links
+    // válidos (con READ COMMITTED la transacción sola no alcanza)
+    await lockUserRow(user.id, transaction)
     await cleanupExpiredTokens(user.id, RESET_PASSWORD, transaction)
     // Solo el último link pedido sirve
     await AuthToken.update(
@@ -253,8 +262,13 @@ async function issuePasswordReset(email, meta) {
  */
 export function requestPasswordReset(email, meta) {
   issuePasswordReset(email, meta).catch((error) => {
-    // Sin await en el controller: este log es el único rastro si falla la DB o el SMTP
-    console.error('[ProfitZone] No se pudo procesar el pedido de recuperación de contraseña:', error)
+    // Sin await en el controller: este log es el único rastro si falla la DB o el SMTP.
+    // Solo nombre, código y mensaje: el error entero trae el SQL con sus parámetros o el correo
+    console.error(
+      `[ProfitZone] No se pudo procesar el pedido de recuperación de contraseña: ${error.name}${
+        error.code ? ` (${error.code})` : ''
+      }: ${error.message}`,
+    )
   })
 }
 
@@ -278,6 +292,7 @@ export async function resetPassword(token, password) {
   const passwordHash = await hashPassword(password)
 
   await sequelize.transaction(async (transaction) => {
+    await lockUserRow(record.userId, transaction)
     // Uso atómico: dos requests con el mismo link no cambian la contraseña dos veces
     const [updated] = await AuthToken.update(
       { usedAt: new Date() },
