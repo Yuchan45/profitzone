@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { useAuth } from '../../hooks/useAuth.js'
 import StepHeading from '../../components/molecules/StepHeading/StepHeading.jsx'
@@ -11,8 +11,13 @@ import '../../styles/auth-form.css'
 
 // Página del link que llega por correo: /restablecer-contrasena?token=…
 function RestablecerContrasena() {
-  const [searchParams] = useSearchParams()
-  const token = searchParams.get('token')
+  const [searchParams, setSearchParams] = useSearchParams()
+  // El token se guarda en el estado y se saca de la URL: así no queda en el historial
+  const [token] = useState(() => searchParams.get('token'))
+
+  useEffect(() => {
+    if (searchParams.has('token')) setSearchParams({}, { replace: true })
+  }, [searchParams, setSearchParams])
   const { status, logout } = useAuth()
   const [done, setDone] = useState(false)
 

@@ -103,8 +103,8 @@ export async function postForgotPassword(req, res) {
   const email = normalizeEmail(req.body)
   if (!EMAIL_PATTERN.test(email) || email.length > 320) throw badRequest('Ingresá un correo válido.')
 
-  await requestPasswordReset(email, requestMeta(req))
-  // Misma respuesta exista o no la cuenta: no revela qué correos están registrados
+  // No se espera: misma respuesta, y en el mismo tiempo, exista o no la cuenta
+  requestPasswordReset(email, requestMeta(req))
   res.status(202).json({
     message: 'Si el correo corresponde a una cuenta, te mandamos un link para restablecer la contraseña.',
   })

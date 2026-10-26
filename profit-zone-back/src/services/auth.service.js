@@ -70,10 +70,11 @@ async function revokeAllRefreshTokens(userId, transaction) {
   )
 }
 
-/** Borra los refresh tokens vencidos del usuario para que la tabla no crezca sin límite. */
-async function cleanupExpiredTokens(userId) {
+/** Borra los tokens vencidos del usuario (de un tipo) para que la tabla no crezca sin límite. */
+async function cleanupExpiredTokens(userId, type = REFRESH, transaction = undefined) {
   await AuthToken.destroy({
-    where: { userId, type: REFRESH, expiresAt: { [Op.lt]: new Date() } },
+    where: { userId, type, expiresAt: { [Op.lt]: new Date() } },
+    transaction,
   })
 }
 
@@ -208,37 +209,45 @@ function escapeHtml(value) {
   return value.replace(/[&<>"']/g, (char) => `&#${char.charCodeAt(0)};`)
 }
 
-/**
- * Pide restablecer la contraseña: si el correo es de una cuenta activa, invalida
- * los links anteriores y manda uno nuevo. Responde igual exista o no el correo.
- */
-export async function requestPasswordReset(email, meta) {
+/** Invalida los links anteriores, crea uno nuevo y manda el correo. */
+async function issuePasswordReset(email, meta) {
   const user = await User.findOne({ where: { email } })
   if (!user || !user.isActive) return
 
-  // Solo el último link pedido sirve
-  await AuthToken.update(
-    { revokedAt: new Date() },
-    { where: { userId: user.id, type: RESET_PASSWORD, usedAt: null, revokedAt: null } },
-  )
-  await AuthToken.destroy({
-    where: { userId: user.id, type: RESET_PASSWORD, expiresAt: { [Op.lt]: new Date() } },
-  })
-
   const token = generateOpaqueToken()
-  await AuthToken.create({
-    userId: user.id,
-    type: RESET_PASSWORD,
-    tokenHash: hashToken(token),
-    expiresAt: new Date(Date.now() + RESET_PASSWORD_TTL_MS),
-    userAgent: meta.userAgent ?? null,
-    ip: meta.ip ?? null,
+  // En una transacción: dos pedidos a la vez no dejan dos links válidos
+  await sequelize.transaction(async (transaction) => {
+    // Solo el último link pedido sirve
+    await AuthToken.update(
+      { revokedAt: new Date() },
+      { where: { userId: user.id, type: RESET_PASSWORD, usedAt: null, revokedAt: null }, transaction },
+    )
+    await cleanupExpiredTokens(user.id, RESET_PASSWORD, transaction)
+    await AuthToken.create(
+      {
+        userId: user.id,
+        type: RESET_PASSWORD,
+        tokenHash: hashToken(token),
+        expiresAt: new Date(Date.now() + RESET_PASSWORD_TTL_MS),
+        userAgent: meta.userAgent ?? null,
+        ip: meta.ip ?? null,
+      },
+      { transaction },
+    )
   })
 
   const link = `${env.frontendUrl}/restablecer-contrasena?token=${encodeURIComponent(token)}`
-  // Sin await: si el correo existe la respuesta no tarda más (no revela qué cuentas hay)
-  sendMail(buildResetPasswordMail(user, link)).catch((error) => {
-    console.error(`[ProfitZone] No se pudo mandar el correo de recuperación: ${error.message}`)
+  await sendMail(buildResetPasswordMail(user, link))
+}
+
+/**
+ * Pide restablecer la contraseña: si el correo es de una cuenta activa, invalida
+ * los links anteriores y manda uno nuevo. No espera a que termine: la respuesta
+ * tarda lo mismo exista o no el correo, así no revela qué cuentas hay.
+ */
+export function requestPasswordReset(email, meta) {
+  issuePasswordReset(email, meta).catch((error) => {
+    console.error(`[ProfitZone] No se pudo generar el link de recuperación: ${error.message}`)
   })
 }
 
