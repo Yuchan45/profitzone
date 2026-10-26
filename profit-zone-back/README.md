@@ -490,6 +490,7 @@ geometry|	MultiPolygon|	Coordenadas vectoriales exactas de los límites de las m
 | `price_per_m2_ars` | `decimal(14,2)` | Valor locativo mensual por metro cuadrado en ARS. |
 | `price_per_m2_usd` | `decimal(14,2)` | Valor locativo mensual por metro cuadrado en USD. |
 | `geom` | `geography` | Coordenadas vectoriales puntuales WGS84 (`Point(lat, lng, 4326)`). |
+| `scraped_at` | `datetime2` | Fecha del relevamiento de los avisos (UTC, migración `0014`). `NULL` en las filas cargadas antes de esa migración, hasta volver a correr el seed. |
 
 ### Negocios de OpenStreetMap (seed)
 
