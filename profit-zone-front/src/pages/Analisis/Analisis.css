@@ -1,5 +1,9 @@
-/* Sin "Anterior", "Nuevo análisis" queda a la derecha */
-.analisis .flow-step-actions > :only-child {
+/* "Nuevo análisis" e "Ir a Mis reportes" van juntos a la derecha, aunque no esté "Anterior" */
+.analisis-actions-end {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-16);
   margin-left: auto;
 }
 

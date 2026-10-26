@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useId, useRef } from 'react'
 import Icon from '../../atoms/Icon/Icon.jsx'
 import './Modal.css'
 
@@ -8,6 +8,8 @@ import './Modal.css'
  */
 function Modal({ open, onClose, title, children }) {
   const dialogRef = useRef(null)
+  // id único: puede haber más de un modal en la misma página
+  const titleId = useId()
 
   useEffect(() => {
     const dialog = dialogRef.current
@@ -30,13 +32,13 @@ function Modal({ open, onClose, title, children }) {
     <dialog
       ref={dialogRef}
       className="modal"
-      aria-labelledby="modal-title"
+      aria-labelledby={titleId}
       onCancel={handleCancel}
       onClick={handleClick}
     >
       <div className="modal-content">
         <div className="modal-header">
-          <h2 id="modal-title" className="modal-title">
+          <h2 id={titleId} className="modal-title">
             {title}
           </h2>
           <button type="button" className="modal-close" aria-label="Cerrar" onClick={onClose}>

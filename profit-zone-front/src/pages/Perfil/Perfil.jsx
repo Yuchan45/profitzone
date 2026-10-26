@@ -487,7 +487,7 @@ function Perfil() {
             </div>
 
             <Link
-              to="/dashboard"
+              to="/mis-reportes"
               className="profile-btn-secondary profile-btn-block"
             >
               Ir a Mis reportes

@@ -1,4 +1,5 @@
 import { sequelize } from '../db/sequelize.js'
+import { ANALYSIS_STATUSES } from '../models/analysis/Analysis.js'
 import {
   Analysis,
   AnalysisAnswer,
@@ -9,6 +10,7 @@ import {
 } from '../models/index.js'
 import { getSubcategorySurvey } from './questions.service.js'
 import { availableNeighborhoodNames, findAvailableNeighborhood } from './neighborhoods.service.js'
+import { reverseGeocode } from './geocode.service.js'
 import { httpError } from '../utils/httpErrors.js'
 
 // Rango del radio de análisis en metros. Hasta RADIUS_FREE_MAX_M es para todos; más allá,
@@ -20,6 +22,9 @@ const UNLIMITED_RADIUS_ROLES = ['premium', 'admin']
 
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
+// Largo máximo del nombre del análisis (columna name nvarchar(80))
+const NAME_MAX_LENGTH = 80
+
 function badRequest(message) {
   return httpError(400, message)
 }
@@ -28,18 +33,16 @@ function notFound(id) {
   return httpError(404, `No existe el análisis "${id}".`)
 }
 
-function toAnalysisDto(analysis) {
-  // Una fila por opción elegida: se agrupan por pregunta
-  const answers = {}
-  for (const answer of analysis.answers) {
-    const questionCode = answer.question.code
-    answers[questionCode] = [...(answers[questionCode] ?? []), answer.option.code]
-  }
-
+/** Datos del análisis sin las respuestas: alcanza para listarlo. */
+function toAnalysisSummaryDto(analysis) {
   return {
     // SQL Server devuelve los uniqueidentifier en mayúsculas
     id: analysis.id.toLowerCase(),
     status: analysis.status,
+    // null si el usuario no lo renombró: el front muestra el rubro
+    name: analysis.name,
+    // Dirección del punto (null sin ubicación o si no se encontró una)
+    address: analysis.address,
     category: {
       code: analysis.subcategory.category.code,
       name: analysis.subcategory.category.name,
@@ -53,10 +56,20 @@ function toAnalysisDto(analysis) {
             lng: Number(analysis.centerLng),
             radius: analysis.radiusM,
           },
-    answers,
     createdAt: analysis.createdAt,
     updatedAt: analysis.updatedAt,
   }
+}
+
+function toAnalysisDto(analysis) {
+  // Una fila por opción elegida: se agrupan por pregunta
+  const answers = {}
+  for (const answer of analysis.answers) {
+    const questionCode = answer.question.code
+    answers[questionCode] = [...(answers[questionCode] ?? []), answer.option.code]
+  }
+
+  return { ...toAnalysisSummaryDto(analysis), answers }
 }
 
 function sameId(a, b) {
@@ -165,6 +178,29 @@ async function buildAnswerRows(categoryCode, subcategoryCode, rawAnswers) {
   )
 }
 
+/**
+ * Análisis del usuario para "Mis reportes", del más reciente al más viejo.
+ * `status`: 'saved' (reportes guardados: se analizó la zona) o 'draft'
+ * (borradores: completaron "Tu negocio" pero no la ubicación; se retoman desde el flujo).
+ */
+export async function listUserAnalyses(userId, status) {
+  if (!ANALYSIS_STATUSES.includes(status)) {
+    throw badRequest(`El estado debe ser uno de: ${ANALYSIS_STATUSES.join(', ')}.`)
+  }
+  const analyses = await Analysis.findAll({
+    where: { userId, status },
+    include: [
+      {
+        model: Subcategory,
+        as: 'subcategory',
+        include: [{ model: Category, as: 'category' }],
+      },
+    ],
+    order: [['updatedAt', 'DESC']],
+  })
+  return analyses.map(toAnalysisSummaryDto)
+}
+
 /** Devuelve un análisis con su rubro, ubicación y respuestas. Lanza 404 si no existe. */
 export async function getAnalysis(id, userId) {
   return toAnalysisDto(await findAnalysis(id, userId))
@@ -221,7 +257,9 @@ export async function replaceAnalysisAnswers(id, answers, userId) {
 }
 
 /**
- * Guarda el punto y el radio elegidos en el paso 3 ("Analizar zona").
+ * Guarda el punto y el radio elegidos en el paso 3 ("Analizar zona"). Con la ubicación
+ * el análisis está completo: pasa a reporte guardado y aparece en "Mis reportes".
+ * Volver a analizar (otro punto u otro radio) actualiza el mismo reporte.
  */
 export async function updateAnalysisLocation(id, { lat, lng, radius }, { id: userId, role }) {
   if (!Number.isInteger(radius) || radius < RADIUS_MIN_M || radius > RADIUS_MAX_M) {
@@ -239,6 +277,44 @@ export async function updateAnalysisLocation(id, { lat, lng, radius }, { id: use
     centerLat: lat,
     centerLng: lng,
     radiusM: radius,
+    address: await findAddress(analysis, { lat, lng }),
+    status: 'saved',
   })
   return getAnalysis(id, userId)
+}
+
+/**
+ * Dirección del punto para mostrar en "Mis reportes". Es un dato de apoyo: si la búsqueda
+ * falla, el análisis se guarda igual. Con el mismo punto se conserva la que ya tenía.
+ * reverseGeocode cachea por punto: casi siempre es la que el front ya pidió en el paso 3.
+ */
+async function findAddress(analysis, point) {
+  const samePoint =
+    Number(analysis.centerLat) === point.lat && Number(analysis.centerLng) === point.lng
+  try {
+    const { label } = await reverseGeocode(point)
+    return label ?? (samePoint ? analysis.address : null)
+  } catch {
+    return samePoint ? analysis.address : null
+  }
+}
+
+/**
+ * Renombra un análisis (borrador o reporte guardado). Un nombre vacío lo vuelve a
+ * NULL: el front muestra el rubro.
+ */
+export async function renameAnalysis(id, name, userId) {
+  const trimmed = name?.trim() || null
+  if (trimmed && trimmed.length > NAME_MAX_LENGTH) {
+    throw badRequest(`El nombre puede tener hasta ${NAME_MAX_LENGTH} caracteres.`)
+  }
+  const analysis = await findAnalysis(id, userId)
+  await analysis.update({ name: trimmed })
+  return getAnalysis(id, userId)
+}
+
+/** Elimina un análisis, borrador o reporte guardado (sus respuestas caen por ON DELETE CASCADE). */
+export async function deleteUserAnalysis(id, userId) {
+  const analysis = await findAnalysis(id, userId)
+  await analysis.destroy()
 }
