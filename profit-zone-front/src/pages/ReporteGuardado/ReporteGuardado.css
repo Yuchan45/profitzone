@@ -19,25 +19,3 @@
 .reporte-guardado-back:hover {
   color: var(--color-text);
 }
-
-.reporte-guardado-loading {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-28);
-}
-
-.reporte-guardado-skeleton-tall {
-  min-height: 360px;
-}
-
-.reporte-guardado-error {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--space-12);
-}
-
-.reporte-guardado-error .status-message {
-  flex: 1;
-  min-width: 240px;
-}
