@@ -97,6 +97,38 @@ const schema = {
     validate: (value) => ['true', 'false'].includes(value),
     message: 'debe ser true o false',
   },
+  FRONTEND_URL: {
+    // Base de los links que se mandan por correo (ej. restablecer la contraseña)
+    required: false,
+    default: 'http://localhost:5173',
+    parse: (value) => value.replace(/\/+$/, ''),
+    validate: (value) => /^https?:\/\/.+/.test(value),
+    message: 'debe ser una URL http(s), ej: http://localhost:5173',
+  },
+  SMTP_HOST: {
+    // Sin definir no se mandan correos: en desarrollo el link se muestra en la consola
+    required: false,
+    default: '',
+  },
+  SMTP_PORT: {
+    required: false,
+    default: '587',
+    parse: Number,
+    validate: (value) => Number.isInteger(value) && value > 0 && value < 65536,
+    message: 'debe ser un puerto válido (1-65535)',
+  },
+  SMTP_USER: {
+    required: false,
+    default: '',
+  },
+  SMTP_PASSWORD: {
+    required: false,
+    default: '',
+  },
+  SMTP_FROM: {
+    required: false,
+    default: 'ProfitZone <no-reply@profitzone.local>',
+  },
 }
 
 function loadEnv() {
@@ -136,6 +168,14 @@ function loadEnv() {
     isProduction: config.NODE_ENV === 'production',
     googlePlacesApiKey: config.GOOGLE_PLACES_API_KEY ?? '',
     bestTimeApiKey: config.BESTTIME_API_KEY ?? '',
+    frontendUrl: config.FRONTEND_URL,
+    mail: Object.freeze({
+      host: config.SMTP_HOST ?? '',
+      port: config.SMTP_PORT,
+      user: config.SMTP_USER ?? '',
+      password: config.SMTP_PASSWORD ?? '',
+      from: config.SMTP_FROM,
+    }),
     auth: Object.freeze({
       jwtAccessSecret: config.JWT_ACCESS_SECRET,
       jwtAccessTtl: config.JWT_ACCESS_TTL,

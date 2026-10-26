@@ -12,6 +12,8 @@ import Rubro from './pages/Rubro/Rubro.jsx'
 import Negocio from './pages/Negocio/Negocio.jsx'
 import Registro from './pages/Registro/Registro.jsx'
 import Login from './pages/Login/Login.jsx'
+import RecuperarContrasena from './pages/RecuperarContrasena/RecuperarContrasena.jsx'
+import RestablecerContrasena from './pages/RestablecerContrasena/RestablecerContrasena.jsx'
 import Reporte from './pages/Reporte/Reporte.jsx'
 import Terminos from './pages/Terminos/Terminos.jsx'
 import NotFound from './pages/NotFound.jsx'
@@ -56,6 +58,8 @@ function App() {
       <Route element={<AuthLayout />}>
         <Route path="/registro" element={<Registro />} />
         <Route path="/login" element={<Login />} />
+        <Route path="/recuperar-contrasena" element={<RecuperarContrasena />} />
+        <Route path="/restablecer-contrasena" element={<RestablecerContrasena />} />
       </Route>
       {/* La landing usa ancho completo: sus secciones tienen fondos de borde a borde */}
       <Route element={<MainLayout fullWidth />}>

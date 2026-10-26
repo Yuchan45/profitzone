@@ -35,14 +35,16 @@ SQL Server (Docker, `docker-compose.yml` en la raíz) + Sequelize.
 
 ## Autenticación y autorización
 
-JWT de acceso de vida corta + refresh token opaco en cookie httpOnly. Endpoints en `src/routes/auth.routes.js` (`/api/auth/register`, `login`, `refresh`, `logout`, `me`).
+JWT de acceso de vida corta + refresh token opaco en cookie httpOnly. Endpoints en `src/routes/auth.routes.js` (`/api/auth/register`, `login`, `refresh`, `logout`, `me`, `forgot-password`, `reset-password`).
 
 - **Proteger una ruta:** `router.get('/', requireAuth, handler)` (`src/middlewares/requireAuth.js`). Lee `Authorization: Bearer <token>` y deja `req.user = { id, role }`. Para limitar por rol: `requireAuth, requireRole('admin')` (`src/middlewares/requireRole.js`).
 - **Tokens:** el JWT de acceso (HS256, `{ sub, role }`) se firma y verifica solo con `src/utils/tokens.js`. El refresh token es opaco (`generateOpaqueToken`) y en `users.auth_tokens` se guarda únicamente su SHA-256 (`hashToken`): nunca el token en claro.
 - **Rotación:** cada `/refresh` revoca el token usado (`revoked_at` + `replaced_by_id`) y emite otro. Si llega un token ya rotado fuera del margen de gracia (30 s), se revocan todas las sesiones del usuario (reuso = posible robo). La lógica vive en `src/services/auth.service.js`.
 - **Cookie `pz_refresh`:** `httpOnly`, `SameSite=Strict`, `Path=/api/auth`, `Secure` según `COOKIE_SECURE`. Las rutas que la usan (`/refresh`, `/logout`) van con `requireTrustedOrigin` (defensa CSRF).
 - **Contraseñas:** solo con `hashPassword` / `verifyPassword` de `src/utils/password.js` (scrypt de `node:crypto`). Los mensajes de login fallido son siempre genéricos ("Correo o contraseña incorrectos.") para no revelar qué correos existen.
-- **Rate limit:** `/register` y `/login` comparten un límite de 10 intentos cada 15 minutos por IP (`express-rate-limit`).
+- **Rate limit:** `/register`, `/login` y `/reset-password` comparten un límite de 10 intentos cada 15 minutos por IP (`express-rate-limit`). `/forgot-password` tiene uno propio de 5 (cada pedido manda un correo).
+- **Recuperar contraseña:** `/forgot-password` guarda un token opaco `reset_password` (solo el SHA-256, vence en 30 min, invalida los anteriores) y manda el link `FRONTEND_URL/restablecer-contrasena?token=…`. Responde siempre lo mismo y no espera ni la generación del token (en una transacción que bloquea la fila del usuario) ni el envío del correo, para que el tiempo de respuesta no revele qué cuentas existen. `/reset-password` marca el token como usado (`used_at`, atómico), cambia el hash y revoca todos los refresh tokens.
+- **Correo:** solo con `sendMail` de `src/services/mail.service.js` (nodemailer + `SMTP_*`). Sin `SMTP_HOST` no falla: en desarrollo imprime el correo en la consola.
 
 ## Errores
 

@@ -1,5 +1,13 @@
 import { env } from '../config/env.js'
-import { getMe, login, logout, refresh, register } from '../services/auth.service.js'
+import {
+  getMe,
+  login,
+  logout,
+  refresh,
+  register,
+  requestPasswordReset,
+  resetPassword,
+} from '../services/auth.service.js'
 
 export const REFRESH_COOKIE = 'pz_refresh'
 
@@ -88,6 +96,30 @@ export async function postRefresh(req, res) {
 export async function postLogout(req, res) {
   await logout(req.cookies?.[REFRESH_COOKIE])
   res.clearCookie(REFRESH_COOKIE, cookieOptions())
+  res.status(204).end()
+}
+
+export async function postForgotPassword(req, res) {
+  const email = normalizeEmail(req.body)
+  if (!EMAIL_PATTERN.test(email) || email.length > 320) throw badRequest('Ingresá un correo válido.')
+
+  // No se espera: misma respuesta, y en el mismo tiempo, exista o no la cuenta
+  requestPasswordReset(email, requestMeta(req))
+  res.status(202).json({
+    message: 'Si el correo corresponde a una cuenta, te mandamos un link para restablecer la contraseña.',
+  })
+}
+
+export async function postResetPassword(req, res) {
+  const token = readString(req.body, 'token')
+  const password = typeof req.body?.password === 'string' ? req.body.password : ''
+
+  if (!token || token.length > 100) throw badRequest('El link para restablecer la contraseña no es válido.')
+  if (password.length < PASSWORD_MIN || password.length > PASSWORD_MAX) {
+    throw badRequest(`La contraseña tiene que tener entre ${PASSWORD_MIN} y ${PASSWORD_MAX} caracteres.`)
+  }
+
+  await resetPassword(token, password)
   res.status(204).end()
 }
 
