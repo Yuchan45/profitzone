@@ -4,8 +4,8 @@ import { useAuth } from './useAuth.js'
 
 const LOADING = { status: 'loading', data: null, error: null }
 
-// Último reporte traído de cada análisis (en memoria, por pestaña). El paso 5 reusa el
-// del paso 4: armar el reporte consulta fuentes pagas (Google Places) y no hace falta repetirlo.
+// Último reporte traído de cada análisis (en memoria, por pestaña). Al volver al paso 4 se
+// reusa: armar el reporte consulta fuentes pagas (Google Places) y no hace falta repetirlo.
 // La clave incluye al usuario: si otra cuenta entra en la misma pestaña, no ve el reporte
 // guardado de la anterior (se pide a la API, que controla el dueño).
 const reportCache = new Map()

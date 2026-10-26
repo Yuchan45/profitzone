@@ -8,7 +8,7 @@ import { useAnalysisReport } from './useAnalysisReport.js'
  *   que salió bien (`reportReadyFor`): así no repite la consulta paga a Google Places al
  *   ir y volver entre los pasos, pero nunca muestra uno armado con respuestas viejas.
  * - Con el reporte listo, marca el paso 4 como completo en el Stepper. Un reporte
- *   de otro análisis (ej. desde Mis reportes) no toca el flujo.
+ *   de otro análisis (ej. abierto por link directo) no toca el flujo.
  * Devuelve lo mismo que `useAnalysisReport` más `isCurrentAnalysis`.
  */
 export function useFlowAnalysisReport(id) {

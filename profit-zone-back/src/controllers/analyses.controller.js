@@ -1,8 +1,11 @@
 import {
+  listUserAnalyses,
   getAnalysis,
   createAnalysis,
   replaceAnalysisAnswers,
   updateAnalysisLocation,
+  deleteUserAnalysis,
+  renameAnalysis,
 } from '../services/analyses.service.js'
 import { buildAnalysisReport } from '../services/report.service.js'
 import { httpError } from '../utils/httpErrors.js'
@@ -40,6 +43,25 @@ function parseCoordinate(value, name, limit) {
     throw badRequest(`El campo "${name}" debe ser un número entre -${limit} y ${limit}.`)
   }
   return value
+}
+
+// Sin ?status= lista los reportes guardados: es lo que muestra "Mis reportes" por defecto
+export async function getMyAnalyses(req, res) {
+  res.json(await listUserAnalyses(req.user.id, req.query.status ?? 'saved'))
+}
+
+// `name`: texto o null (null o vacío vuelve a mostrar el rubro). El largo lo valida el service
+export async function patchAnalysis(req, res) {
+  const { name } = req.body ?? {}
+  if (name !== null && typeof name !== 'string') {
+    throw badRequest('El campo "name" debe ser un texto o null.')
+  }
+  res.json(await renameAnalysis(req.params.id, name, req.user.id))
+}
+
+export async function deleteAnalysis(req, res) {
+  await deleteUserAnalysis(req.params.id, req.user.id)
+  res.status(204).end()
 }
 
 export async function getAnalysisById(req, res) {

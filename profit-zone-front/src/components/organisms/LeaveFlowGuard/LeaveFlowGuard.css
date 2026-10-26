@@ -1,0 +1,19 @@
+.leave-flow-text {
+  margin: 0;
+  color: var(--color-text-secondary);
+  line-height: 1.5;
+}
+
+.leave-flow-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: var(--space-12);
+}
+
+@media (max-width: 480px) {
+  .leave-flow-actions {
+    flex-direction: column-reverse;
+    align-items: stretch;
+  }
+}

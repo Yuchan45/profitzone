@@ -1,0 +1,46 @@
+.mis-reportes {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-28);
+  max-width: 760px;
+  margin: 0 auto;
+}
+
+.mis-reportes-header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--space-16);
+  flex-wrap: wrap;
+}
+
+.mis-reportes-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-12);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* El placeholder es .flow-skeleton (FlowLayout.css): acá solo va la altura de una ReportCard */
+.flow-skeleton.mis-reportes-skeleton {
+  min-height: 70px;
+}
+
+/* Las pestañas no ocupan todo el ancho */
+.mis-reportes > .segmented-nav {
+  align-self: flex-start;
+}
+
+.mis-reportes-modal-text {
+  margin: 0;
+  color: var(--color-text-secondary);
+  line-height: 1.5;
+}
+
+.mis-reportes-modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-12);
+}
