@@ -1,7 +1,7 @@
 import api, { refreshSession } from './api.js'
 import { clearAccessToken, setAccessToken } from './authToken.js'
 
-// Todas devuelven { user, accessToken } salvo logout. El refresh token nunca
+// register, login y restoreSession devuelven { user, accessToken }. El refresh token nunca
 // pasa por JS: lo maneja el navegador como cookie httpOnly.
 
 export async function register({ firstName, lastName, email, password }) {
@@ -32,4 +32,15 @@ export async function logout() {
 export async function fetchMe() {
   const { data } = await api.get('/auth/me')
   return data.user
+}
+
+/** Pide el link para restablecer la contraseña. Responde lo mismo exista o no la cuenta. */
+export async function requestPasswordReset(email) {
+  const { data } = await api.post('/auth/forgot-password', { email })
+  return data
+}
+
+/** Cambia la contraseña con el token del link. El back cierra todas las sesiones de la cuenta. */
+export async function resetPassword({ token, password }) {
+  await api.post('/auth/reset-password', { token, password })
 }

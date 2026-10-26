@@ -24,6 +24,10 @@ export const Analysis = sequelize.define(
     centerLat: { type: DataTypes.DECIMAL(9, 6), allowNull: true },
     centerLng: { type: DataTypes.DECIMAL(9, 6), allowNull: true },
     radiusM: { type: DataTypes.INTEGER, allowNull: true },
+    // Nombre que le pone el usuario: NULL hasta que lo renombra (se muestra el rubro)
+    name: { type: DataTypes.STRING(80), allowNull: true },
+    // Dirección del punto, buscada al analizar la zona. NULL si no hay una cerca o si falló
+    address: { type: DataTypes.STRING(255), allowNull: true },
   },
   { schema: 'analysis', tableName: 'analyses', timestamps: true },
 )

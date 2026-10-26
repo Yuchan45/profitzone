@@ -222,6 +222,8 @@ export async function buildAnalysisReport(id, userId) {
   return {
     analysis: {
       id: analysis.id,
+      name: analysis.name,
+      address: analysis.address,
       category: analysis.category,
       subcategory: analysis.subcategory,
       location: analysis.location,

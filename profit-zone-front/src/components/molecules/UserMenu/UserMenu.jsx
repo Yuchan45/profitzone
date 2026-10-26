@@ -66,9 +66,9 @@ function UserMenu({ initials, name, onLogout }) {
           </NavLink>
         </li>
         <li>
-          <NavLink to="/dashboard" className="user-menu-item" onClick={close}>
+          <NavLink to="/mis-reportes" className="user-menu-item" onClick={close}>
             <Icon name="chart-column" size={16} />
-            Mis análisis
+            Mis reportes
           </NavLink>
         </li>
         <li className="user-menu-list-footer">

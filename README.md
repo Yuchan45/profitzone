@@ -104,6 +104,12 @@ de su carpeta.
 | `JWT_ACCESS_TTL`        | No | `15m`         | Vida del JWT de acceso (número + `s`/`m`/`h`/`d`) |
 | `REFRESH_TOKEN_TTL_DAYS` | No | `7`          | Vida del refresh token (cookie httpOnly) en días, de 1 a 90 |
 | `COOKIE_SECURE`         | No | según entorno | `true` manda la cookie solo por HTTPS. Sin definir: `true` en producción, `false` en desarrollo |
+| `FRONTEND_URL`          | No | `http://localhost:5173` | URL del front, base de los links que se mandan por correo (restablecer contraseña) |
+| `SMTP_HOST`             | No | —             | Servidor SMTP para mandar correos. Sin definir no se mandan: en desarrollo el link se muestra en la consola |
+| `SMTP_PORT`             | No | `587`         | Puerto SMTP (`465` usa TLS directo; el resto, STARTTLS) |
+| `SMTP_USER`             | No | —             | Usuario SMTP |
+| `SMTP_PASSWORD`         | No | —             | Contraseña SMTP |
+| `SMTP_FROM`             | No | `ProfitZone <no-reply@profitzone.local>` | Remitente de los correos |
 
 `docker-compose.yml` lee `DB_PASSWORD` y `DB_PORT` de `profit-zone-back/.env`
 (los scripts `npm run db:*` le pasan ese archivo), así hay una sola fuente.
@@ -150,11 +156,14 @@ acepta únicamente los orígenes de `CORS_ORIGINS`; cualquier otro recibe **403*
 | `GET`  | `/api/categories/:categoryCode/subcategories/:subcategoryCode/questions` | Encuesta completa de un rubro (`business` y `details`) |
 | `GET`  | `/api/questions`   | Banco de preguntas con opciones y asignaciones (query: `scope`, `active`) |
 | `GET`  | `/api/questions/:code` | Una pregunta con sus opciones en orden (404 si no existe)   |
+| `GET`  | `/api/analyses` | Mis análisis ("Mis reportes"), del más reciente al más viejo, con estado, nombre (`null` si no lo renombró), rubro, ubicación, dirección y fechas (sin respuestas). `?status=saved` (default: reportes guardados, los que ya analizaron la zona) o `?status=draft` (borradores: sin ubicación todavía); 400 con otro valor |
 | `POST` | `/api/analyses` | Crea un análisis en borrador con el rubro y las respuestas (`{ categoryCode, subcategoryCode, answers }`). 201; 400 si faltan obligatorias o hay respuestas inválidas. Queda a nombre del usuario. **Todos los endpoints de `/api/analyses` requieren sesión** (401 sin ella) y cada análisis solo lo ve su dueño (404 para el resto) |
 | `GET`  | `/api/analyses/:id` | Un análisis con su rubro, ubicación y respuestas (404 si no existe) |
 | `GET`  | `/api/analyses/:id/report` | Reporte de zona: indicadores del punto y radio, cuadro de fortalezas y debilidades cruzado con las respuestas y resumen (409 si el análisis no tiene ubicación) |
 | `PUT`  | `/api/analyses/:id/answers` | Reemplaza todas las respuestas (`{ answers }`), con las mismas validaciones que el alta |
-| `PATCH` | `/api/analyses/:id/location` | Guarda el punto y el radio (`{ lat, lng, radius }`, radio entero entre 100 y 2000 m, dentro de Palermo; 422 si cae afuera; más de 600 m solo para los roles `premium` y `admin`, si no 403). Se llama al tocar "Analizar zona" |
+| `PATCH` | `/api/analyses/:id/location` | Guarda el punto y el radio (`{ lat, lng, radius }`, radio entero entre 100 y 2000 m, dentro de Palermo; 422 si cae afuera; más de 600 m solo para los roles `premium` y `admin`, si no 403). Se llama al tocar "Analizar zona": el análisis pasa a `saved` y aparece en Mis reportes (volver a analizar actualiza el mismo reporte). Busca y guarda la dirección del punto (`address`); si la búsqueda falla, se guarda igual sin dirección |
+| `PATCH` | `/api/analyses/:id` | Renombra el análisis (`{ name }`, texto de hasta 80 caracteres; vacío o `null` vuelve a mostrar el rubro). 400 si es más largo |
+| `DELETE` | `/api/analyses/:id` | Elimina un análisis, borrador o reporte guardado (y sus respuestas). 204 |
 | `GET`  | `/api/neighborhoods` | Barrios donde se puede analizar (MVP: Palermo) con su contorno `[lat, lng]`, sus límites (`bounds`) y un centro ponderado por población, calculados desde el censo |
 | `GET`  | `/api/geocode?q=` | Autocompletado de direcciones dentro de Palermo: `[{ type, label, lat?, lng?, detail? }]`. Sin número sugiere calles (`street`, sin coordenadas) y lugares (`place`); con número ("gurruchaga 16") completa la altura (`address`: Gurruchaga 1600). Combina Photon (OSM) y el normalizador del GCBA (USIG). 400 si la búsqueda tiene menos de 3 o más de 120 caracteres; 502 si los servicios externos no responden |
 | `GET`  | `/api/geocode/reverse?lat=&lng=` | Dirección más cercana a un punto de Palermo, para completar el buscador cuando el punto se elige en el mapa: `{ label }` (`label: null` si no hay una dirección cerca o el punto cae fuera del barrio). Usa la búsqueda inversa de USIG y, si falla, Photon. 400 si las coordenadas son inválidas; 502 si los dos servicios fallan |
@@ -162,6 +171,8 @@ acepta únicamente los orígenes de `CORS_ORIGINS`; cualquier otro recibe **403*
 | `POST` | `/api/auth/login` | Inicia sesión. 200 `{ user, accessToken }` + cookie de refresh; 401 genérico si falla |
 | `POST` | `/api/auth/refresh` | Renueva la sesión con la cookie `pz_refresh` (rotación). 200 `{ user, accessToken }`; 401 si venció o fue revocada |
 | `POST` | `/api/auth/logout` | Revoca el refresh token y borra la cookie. 204 |
+| `POST` | `/api/auth/forgot-password` | Pide restablecer la contraseña (`{ email }`): manda un link de un solo uso que vence en 30 min. 202 genérico exista o no la cuenta; límite de 5 pedidos cada 15 min por IP |
+| `POST` | `/api/auth/reset-password` | Cambia la contraseña con el link (`{ token, password }`) y cierra todas las sesiones de la cuenta. 204; 400 si el link venció, ya se usó o la contraseña no cumple el largo |
 | `GET`  | `/api/auth/me` | Usuario de la sesión. Requiere `Authorization: Bearer <accessToken>` |
 
 ## Estructura

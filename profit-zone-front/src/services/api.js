@@ -34,7 +34,14 @@ export function refreshSession() {
 }
 
 // Endpoints donde un 401 no significa "token vencido": no se intenta renovar
-const NO_REFRESH_PATHS = ['/auth/login', '/auth/register', '/auth/refresh', '/auth/logout']
+const NO_REFRESH_PATHS = [
+  '/auth/login',
+  '/auth/register',
+  '/auth/refresh',
+  '/auth/logout',
+  '/auth/forgot-password',
+  '/auth/reset-password',
+]
 
 // Si el JWT de acceso venció (401), se renueva con la cookie y se reintenta una vez.
 api.interceptors.response.use(

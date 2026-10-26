@@ -62,9 +62,11 @@ src/pages/     vistas ruteadas; arman la pantalla con organisms/molecules/atoms
 ## Rutas y layout
 
 - Las rutas se definen en `src/App.jsx`, dentro del template que corresponda y siempre antes de la ruta `*`:
-  - `<Route element={<MainLayout />}>` (Navbar + Footer): Home, Dashboard, Perfil.
+  - `<Route element={<MainLayout />}>` (Navbar + Footer): Home, Dashboard, Perfil, Mis reportes.
   - `<Route element={<FlowLayout />}>` (Header simple): pasos del flujo de análisis bajo `/analizar/*` (ej. `/analizar/rubro`).
 - Los links de navegación van en `src/components/organisms/Navbar/Navbar.jsx` con `NavLink`.
+- `main.jsx` usa `createBrowserRouter` con una sola ruta comodín que renderiza `<App />`: las rutas siguen en `App.jsx`, pero así funciona `useBlocker`. No volver a `<BrowserRouter>`.
+- El reporte se guarda al tocar "Analizar zona" (la API pasa el análisis a `saved`); antes de eso es un borrador. Salir del flujo con algo sin analizar avisa (`organisms/LeaveFlowGuard` + `hooks/useLeaveFlowGuard.js`): modal propio al navegar a otra sección y `beforeunload` al cerrar o recargar. Con la zona analizada y sin cambios después, no avisa.
 - Ancho de las vistas del flujo: lo define solo `FlowLayout.css` con `--flow-max-width` y `--flow-gutter` (desde 1366 px el margen lateral baja a 48 px y el contenido llega a 1600 px). El `Header` usa las mismas variables para quedar alineado. Las páginas del flujo no ponen su propio `max-width` ni padding lateral.
 
 ## Estilos y formato

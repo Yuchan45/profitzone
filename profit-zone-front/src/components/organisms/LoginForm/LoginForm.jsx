@@ -95,6 +95,10 @@ function LoginForm({ onSubmit, onSwitchToRegister }) {
         />
       </FormField>
 
+      <Link to="/recuperar-contrasena" className="auth-form-forgot">
+        ¿Olvidaste tu contraseña?
+      </Link>
+
       <Button type="submit" className="auth-form-submit" disabled={submitting}>
         {submitting ? 'Ingresando…' : 'Iniciar sesión'}
       </Button>

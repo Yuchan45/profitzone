@@ -3,7 +3,9 @@ import './StepHeading.css'
 
 // `part` opcional ({ current, total }): para pasos divididos en partes, muestra
 // "Parte X de Y" con una barra de progreso arriba del título.
-function StepHeading({ part, title, subtitle }) {
+// `heading` opcional reemplaza al <h1> (ej. un nombre editable, que incluye su propio
+// <h1>: un formulario no puede ir adentro de un título).
+function StepHeading({ part, title, heading, subtitle }) {
   return (
     <header className="step-heading">
       {part && (
@@ -14,7 +16,7 @@ function StepHeading({ part, title, subtitle }) {
           <SegmentedProgress current={part.current} total={part.total} />
         </div>
       )}
-      <h1 className="step-heading-title">{title}</h1>
+      {heading ?? <h1 className="step-heading-title">{title}</h1>}
       {subtitle && <p className="step-heading-subtitle">{subtitle}</p>}
     </header>
   )

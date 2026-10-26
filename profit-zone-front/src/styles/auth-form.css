@@ -1,4 +1,4 @@
-/* Estilos compartidos por RegisterForm y LoginForm (organisms) */
+/* Estilos compartidos por los formularios de auth (organisms): registro, login y recuperar contraseña */
 
 .auth-form {
   display: flex;
@@ -64,5 +64,18 @@
 
 .auth-form-switch a:hover,
 .auth-form-switch-button:hover {
+  color: var(--color-text);
+}
+
+/* "¿Olvidaste tu contraseña?" debajo del campo de contraseña del login */
+.auth-form-forgot {
+  align-self: flex-end;
+  margin-top: calc(var(--space-12) * -1);
+  color: var(--color-primary-dark);
+  font-size: var(--text-14);
+  font-weight: 600;
+}
+
+.auth-form-forgot:hover {
   color: var(--color-text);
 }
