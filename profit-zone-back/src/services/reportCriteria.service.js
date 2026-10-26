@@ -1,3 +1,5 @@
+import { calculateMedian } from '../utils/stats.js'
+
 // Reglas del cuadro "Fortalezas y debilidades" del reporte (PZ-20).
 // Cada criterio cruza una respuesta del paso 2 con un indicador de la zona y
 // devuelve una lectura. Los umbrales son una primera propuesta: están acá para
@@ -83,13 +85,6 @@ function formatArs(value) {
   return `$${formatInt(value)}`
 }
 
-/** Mediana de una lista de montos (redondeada). */
-function median(values) {
-  const sorted = [...values].sort((a, b) => a - b)
-  const mid = Math.floor(sorted.length / 2)
-  return sorted.length % 2 !== 0 ? sorted[mid] : Math.round((sorted[mid - 1] + sorted[mid]) / 2)
-}
-
 /** Opción de superficie respondida (solo algunos rubros la preguntan) o null. */
 function surfaceAnswer(answerOption) {
   for (const code of RENT.surfaceQuestions) {
@@ -145,7 +140,7 @@ export function costCriterion({ answerOption, answerLabel, rent }) {
     return criterion('cost', label, yourBusiness, `${published} en el radio, pero sin precio`, 'not_evaluated')
   }
 
-  const rentArs = median(listings.map((p) => p.monthlyRentArs))
+  const rentArs = calculateMedian(listings.map((p) => p.monthlyRentArs))
   const count = listings.length === 1 ? '1 aviso' : `${listings.length} avisos`
   const sample = listings.length < RENT.fewListings ? `solo ${count}` : count
   // Con superficie pero pocos avisos de ese tamaño se compara contra todos y se aclara
@@ -157,8 +152,12 @@ export function costCriterion({ answerOption, answerLabel, rent }) {
       : 'en el radio'
   const zone = `Alquiler mediano de ${formatArs(rentArs)}/mes ${scope} (${sample})`
 
-  // Con muy pocos avisos la mediana no alcanza para una lectura firme
-  if (listings.length < RENT.fewListings) return criterion('cost', label, yourBusiness, zone, 'neutral')
+  // Con muy pocos avisos la mediana no alcanza para una lectura firme. Tampoco si
+  // el rubro pide una superficie y no hay suficientes avisos de ese tamaño: la
+  // mediana de todos los tamaños no dice cuánto cuesta el local que necesita.
+  if (listings.length < RENT.fewListings || (surface && !bySurface)) {
+    return criterion('cost', label, yourBusiness, zone, 'neutral')
+  }
 
   // "Más de $2M" no tiene tope: solo se sabe que entra si el alquiler no pasa el piso
   const budgetMax = budget.valueMax

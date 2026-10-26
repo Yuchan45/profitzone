@@ -4,6 +4,7 @@ import { fileURLToPath } from 'node:url'
 import { QueryTypes } from 'sequelize'
 import { sequelize } from '../db/sequelize.js'
 import { httpError } from '../utils/httpErrors.js'
+import { calculateMedian } from '../utils/stats.js'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const FALLBACK_DATA_PATH = path.resolve(__dirname, '../db/seeders/data/zonaprop_locales_caba_alquiler.json')
@@ -63,13 +64,6 @@ export function calculateHaversineDistance(lat1, lon1, lat2, lon2) {
       Math.sin(dLon / 2)
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
   return Math.round(R * c)
-}
-
-function calculateMedian(numbers) {
-  if (!numbers || numbers.length === 0) return 0
-  const sorted = [...numbers].sort((a, b) => a - b)
-  const mid = Math.floor(sorted.length / 2)
-  return sorted.length % 2 !== 0 ? sorted[mid] : Math.round((sorted[mid - 1] + sorted[mid]) / 2)
 }
 
 function formatDistance(meters) {

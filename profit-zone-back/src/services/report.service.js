@@ -106,6 +106,11 @@ function buildAnswerReaders(answers, survey) {
   }
 }
 
+/** Fecha en la zona horaria de Buenos Aires, la misma con la que la muestra el front. */
+function formatArgentinaDate(value) {
+  return new Date(value).toLocaleDateString('es-AR', { timeZone: 'America/Argentina/Buenos_Aires' })
+}
+
 function buildSources({ competition, traffic, density, rent, accessibility }) {
   const sources = []
   if (competition.status === 'ok') {
@@ -121,7 +126,7 @@ function buildSources({ competition, traffic, density, rent, accessibility }) {
   }
   if (rent.status === 'ok') {
     // Es la mediana de los avisos dentro del radio, no un promedio oficial del barrio
-    const date = rent.data.scrapedAt ? `, relevados el ${new Date(rent.data.scrapedAt).toLocaleDateString('es-AR')}` : ''
+    const date = rent.data.scrapedAt ? `, relevados el ${formatArgentinaDate(rent.data.scrapedAt)}` : ''
     sources.push(
       `Alquiler: mediana de los avisos de locales comerciales en alquiler publicados en ZonaProp dentro del radio${date}. No es un promedio del barrio.`,
     )
