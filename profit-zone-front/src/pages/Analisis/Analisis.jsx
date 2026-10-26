@@ -234,7 +234,10 @@ function RentCard({ report }) {
         {...card}
         status="empty"
         empty={{
-          title: 'No hay locales en alquiler publicados en el radio.',
+          title:
+            data.totalInRadius === 0
+              ? 'No hay locales en alquiler publicados en el radio.'
+              : 'Los locales publicados en el radio no informan el precio.',
           text: 'Probá ampliar el radio para comparar.',
         }}
       />
@@ -247,8 +250,10 @@ function RentCard({ report }) {
     <IndicatorCard
       {...card}
       value={money(data.medianRentArs)}
-      caption={`por mes, mediana de ${listings} en el radio.`}
-      source="ZonaProp · avisos de locales comerciales en alquiler"
+      caption={`por mes, mediana de ${listings} en el radio (no es un promedio del barrio).`}
+      source={`ZonaProp · avisos de locales comerciales en alquiler${
+        data.scrapedAt ? `, relevados el ${formatDate(data.scrapedAt)}` : ''
+      }`}
     >
       <DetailRows
         rows={[
