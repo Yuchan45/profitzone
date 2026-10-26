@@ -112,7 +112,7 @@ function buildSources({ competition, traffic, density, rent, accessibility }) {
   const sources = []
   if (competition.status === 'ok') {
     const date = formatArgentinaDate(competition.data.queryDate)
-    sources.push(`Competencia: ${competition.data.source}, consultado el ${date}.`)
+    sources.push(`Competencia: ${competition.data.source}${date ? `, consultado el ${date}` : ''}.`)
   }
   // El servicio de afluencia usa un perfil por rubro, no consulta el punto
   if (traffic.status === 'ok') sources.push('Afluencia: perfil horario típico del rubro (estimado).')
@@ -123,14 +123,15 @@ function buildSources({ competition, traffic, density, rent, accessibility }) {
   }
   if (rent.status === 'ok') {
     // Es la mediana de los avisos dentro del radio, no un promedio oficial del barrio
-    const date = rent.data.scrapedAt ? `, relevados el ${formatArgentinaDate(rent.data.scrapedAt)}` : ''
+    const surveyed = rent.data.scrapedAt && formatArgentinaDate(rent.data.scrapedAt)
+    const date = surveyed ? `, relevados el ${surveyed}` : ''
     sources.push(
       `Alquiler: mediana de los avisos de locales comerciales en alquiler publicados en ZonaProp dentro del radio${date}. No es un promedio del barrio.`,
     )
   }
   if (accessibility?.status === 'ok') {
     const date = formatArgentinaDate(accessibility.data.queryDate)
-    sources.push(`Accesibilidad: ${accessibility.data.source}, consultado el ${date}.`)
+    sources.push(`Accesibilidad: ${accessibility.data.source}${date ? `, consultado el ${date}` : ''}.`)
   }
   sources.push('Lugares según tu público: todavía sin fuente de datos.')
   return sources
