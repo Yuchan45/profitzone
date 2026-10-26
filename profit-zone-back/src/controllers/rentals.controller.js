@@ -1,5 +1,9 @@
 import { getRentalsInRadius } from '../services/rentals.service.js'
 
+// Mismo rango que el radio de un análisis: más grande devolvería medio dataset
+const MIN_RADIUS = 100
+const MAX_RADIUS = 2000
+
 export async function getRentals(req, res) {
   const { lat, lng, radius } = req.query
 
@@ -26,17 +30,21 @@ export async function getRentals(req, res) {
 
   const parsedRadius = radius !== undefined && radius !== '' ? Number(radius) : 1000
 
-  if (Number.isNaN(parsedRadius) || parsedRadius < 10 || parsedRadius > 20000) {
-    const error = new Error('El parámetro "radius" debe ser un número entero en metros entre 10 y 20000.')
+  if (!Number.isInteger(parsedRadius) || parsedRadius < MIN_RADIUS || parsedRadius > MAX_RADIUS) {
+    const error = new Error(
+      `El parámetro "radius" debe ser un número entero en metros entre ${MIN_RADIUS} y ${MAX_RADIUS}.`,
+    )
     error.status = 400
     throw error
   }
 
-  const result = await getRentalsInRadius({
+  // El endpoint es público: devuelve solo las estadísticas, sin el listado de
+  // avisos (direcciones y links de ZonaProp)
+  const { places, ...stats } = await getRentalsInRadius({
     lat: parsedLat,
     lng: parsedLng,
     radiusInMeters: parsedRadius,
   })
 
-  res.json(result)
+  res.json(stats)
 }

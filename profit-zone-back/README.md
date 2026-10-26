@@ -82,7 +82,7 @@ headers `Content-Type` y `Authorization`, y cachea el preflight 24 h.
 | `GET`  | `/api/places/nearby?lat=&lng=&radius=&category=&subcategory=&match=` | Vista previa del paso 3: negocios del rubro dentro del círculo (radio de 100 a 2000 m), desde OpenStreetMap (`osm_data.places`, gratis, sin sesión). `match` (opcional, `pregunta:opción`, ej. `cuisine_type:asian`) marca como `direct` los que coinciden con la cocina elegida. Responde `{ source, updatedAt, total, directTotal, directLabel, places: [{ id, name, lat, lng, direct }] }`. 400 si los parámetros son inválidos |
 | `GET`  | `/api/places/:id` | Ficha de un negocio de la vista previa (datos de OpenStreetMap, sin sesión): `{ id, kind, name, cuisines, lat, lng, details, source, updatedAt }`. `details` trae solo lo que el local tenga cargado en OSM (`street`, `houseNumber`, `openingHours`, `phone`, `website`, `instagram`, `facebook`, `outdoorSeating`, `delivery`, `takeaway`, `wheelchair`). 404 si no existe |
 | `GET`  | `/api/traffic` | Estimación de afluencia horaria (7h a 23h) y score por franja horaria |
-| `GET`  | `/api/rentals` | Promedio y estadísticas de alquileres comerciales en un radio (query: `lat`, `lng`, `radius`; 503 si no hay avisos cargados) |
+| `GET`  | `/api/rentals` | Promedio y estadísticas de alquileres comerciales en un radio (query: `lat`, `lng`, `radius` entero de 100 a 2000 m, default 1000). Devuelve solo las estadísticas (mediana, promedio, precio por m², `scrapedAt` con la fecha del relevamiento), sin el listado de avisos. 400 si los parámetros son inválidos; 503 si no hay avisos cargados) |
 | `GET`  | `/api/categories` | Categorías (rubros) con sus subcategorías y términos de búsqueda (query: `active`) |
 | `GET`  | `/api/categories/:code` | Una categoría por code con sus subcategorías (404 si no existe; query: `active`) |
 | `GET`  | `/api/categories/:categoryCode/subcategories/:subcategoryCode/questions` | Encuesta completa de un rubro (solo activas), separada en `business` y `details` |
@@ -305,9 +305,11 @@ Host: localhost:8080
 
 ### `GET /api/rentals`
 
-Calcula el precio promedio y mediana de alquiler de locales comerciales, el valor por m² (en ARS y USD unificados según DolarAPI Oficial) y la lista de locales disponibles dentro de un radio de influencia en CABA.
+Calcula el precio promedio y mediana de alquiler de locales comerciales, el valor por m² (en ARS y USD unificados según DolarAPI Oficial) dentro de un radio de influencia en CABA. Es público, así que no devuelve el listado de avisos (direcciones y links): ese listado solo lo usa internamente el reporte para el criterio Costo.
 
 `pricedInRadius` es la cantidad de avisos con precio, que son los que entran en el promedio y la mediana en pesos (los publicados solo en dólares se convierten con el tipo de cambio oficial). Si no hay avisos cargados (tabla vacía y sin el JSON local) o la DB no responde, devuelve **503** con un mensaje en vez de 0 locales.
+
+`scrapedAt` es la fecha del relevamiento de los avisos (ISO, o `null` si no se conoce). Se guarda al correr `npm run db:seed:rentals` (migración `0012`).
 
 #### Parámetros de consulta (Query Params)
 
@@ -315,7 +317,7 @@ Calcula el precio promedio y mediana de alquiler de locales comerciales, el valo
 | --------- | -------- | :-------: | :-----: | --------------------------- |
 | `lat`     | `number` | Sí        | —       | Latitud en grados decimales (`-90` a `90`). Ej: `-34.5880`. |
 | `lng`     | `number` | Sí        | —       | Longitud en grados decimales (`-180` a `180`). Ej: `-58.4300`. |
-| `radius`  | `number` | No        | `1000`  | Radio de búsqueda en metros (`10` a `20000`). Ej: `1000`. |
+| `radius`  | `number` | No        | `1000`  | Radio de búsqueda en metros, entero (`100` a `2000`, el mismo rango que el análisis). Ej: `1000`. |
 
 #### Ejemplo de solicitud y respuesta
 
@@ -343,20 +345,9 @@ Host: localhost:8080
   "maxRentArs": 38500000,
   "neighborhoods": ["Palermo", "Palermo Hollywood", "Palermo Soho", "Villa Crespo"],
   "callout": "Zona comercial consolidada con alta oferta (203 locales disponibles). Valor medio de referencia: $34.630/m².",
-  "places": [
-    {
-      "id": "60284104",
-      "address": "Antezana 500",
-      "neighborhood": "Villa Crespo",
-      "priceArs": 500000,
-      "priceUsd": 324.68,
-      "surfaceM2": 27,
-      "pricePerM2Ars": 18518.52,
-      "distanceMeters": 180,
-      "distanceText": "180 m",
-      "url": "https://www.zonaprop.com.ar/propiedades/..."
-    }
-  ]
+  "source": "SQL Server (commercial_data.commercial_rentals)",
+  "scrapedAt": "2026-10-06T19:48:21.000Z",
+  "exchangeRate": { "rate": 1540, "source": "https://dolarapi.com/v1/dolares/oficial" }
 }
 ```
 

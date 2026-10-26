@@ -119,7 +119,13 @@ function buildSources({ competition, traffic, density, rent, accessibility }) {
       'Demografía: censo nacional (INDEC) por radio censal y estructura por edad y sexo del Geoportal INDEC (Censo 2022), ponderados por área.',
     )
   }
-  if (rent.status === 'ok') sources.push('Alquiler: avisos de locales comerciales en alquiler publicados en ZonaProp.')
+  if (rent.status === 'ok') {
+    // Es la mediana de los avisos dentro del radio, no un promedio oficial del barrio
+    const date = rent.data.scrapedAt ? `, relevados el ${new Date(rent.data.scrapedAt).toLocaleDateString('es-AR')}` : ''
+    sources.push(
+      `Alquiler: mediana de los avisos de locales comerciales en alquiler publicados en ZonaProp dentro del radio${date}. No es un promedio del barrio.`,
+    )
+  }
   if (accessibility?.status === 'ok') {
     const date = new Date(accessibility.data.queryDate).toLocaleDateString('es-AR')
     sources.push(`Accesibilidad: ${accessibility.data.source}, consultado el ${date}.`)
@@ -128,8 +134,26 @@ function buildSources({ competition, traffic, density, rent, accessibility }) {
   return sources
 }
 
-function summarizeRent({ totalInRadius, pricedInRadius, medianRentArs, averageRentArs, medianPricePerM2Ars, averageSurfaceM2 }) {
-  return { totalInRadius, pricedInRadius, medianRentArs, averageRentArs, medianPricePerM2Ars, averageSurfaceM2 }
+function summarizeRent({
+  radiusInMeters,
+  totalInRadius,
+  pricedInRadius,
+  medianRentArs,
+  averageRentArs,
+  medianPricePerM2Ars,
+  averageSurfaceM2,
+  scrapedAt,
+}) {
+  return {
+    radiusInMeters,
+    totalInRadius,
+    pricedInRadius,
+    medianRentArs,
+    averageRentArs,
+    medianPricePerM2Ars,
+    averageSurfaceM2,
+    scrapedAt,
+  }
 }
 
 /**

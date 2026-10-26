@@ -111,6 +111,7 @@ async function queryRentalsFromDb(lat, lng, radiusInMeters) {
       price_per_m2_ars AS pricePerM2Ars,
       price_per_m2_usd AS pricePerM2Usd,
       url,
+      scraped_at AS scrapedAt,
       geom.Lat AS lat,
       geom.Long AS lng,
       ROUND(geom.STDistance(@point), 0) AS distanceMeters
@@ -150,6 +151,7 @@ function queryRentalsFromFallback(lat, lng, radiusInMeters) {
         pricePerM2Ars: p.price_per_m2_ars,
         pricePerM2Usd: p.price_per_m2_usd,
         url: p.url,
+        scrapedAt: catalog.scraped_at ?? null,
         lat: p.lat,
         lng: p.lng,
         distanceMeters,
@@ -159,6 +161,17 @@ function queryRentalsFromFallback(lat, lng, radiusInMeters) {
 
   matching.sort((a, b) => a.distanceMeters - b.distanceMeters)
   return matching
+}
+
+/**
+ * Fecha del relevamiento más reciente de los avisos. Las filas cargadas antes de
+ * guardar scraped_at no la tienen: se usa la del dataset local si está.
+ */
+function resolveScrapedAt(rows) {
+  const times = rows.map((r) => (r.scrapedAt ? new Date(r.scrapedAt).getTime() : NaN)).filter(Number.isFinite)
+  if (times.length > 0) return new Date(Math.max(...times)).toISOString()
+  const fallback = getFallbackCatalog()?.scraped_at
+  return fallback ? new Date(fallback).toISOString() : null
 }
 
 /**
@@ -210,6 +223,7 @@ export async function getRentalsInRadius({ lat, lng, radiusInMeters = 1000 }) {
       neighborhoods: [],
       callout: 'No se encontraron locales comerciales en oferta dentro del radio seleccionado.',
       source,
+      scrapedAt: resolveScrapedAt([]),
       exchangeRate,
       places: [],
     }
@@ -222,10 +236,16 @@ export async function getRentalsInRadius({ lat, lng, radiusInMeters = 1000 }) {
   const surfaces = []
   const neighborhoodsSet = new Set()
 
+  // Los avisos publicados solo en dólares se pasan a pesos con el tipo de cambio oficial
+  const monthlyRentArs = (r) => {
+    if (r.priceArs) return Number(r.priceArs)
+    if (r.priceUsd) return Math.round(Number(r.priceUsd) * exchangeRate.rate)
+    return null
+  }
+
   for (const r of rows) {
-    // Los avisos publicados solo en dólares se pasan a pesos con el tipo de cambio oficial
-    if (r.priceArs) pricesArs.push(Number(r.priceArs))
-    else if (r.priceUsd) pricesArs.push(Math.round(Number(r.priceUsd) * exchangeRate.rate))
+    const rentArs = monthlyRentArs(r)
+    if (rentArs !== null) pricesArs.push(rentArs)
     if (r.priceUsd) pricesUsd.push(Number(r.priceUsd))
     if (r.pricePerM2Ars) pricesM2Ars.push(Number(r.pricePerM2Ars))
     if (r.pricePerM2Usd) pricesM2Usd.push(Number(r.pricePerM2Usd))
@@ -250,8 +270,10 @@ export async function getRentalsInRadius({ lat, lng, radiusInMeters = 1000 }) {
   const minRentArs = pricesArs.length > 0 ? Math.min(...pricesArs) : 0
   const maxRentArs = pricesArs.length > 0 ? Math.max(...pricesArs) : 0
 
-  const places = rows.map((p) => ({
+  const places = rows.map(({ scrapedAt, ...p }) => ({
     ...p,
+    surfaceM2: p.surfaceM2 ? Number(p.surfaceM2) : null,
+    monthlyRentArs: monthlyRentArs(p),
     distanceText: formatDistance(p.distanceMeters),
   }))
 
@@ -277,6 +299,8 @@ export async function getRentalsInRadius({ lat, lng, radiusInMeters = 1000 }) {
     neighborhoods: Array.from(neighborhoodsSet).sort(),
     callout,
     source,
+    // Fecha del relevamiento de los avisos (ISO) o null si no se conoce
+    scrapedAt: resolveScrapedAt(rows),
     exchangeRate,
     places,
   }

@@ -26,8 +26,11 @@ const DENSITY = {
 const RENT = {
   // Hasta este factor sobre el tope del presupuesto es alerta; más arriba, debilidad
   alertOverBudget: 1.25,
-  // Con menos avisos que esto se aclara que la muestra es chica
+  // Con menos avisos que esto la muestra es chica: se aclara y la lectura queda neutral.
+  // También es el mínimo de avisos del tamaño respondido para comparar solo contra esos.
   fewListings: 3,
+  // Preguntas de superficie (m²) del catálogo, según el rubro
+  surfaceQuestions: ['surface_gym', 'surface_pilates'],
 }
 
 // Score de afluencia (0–100) en la franja del negocio
@@ -80,10 +83,47 @@ function formatArs(value) {
   return `$${formatInt(value)}`
 }
 
-/** Costo: tope del presupuesto vs. la mediana del alquiler mensual de los locales en oferta en el radio. */
+/** Mediana de una lista de montos (redondeada). */
+function median(values) {
+  const sorted = [...values].sort((a, b) => a - b)
+  const mid = Math.floor(sorted.length / 2)
+  return sorted.length % 2 !== 0 ? sorted[mid] : Math.round((sorted[mid - 1] + sorted[mid]) / 2)
+}
+
+/** Opción de superficie respondida (solo algunos rubros la preguntan) o null. */
+function surfaceAnswer(answerOption) {
+  for (const code of RENT.surfaceQuestions) {
+    const option = answerOption(code)
+    if (option && !option.isUnknown) return option
+  }
+  return null
+}
+
+function inRange(value, { valueMin, valueMax }) {
+  return value >= (valueMin ?? 0) && (valueMax === null || valueMax === undefined || value <= valueMax)
+}
+
+/**
+ * Avisos con precio contra los que se compara el presupuesto. Si el rubro
+ * pregunta la superficie y hay suficientes avisos de ese tamaño, solo esos.
+ */
+function comparableListings(places, surface) {
+  const priced = places.filter((p) => p.monthlyRentArs)
+  if (!surface) return { listings: priced, bySurface: false }
+  const sized = priced.filter((p) => p.surfaceM2 && inRange(p.surfaceM2, surface))
+  return sized.length >= RENT.fewListings
+    ? { listings: sized, bySurface: true }
+    : { listings: priced, bySurface: false }
+}
+
+/**
+ * Costo: tope del presupuesto vs. la mediana del alquiler mensual de los locales
+ * en oferta en el radio (del tamaño que necesita, si el rubro pregunta la superficie).
+ */
 export function costCriterion({ answerOption, answerLabel, rent }) {
-  const yourBusiness = answerLabel('budget')
   const budget = answerOption('budget')
+  const surface = surfaceAnswer(answerOption)
+  const yourBusiness = [answerLabel('budget'), surface?.label].filter(Boolean).join(', ') || null
   const label = 'Costo'
 
   if (!budget || budget.isUnknown) {
@@ -93,21 +133,41 @@ export function costCriterion({ answerOption, answerLabel, rent }) {
     return criterion('cost', label, yourBusiness, 'No pudimos obtener el alquiler', 'not_evaluated')
   }
 
-  // Solo cuentan los avisos con precio: son los que forman la mediana
-  const { pricedInRadius, medianRentArs } = rent.data
-  if (pricedInRadius === 0) {
+  const { totalInRadius, places = [] } = rent.data
+  if (totalInRadius === 0) {
     return criterion('cost', label, yourBusiness, 'Sin locales en alquiler publicados en el radio', 'not_evaluated')
   }
 
-  const listings = pricedInRadius === 1 ? '1 aviso' : `${pricedInRadius} avisos`
-  const sample = pricedInRadius < RENT.fewListings ? `, solo ${listings}` : ` (${listings})`
-  const zone = `Alquiler mediano de ${formatArs(medianRentArs)}/mes${sample}`
-  // "Más de $2M" no tiene tope: cualquier alquiler entra
-  const budgetMax = budget.valueMax
-  if (budgetMax === null || medianRentArs <= budgetMax) {
-    return criterion('cost', label, yourBusiness, zone, 'strength')
+  // Solo cuentan los avisos con precio: son los que forman la mediana
+  const { listings, bySurface } = comparableListings(places, surface)
+  if (listings.length === 0) {
+    const published = totalInRadius === 1 ? 'Hay 1 local publicado' : `Hay ${totalInRadius} locales publicados`
+    return criterion('cost', label, yourBusiness, `${published} en el radio, pero sin precio`, 'not_evaluated')
   }
-  const reading = medianRentArs > budgetMax * RENT.alertOverBudget ? 'weakness' : 'alert'
+
+  const rentArs = median(listings.map((p) => p.monthlyRentArs))
+  const count = listings.length === 1 ? '1 aviso' : `${listings.length} avisos`
+  const sample = listings.length < RENT.fewListings ? `solo ${count}` : count
+  // Con superficie pero pocos avisos de ese tamaño se compara contra todos y se aclara
+  const surfaceText = surface && `${surface.label.charAt(0).toLowerCase()}${surface.label.slice(1)}`
+  const scope = bySurface
+    ? `de locales de ${surfaceText} en el radio`
+    : surface
+      ? 'en el radio, de cualquier tamaño'
+      : 'en el radio'
+  const zone = `Alquiler mediano de ${formatArs(rentArs)}/mes ${scope} (${sample})`
+
+  // Con muy pocos avisos la mediana no alcanza para una lectura firme
+  if (listings.length < RENT.fewListings) return criterion('cost', label, yourBusiness, zone, 'neutral')
+
+  // "Más de $2M" no tiene tope: solo se sabe que entra si el alquiler no pasa el piso
+  const budgetMax = budget.valueMax
+  if (budgetMax === null || budgetMax === undefined) {
+    const reading = rentArs <= (budget.valueMin ?? 0) ? 'strength' : 'neutral'
+    return criterion('cost', label, yourBusiness, zone, reading)
+  }
+  if (rentArs <= budgetMax) return criterion('cost', label, yourBusiness, zone, 'strength')
+  const reading = rentArs > budgetMax * RENT.alertOverBudget ? 'weakness' : 'alert'
   return criterion('cost', label, yourBusiness, zone, reading)
 }
 
