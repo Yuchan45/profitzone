@@ -9,8 +9,10 @@ import { useSubcategorySurvey } from '../../hooks/useSubcategorySurvey.js'
 import Stepper from '../../components/organisms/Stepper/Stepper.jsx'
 import LocationMap from '../../components/organisms/LocationMap/LocationMap.jsx'
 import BusinessSummary from '../../components/organisms/BusinessSummary/BusinessSummary.jsx'
+import CriteriaTable from '../../components/organisms/CriteriaTable/CriteriaTable.jsx'
 import StepHeading from '../../components/molecules/StepHeading/StepHeading.jsx'
 import StatusMessage from '../../components/molecules/StatusMessage/StatusMessage.jsx'
+import StatTile from '../../components/molecules/StatTile/StatTile.jsx'
 import IndicatorCard from '../../components/molecules/IndicatorCard/IndicatorCard.jsx'
 import HourlyBars from '../../components/atoms/HourlyBars/HourlyBars.jsx'
 import DisclaimerCard from '../../components/molecules/DisclaimerCard/DisclaimerCard.jsx'
@@ -18,6 +20,7 @@ import Button from '../../components/atoms/Button/Button.jsx'
 import Icon from '../../components/atoms/Icon/Icon.jsx'
 import { formatCurrency, formatDate, formatNumber } from '../../utils/formatters.js'
 import { buildSummaryRows, directMatch } from '../../utils/surveySummary.js'
+import { NEW_ANALYSIS_LINK } from '../../utils/flowSteps.js'
 import './Analisis.css'
 
 // Google Places devuelve como máximo 20 locales por consulta
@@ -28,6 +31,8 @@ const COMPETITION_ROWS = 5
 const TRANSIT_MAX_RESULTS = 20
 // Paradas que se listan en la tarjeta de accesibilidad (las más cercanas)
 const TRANSIT_ROWS = 6
+
+const PENDING_CAPTION = 'Dato pendiente'
 
 // El censo trae los barrios en mayúsculas ("PALERMO")
 const titleCase = (text) =>
@@ -61,6 +66,65 @@ function DetailRows({ rows }) {
         ))}
     </dl>
   )
+}
+
+function competitionTile(indicator) {
+  if (!indicator) return { value: null, caption: PENDING_CAPTION }
+  const { status, data } = indicator
+  if (status === 'not_applicable') return { value: null, caption: 'No aplica sin atención al público' }
+  if (status !== 'ok') return { value: null, caption: 'No pudimos cargar este dato' }
+  const value = data.isExact
+    ? formatNumber(data.total)
+    : data.total >= COMPETITION_MAX_RESULTS
+      ? `${data.total}+`
+      : formatNumber(data.total)
+  return { value, caption: `${data.directCount} directos` }
+}
+
+function trafficTile(indicator) {
+  if (!indicator) return { value: null, caption: PENDING_CAPTION }
+  const { status, data } = indicator
+  if (status === 'not_applicable') return { value: null, caption: 'No aplica sin atención al público' }
+  if (status !== 'ok') return { value: null, caption: 'No pudimos cargar este dato' }
+  return { value: `${data.score}/${data.scoreMax}`, caption: data.timeSlot }
+}
+
+function populationTile(indicator) {
+  if (!indicator) return { value: null, caption: PENDING_CAPTION }
+  const { status, data } = indicator
+  if (status !== 'ok') return { value: null, caption: 'No pudimos cargar este dato' }
+  if (!data.inCoverage) return { value: null, caption: 'Fuera de la cobertura del censo' }
+  return { value: formatNumber(data.poblacionEstimada), caption: 'habitantes en el radio' }
+}
+
+function rentTile(indicator) {
+  if (!indicator) return { value: null, caption: PENDING_CAPTION }
+  const { status, data } = indicator
+  if (status !== 'ok') return { value: null, caption: 'No pudimos cargar este dato' }
+  // Solo los avisos con precio forman la mediana
+  if (data.pricedInRadius === 0) return { value: null, caption: 'Sin locales en alquiler publicados en el radio' }
+  const listings = data.pricedInRadius === 1 ? '1 aviso' : `${formatNumber(data.pricedInRadius)} avisos`
+  return {
+    value: formatCurrency(data.medianRentArs, 'ARS', { decimals: 0 }),
+    caption: `por mes, mediana de ${listings}`,
+  }
+}
+
+function accessibilityTile(indicator) {
+  if (!indicator) return { value: null, caption: PENDING_CAPTION }
+  const { status, data } = indicator
+  if (status === 'not_applicable') return { value: null, caption: 'No aplica sin atención al público' }
+  if (status !== 'ok') return { value: null, caption: 'No pudimos cargar este dato' }
+  const value = data.total >= 20 ? '20+' : formatNumber(data.total)
+  let caption = 'paradas en el radio'
+  if (data.subwayCount > 0) {
+    caption = data.subwayCount === 1 ? '1 subte en el radio' : `${data.subwayCount} subtes en el radio`
+  } else if (data.trainCount > 0) {
+    caption = data.trainCount === 1 ? '1 tren en el radio' : `${data.trainCount} trenes en el radio`
+  } else if (data.total === 0) {
+    caption = 'sin paradas en el radio'
+  }
+  return { value, caption }
 }
 
 function CompetitionCard({ report }) {
@@ -358,7 +422,8 @@ function Analisis() {
     isCurrentAnalysis ? subcategoryCode : null,
   )
 
-  const analysis = report.data?.analysis
+  const reportData = report.data
+  const analysis = reportData?.analysis
   // El punto ya está en el flujo: el mapa se muestra sin esperar al reporte
   const location = analysis?.location ?? (isCurrentAnalysis ? flow.location : null)
   const neighborhood = neighborhoods.data?.[0] ?? null
@@ -375,11 +440,18 @@ function Analisis() {
     match: surveyReady ? directMatch(survey.data, answers) : null,
   })
 
-  const indicators = report.data?.indicators
+  const indicators = reportData?.indicators
   const noPublic = indicators?.competition?.status === 'not_applicable'
 
   const subtitle = analysis
-    ? [analysis.subcategory.name, `radio de ${analysis.location.radius} m`, formatDate(analysis.createdAt)].join(' · ')
+    ? [
+        analysis.category.name,
+        analysis.subcategory.name,
+        `radio de ${analysis.location.radius} m`,
+        formatDate(analysis.createdAt),
+      ]
+        .filter(Boolean)
+        .join(' · ')
     : 'Consultando los datos de la zona que elegiste…'
 
   return (
@@ -401,50 +473,98 @@ function Analisis() {
         </div>
       )}
 
-      <div className="analisis-grid">
-        <div className="analisis-map-column">
-          {/* Sin el contorno del barrio (si falló) el mapa se muestra igual, centrado en el punto */}
-          {location && neighborhoods.status !== 'loading' ? (
-            <LocationMap
-              center={neighborhood?.center ?? location}
-              bounds={neighborhood?.bounds}
-              boundary={neighborhood?.boundary}
-              point={location}
-              radius={location.radius}
-              places={nearbyPlaces.data?.places}
-              readOnly
-            />
-          ) : (
-            <div className="flow-skeleton analisis-map-skeleton" aria-busy="true" aria-label="Cargando el mapa" />
-          )}
-          <ul className="analisis-legend" aria-label="Referencias del mapa">
-            <li className="analisis-legend-item analisis-legend-item--direct">Competencia directa</li>
-            <li className="analisis-legend-item">Otros locales del rubro</li>
-          </ul>
-        </div>
-
-        {/* Si falló el pedido entero, el error ya se muestra arriba una sola vez */}
-        {report.status !== 'error' && (
-          <div className="analisis-cards">
-            {noPublic ? (
-              <p className="analisis-notice">
-                <Icon name="info" size={18} />
-                Como elegiste “Sin atención al público”, no mostramos competencia ni afluencia.
-              </p>
-            ) : (
-              <>
-                <CompetitionCard report={report} />
-                <TrafficCard report={report} />
-              </>
-            )}
-            <AccessibilityCard report={report} />
-            <PopulationCard report={report} />
-            <RentCard report={report} />
-          </div>
+      {/* 1. Mapa estirado a ancho completo */}
+      <div className="analisis-map-stretched">
+        {location && neighborhoods.status !== 'loading' ? (
+          <LocationMap
+            center={neighborhood?.center ?? location}
+            bounds={neighborhood?.bounds}
+            boundary={neighborhood?.boundary}
+            point={location}
+            radius={location.radius}
+            places={nearbyPlaces.data?.places}
+            readOnly
+          />
+        ) : (
+          <div className="flow-skeleton analisis-map-skeleton" aria-busy="true" aria-label="Cargando el mapa" />
         )}
+        <ul className="analisis-legend" aria-label="Referencias del mapa">
+          <li className="analisis-legend-item analisis-legend-item--direct">Competencia directa</li>
+          <li className="analisis-legend-item">Otros locales del rubro</li>
+        </ul>
       </div>
 
-      {report.status === 'ok' && <DisclaimerCard compact />}
+      {/* 2. Todos los cuadros con datos en una columna */}
+      {report.status !== 'error' && (
+        <div className="analisis-cards">
+          {noPublic ? (
+            <p className="analisis-notice">
+              <Icon name="info" size={18} />
+              Como elegiste “Sin atención al público”, no mostramos competencia ni afluencia.
+            </p>
+          ) : (
+            <>
+              <CompetitionCard report={report} />
+              <TrafficCard report={report} />
+            </>
+          )}
+          <AccessibilityCard report={report} />
+          <PopulationCard report={report} />
+          <RentCard report={report} />
+        </div>
+      )}
+
+      {/* 3. La parte de la imagen al final (Reporte) */}
+      {report.status === 'loading' && (
+        <div className="reporte-loading" aria-busy="true" aria-label="Generando el reporte">
+          <div className="flow-skeleton" />
+          <div className="flow-skeleton reporte-skeleton-tall" />
+        </div>
+      )}
+
+      {report.status === 'ok' && reportData && (
+        <>
+          {reportData.summary && (
+            <section className="reporte-card" aria-labelledby="reporte-summary-title">
+              <h2 id="reporte-summary-title" className="reporte-card-title">
+                Resumen
+              </h2>
+              <p className="reporte-summary">{reportData.summary}</p>
+            </section>
+          )}
+
+          <CriteriaTable criteria={reportData.criteria} />
+
+          <section className="reporte-card" aria-labelledby="reporte-data-title">
+            <h2 id="reporte-data-title" className="reporte-card-title">
+              La zona en datos
+            </h2>
+            <div className="reporte-tiles">
+              <StatTile label="Competencia" {...competitionTile(reportData.indicators?.competition)} />
+              <StatTile label="Afluencia (estimada)" {...trafficTile(reportData.indicators?.traffic)} />
+              <StatTile label="Población" {...populationTile(reportData.indicators?.density)} />
+              <StatTile label="Alquiler" {...rentTile(reportData.indicators?.rent)} />
+              <StatTile label="Accesibilidad" {...accessibilityTile(reportData.indicators?.accessibility)} />
+            </div>
+          </section>
+
+          {((reportData.notices && reportData.notices.length > 0) ||
+            (reportData.sources && reportData.sources.length > 0)) && (
+            <section className="reporte-card" aria-labelledby="reporte-sources-title">
+              <h2 id="reporte-sources-title" className="reporte-card-title">
+                Fuentes y avisos
+              </h2>
+              <ul className="reporte-notes">
+                {[...(reportData.notices || []), ...(reportData.sources || [])].map((note) => (
+                  <li key={note}>{note}</li>
+                ))}
+              </ul>
+            </section>
+          )}
+
+          <DisclaimerCard />
+        </>
+      )}
 
       <div className="flow-step-actions">
         {/* Un análisis de fuera del flujo en curso (ej. desde Mis reportes) no tiene paso anterior */}
@@ -453,11 +573,9 @@ function Analisis() {
             Anterior
           </Button>
         )}
-        {report.status === 'ok' ? (
-          <Button to={`/analizar/reporte/${id}`}>Ver reporte</Button>
-        ) : (
-          <Button disabled>Ver reporte</Button>
-        )}
+        <Button {...NEW_ANALYSIS_LINK}>
+          Nuevo análisis
+        </Button>
       </div>
     </div>
   )
