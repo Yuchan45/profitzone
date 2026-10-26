@@ -18,6 +18,12 @@ export function validateNewPassword(value) {
   return null
 }
 
+export function validatePasswordConfirmation(password, confirmation) {
+  if (!confirmation) return 'Repetí la contraseña.'
+  if (password !== confirmation) return 'Las contraseñas no coinciden.'
+  return null
+}
+
 export function validateRequired(value, message) {
   return value.trim() ? null : message
 }
