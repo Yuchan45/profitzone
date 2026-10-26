@@ -104,6 +104,12 @@ de su carpeta.
 | `JWT_ACCESS_TTL`        | No | `15m`         | Vida del JWT de acceso (número + `s`/`m`/`h`/`d`) |
 | `REFRESH_TOKEN_TTL_DAYS` | No | `7`          | Vida del refresh token (cookie httpOnly) en días, de 1 a 90 |
 | `COOKIE_SECURE`         | No | según entorno | `true` manda la cookie solo por HTTPS. Sin definir: `true` en producción, `false` en desarrollo |
+| `FRONTEND_URL`          | No | `http://localhost:5173` | URL del front, base de los links que se mandan por correo (restablecer contraseña) |
+| `SMTP_HOST`             | No | —             | Servidor SMTP para mandar correos. Sin definir no se mandan: en desarrollo el link se muestra en la consola |
+| `SMTP_PORT`             | No | `587`         | Puerto SMTP (`465` usa TLS directo; el resto, STARTTLS) |
+| `SMTP_USER`             | No | —             | Usuario SMTP |
+| `SMTP_PASSWORD`         | No | —             | Contraseña SMTP |
+| `SMTP_FROM`             | No | `ProfitZone <no-reply@profitzone.local>` | Remitente de los correos |
 
 `docker-compose.yml` lee `DB_PASSWORD` y `DB_PORT` de `profit-zone-back/.env`
 (los scripts `npm run db:*` le pasan ese archivo), así hay una sola fuente.
@@ -162,6 +168,8 @@ acepta únicamente los orígenes de `CORS_ORIGINS`; cualquier otro recibe **403*
 | `POST` | `/api/auth/login` | Inicia sesión. 200 `{ user, accessToken }` + cookie de refresh; 401 genérico si falla |
 | `POST` | `/api/auth/refresh` | Renueva la sesión con la cookie `pz_refresh` (rotación). 200 `{ user, accessToken }`; 401 si venció o fue revocada |
 | `POST` | `/api/auth/logout` | Revoca el refresh token y borra la cookie. 204 |
+| `POST` | `/api/auth/forgot-password` | Pide restablecer la contraseña (`{ email }`): manda un link de un solo uso que vence en 30 min. 202 genérico exista o no la cuenta; límite de 5 pedidos cada 15 min por IP |
+| `POST` | `/api/auth/reset-password` | Cambia la contraseña con el link (`{ token, password }`) y cierra todas las sesiones de la cuenta. 204; 400 si el link venció, ya se usó o la contraseña no cumple el largo |
 | `GET`  | `/api/auth/me` | Usuario de la sesión. Requiere `Authorization: Bearer <accessToken>` |
 
 ## Estructura

@@ -4,9 +4,12 @@ import { AuthToken, Role, User } from '../models/index.js'
 import { env } from '../config/env.js'
 import { getDummyPasswordHash, hashPassword, verifyPassword } from '../utils/password.js'
 import { generateOpaqueToken, hashToken, signAccessToken } from '../utils/tokens.js'
+import { sendMail } from './mail.service.js'
 
 const REFRESH = 'refresh'
+const RESET_PASSWORD = 'reset_password'
 const DAY_MS = 24 * 60 * 60 * 1000
+const RESET_PASSWORD_TTL_MS = 30 * 60 * 1000
 
 // Si un refresh token ya rotado vuelve a llegar dentro de este margen se toma
 // como una carrera benigna (dos pestañas o requests en paralelo) y no como robo.
@@ -14,6 +17,7 @@ const ROTATION_GRACE_MS = 30 * 1000
 
 const INVALID_CREDENTIALS = 'Correo o contraseña incorrectos.'
 const INVALID_SESSION = 'Tu sesión expiró. Iniciá sesión de nuevo.'
+const INVALID_RESET_LINK = 'El link para restablecer la contraseña venció o ya se usó. Pedí uno nuevo.'
 
 function httpError(status, message) {
   const error = new Error(message)
@@ -178,6 +182,96 @@ export async function logout(refreshToken) {
     { revokedAt: new Date() },
     { where: { tokenHash: hashToken(refreshToken), type: REFRESH, revokedAt: null } },
   )
+}
+
+function buildResetPasswordMail(user, link) {
+  const minutes = RESET_PASSWORD_TTL_MS / 60000
+  const text = [
+    `Hola, ${user.firstName}:`,
+    '',
+    'Recibimos un pedido para restablecer la contraseña de tu cuenta de ProfitZone.',
+    `Entrá a este link para elegir una nueva (vence en ${minutes} minutos y sirve una sola vez):`,
+    link,
+    '',
+    'Si no lo pediste, ignorá este correo: tu contraseña sigue siendo la misma.',
+  ].join('\n')
+  const html = `
+    <p>Hola, ${escapeHtml(user.firstName)}:</p>
+    <p>Recibimos un pedido para restablecer la contraseña de tu cuenta de ProfitZone.</p>
+    <p><a href="${link}">Elegí una contraseña nueva</a>. El link vence en ${minutes} minutos y sirve una sola vez.</p>
+    <p>Si no lo pediste, ignorá este correo: tu contraseña sigue siendo la misma.</p>
+  `
+  return { to: user.email, subject: 'Restablecé tu contraseña de ProfitZone', text, html }
+}
+
+function escapeHtml(value) {
+  return value.replace(/[&<>"']/g, (char) => `&#${char.charCodeAt(0)};`)
+}
+
+/**
+ * Pide restablecer la contraseña: si el correo es de una cuenta activa, invalida
+ * los links anteriores y manda uno nuevo. Responde igual exista o no el correo.
+ */
+export async function requestPasswordReset(email, meta) {
+  const user = await User.findOne({ where: { email } })
+  if (!user || !user.isActive) return
+
+  // Solo el último link pedido sirve
+  await AuthToken.update(
+    { revokedAt: new Date() },
+    { where: { userId: user.id, type: RESET_PASSWORD, usedAt: null, revokedAt: null } },
+  )
+  await AuthToken.destroy({
+    where: { userId: user.id, type: RESET_PASSWORD, expiresAt: { [Op.lt]: new Date() } },
+  })
+
+  const token = generateOpaqueToken()
+  await AuthToken.create({
+    userId: user.id,
+    type: RESET_PASSWORD,
+    tokenHash: hashToken(token),
+    expiresAt: new Date(Date.now() + RESET_PASSWORD_TTL_MS),
+    userAgent: meta.userAgent ?? null,
+    ip: meta.ip ?? null,
+  })
+
+  const link = `${env.frontendUrl}/restablecer-contrasena?token=${encodeURIComponent(token)}`
+  // Sin await: si el correo existe la respuesta no tarda más (no revela qué cuentas hay)
+  sendMail(buildResetPasswordMail(user, link)).catch((error) => {
+    console.error(`[ProfitZone] No se pudo mandar el correo de recuperación: ${error.message}`)
+  })
+}
+
+/**
+ * Cambia la contraseña con un link de recuperación. El token es de un solo uso
+ * y, al usarlo, se cierran todas las sesiones abiertas de la cuenta.
+ */
+export async function resetPassword(token, password) {
+  if (!token) throw httpError(400, INVALID_RESET_LINK)
+
+  const record = await AuthToken.findOne({
+    where: { tokenHash: hashToken(token), type: RESET_PASSWORD },
+    include: [{ model: User, as: 'user' }],
+  })
+
+  const expired = record && new Date(record.expiresAt).getTime() <= Date.now()
+  if (!record || record.usedAt || record.revokedAt || expired || !record.user?.isActive) {
+    throw httpError(400, INVALID_RESET_LINK)
+  }
+
+  const passwordHash = await hashPassword(password)
+
+  await sequelize.transaction(async (transaction) => {
+    // Uso atómico: dos requests con el mismo link no cambian la contraseña dos veces
+    const [updated] = await AuthToken.update(
+      { usedAt: new Date() },
+      { where: { id: record.id, usedAt: null, revokedAt: null }, transaction },
+    )
+    if (updated !== 1) throw httpError(400, INVALID_RESET_LINK)
+
+    await User.update({ passwordHash }, { where: { id: record.userId }, transaction })
+    await revokeAllRefreshTokens(record.userId, transaction)
+  })
 }
 
 export async function getMe(userId) {
