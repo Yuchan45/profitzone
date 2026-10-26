@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { useAuth } from '../../hooks/useAuth.js'
 import StepHeading from '../../components/molecules/StepHeading/StepHeading.jsx'
@@ -12,12 +12,7 @@ import '../../styles/auth-form.css'
 // Página del link que llega por correo: /restablecer-contrasena?token=…
 function RestablecerContrasena() {
   const [searchParams, setSearchParams] = useSearchParams()
-  // El token se guarda en el estado y se saca de la URL: así no queda en el historial
-  const [token] = useState(() => searchParams.get('token'))
-
-  useEffect(() => {
-    if (searchParams.has('token')) setSearchParams({}, { replace: true })
-  }, [searchParams, setSearchParams])
+  const token = searchParams.get('token')
   const { status, logout } = useAuth()
   const [done, setDone] = useState(false)
 
@@ -30,22 +25,10 @@ function RestablecerContrasena() {
     // El back cerró todas las sesiones: si había una abierta en esta pestaña, también se cierra
     if (status === 'authenticated') await logout().catch(() => {})
     setDone(true)
-  }
-
-  if (!token) {
-    return (
-      <>
-        <StepHeading title="Link inválido" />
-        <div className="auth-form">
-          <StatusMessage variant="error">
-            Al link le falta una parte. Abrilo de nuevo desde el correo o pedí uno nuevo.
-          </StatusMessage>
-          <Button to="/recuperar-contrasena" className="auth-form-submit">
-            Pedir un link nuevo
-          </Button>
-        </div>
-      </>
-    )
+    // Ya usado, el token no sirve más: se saca de la URL para que no quede en el historial
+    const next = new URLSearchParams(searchParams)
+    next.delete('token')
+    setSearchParams(next, { replace: true })
   }
 
   if (done) {
@@ -59,6 +42,22 @@ function RestablecerContrasena() {
           </StatusMessage>
           <Button to="/login" className="auth-form-submit">
             Iniciar sesión
+          </Button>
+        </div>
+      </>
+    )
+  }
+
+  if (!token) {
+    return (
+      <>
+        <StepHeading title="Link inválido" />
+        <div className="auth-form">
+          <StatusMessage variant="error">
+            Al link le falta una parte. Abrilo de nuevo desde el correo o pedí uno nuevo.
+          </StatusMessage>
+          <Button to="/recuperar-contrasena" className="auth-form-submit">
+            Pedir un link nuevo
           </Button>
         </div>
       </>

@@ -1,4 +1,4 @@
-import { Op, UniqueConstraintError } from 'sequelize'
+import { Op, QueryTypes, UniqueConstraintError } from 'sequelize'
 import { sequelize } from '../db/sequelize.js'
 import { AuthToken, Role, User } from '../models/index.js'
 import { env } from '../config/env.js'
@@ -71,7 +71,7 @@ async function revokeAllRefreshTokens(userId, transaction) {
 }
 
 /** Borra los tokens vencidos del usuario (de un tipo) para que la tabla no crezca sin límite. */
-async function cleanupExpiredTokens(userId, type = REFRESH, transaction = undefined) {
+async function cleanupExpiredTokens(userId, type, transaction) {
   await AuthToken.destroy({
     where: { userId, type, expiresAt: { [Op.lt]: new Date() } },
     transaction,
@@ -123,7 +123,7 @@ export async function login({ email, password }, meta) {
 
   user.lastLoginAt = new Date()
   await user.save({ fields: ['lastLoginAt'] })
-  await cleanupExpiredTokens(user.id)
+  await cleanupExpiredTokens(user.id, REFRESH)
 
   return issueSession(user, meta)
 }
@@ -215,14 +215,20 @@ async function issuePasswordReset(email, meta) {
   if (!user || !user.isActive) return
 
   const token = generateOpaqueToken()
-  // En una transacción: dos pedidos a la vez no dejan dos links válidos
   await sequelize.transaction(async (transaction) => {
+    // Bloquea la fila del usuario: dos pedidos a la vez se ejecutan uno detrás del
+    // otro y no dejan dos links válidos (con READ COMMITTED la transacción sola no alcanza)
+    await sequelize.query('SELECT id FROM users.users WITH (UPDLOCK, ROWLOCK) WHERE id = :id', {
+      replacements: { id: user.id },
+      type: QueryTypes.SELECT,
+      transaction,
+    })
+    await cleanupExpiredTokens(user.id, RESET_PASSWORD, transaction)
     // Solo el último link pedido sirve
     await AuthToken.update(
       { revokedAt: new Date() },
       { where: { userId: user.id, type: RESET_PASSWORD, usedAt: null, revokedAt: null }, transaction },
     )
-    await cleanupExpiredTokens(user.id, RESET_PASSWORD, transaction)
     await AuthToken.create(
       {
         userId: user.id,
@@ -247,7 +253,8 @@ async function issuePasswordReset(email, meta) {
  */
 export function requestPasswordReset(email, meta) {
   issuePasswordReset(email, meta).catch((error) => {
-    console.error(`[ProfitZone] No se pudo generar el link de recuperación: ${error.message}`)
+    // Sin await en el controller: este log es el único rastro si falla la DB o el SMTP
+    console.error('[ProfitZone] No se pudo procesar el pedido de recuperación de contraseña:', error)
   })
 }
 
