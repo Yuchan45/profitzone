@@ -3,6 +3,7 @@ import { useNeighborhoods } from '../../../hooks/useNeighborhoods.js'
 import { useNearbyPlaces } from '../../../hooks/useNearbyPlaces.js'
 import LocationMap from '../LocationMap/LocationMap.jsx'
 import CriteriaTable from '../CriteriaTable/CriteriaTable.jsx'
+import PermitsGuide from '../PermitsGuide/PermitsGuide.jsx'
 import StatusMessage from '../../molecules/StatusMessage/StatusMessage.jsx'
 import StatTile from '../../molecules/StatTile/StatTile.jsx'
 import IndicatorCard from '../../molecules/IndicatorCard/IndicatorCard.jsx'
@@ -415,8 +416,18 @@ function AccessibilityCard({ report }) {
  *   el reporte (ej. los del flujo); con el reporte se usan los suyos.
  * - `match`: criterio de competencia directa para los puntos del mapa (sin él, todos
  *   los locales se ven iguales y la referencia de "directa" no se muestra).
+ * - `serviceMode`: respuesta a "¿Cómo vas a atender al público?" para las notas de la
+ *   guía de trámites. El reporte no trae las respuestas: sin ella, solo se deduce
+ *   "sin atención al público" de los indicadores que no aplican.
  */
-function ZoneAnalysis({ report, point = null, categoryCode = null, subcategoryCode = null, match = null }) {
+function ZoneAnalysis({
+  report,
+  point = null,
+  categoryCode = null,
+  subcategoryCode = null,
+  match = null,
+  serviceMode = null,
+}) {
   const neighborhoods = useNeighborhoods()
   const reportData = report.data
   const analysis = reportData?.analysis
@@ -521,6 +532,13 @@ function ZoneAnalysis({ report, point = null, categoryCode = null, subcategoryCo
               <StatTile label="Accesibilidad" {...accessibilityTile(reportData.indicators?.accessibility)} />
             </div>
           </section>
+
+          <PermitsGuide
+            categoryCode={analysis.category.code}
+            subcategoryCode={analysis.subcategory.code}
+            serviceMode={serviceMode ?? (noPublic ? 'no_public' : null)}
+            showPageLink
+          />
 
           {((reportData.notices && reportData.notices.length > 0) ||
             (reportData.sources && reportData.sources.length > 0)) && (

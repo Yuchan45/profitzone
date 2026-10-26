@@ -64,6 +64,7 @@ function Analisis() {
         categoryCode={isCurrentAnalysis ? categoryCode : null}
         subcategoryCode={isCurrentAnalysis ? subcategoryCode : null}
         match={surveyReady ? directMatch(survey.data, answers) : null}
+        serviceMode={isCurrentAnalysis ? (answers.service_mode?.[0] ?? null) : null}
       />
 
       <div className="flow-step-actions">
