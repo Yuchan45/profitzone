@@ -143,12 +143,13 @@ export function costCriterion({ answerOption, answerLabel, rent }) {
   const rentArs = calculateMedian(listings.map((p) => p.monthlyRentArs))
   const count = listings.length === 1 ? '1 aviso' : `${listings.length} avisos`
   const sample = listings.length < RENT.fewListings ? `solo ${count}` : count
-  // Con superficie pero pocos avisos de ese tamaño se compara contra todos y se aclara
+  // Con superficie pero pocos avisos de ese tamaño se muestra la mediana de todos
+  // los tamaños como referencia, se aclara y la lectura queda neutral
   const surfaceText = surface && `${surface.label.charAt(0).toLowerCase()}${surface.label.slice(1)}`
   const scope = bySurface
     ? `de locales de ${surfaceText} en el radio`
     : surface
-      ? 'en el radio, de cualquier tamaño'
+      ? `en el radio, de cualquier tamaño (hay pocos avisos de ${surfaceText} para comparar)`
       : 'en el radio'
   const zone = `Alquiler mediano de ${formatArs(rentArs)}/mes ${scope} (${sample})`
 

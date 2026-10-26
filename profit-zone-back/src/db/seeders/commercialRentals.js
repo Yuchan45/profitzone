@@ -2,6 +2,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { sequelize } from '../sequelize.js'
+import { parseArgentinaDateTime } from '../../utils/dates.js'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const DATA_PATH = path.resolve(__dirname, 'data/zonaprop_locales_caba_alquiler.json')
@@ -19,7 +20,7 @@ export async function seedCommercialRentals({ batchSize = 100 } = {}) {
   const catalog = JSON.parse(raw)
   const properties = catalog.properties || []
   // Fecha del relevamiento: es la misma para todo el archivo
-  const scrapedAt = catalog.scraped_at ? new Date(catalog.scraped_at) : null
+  const scrapedAt = catalog.scraped_at ? parseArgentinaDateTime(catalog.scraped_at) : null
   if (scrapedAt && Number.isNaN(scrapedAt.getTime())) {
     throw new Error(`scraped_at inválido en ${DATA_PATH}: ${catalog.scraped_at}`)
   }

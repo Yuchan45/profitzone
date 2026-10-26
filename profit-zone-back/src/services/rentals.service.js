@@ -5,6 +5,7 @@ import { QueryTypes } from 'sequelize'
 import { sequelize } from '../db/sequelize.js'
 import { httpError } from '../utils/httpErrors.js'
 import { calculateMedian } from '../utils/stats.js'
+import { parseArgentinaDateTime } from '../utils/dates.js'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const FALLBACK_DATA_PATH = path.resolve(__dirname, '../db/seeders/data/zonaprop_locales_caba_alquiler.json')
@@ -162,10 +163,12 @@ function queryRentalsFromFallback(lat, lng, radiusInMeters) {
  * guardar scraped_at no la tienen: se usa la del dataset local si está.
  */
 function resolveScrapedAt(rows) {
-  const times = rows.map((r) => (r.scrapedAt ? new Date(r.scrapedAt).getTime() : NaN)).filter(Number.isFinite)
+  // Las filas de la DB traen Date (UTC); las del JSON, el texto sin zona del dataset
+  const times = rows.map((r) => (r.scrapedAt ? parseArgentinaDateTime(r.scrapedAt).getTime() : NaN)).filter(Number.isFinite)
   if (times.length > 0) return new Date(Math.max(...times)).toISOString()
   const fallback = getFallbackCatalog()?.scraped_at
-  return fallback ? new Date(fallback).toISOString() : null
+  const fallbackDate = fallback ? parseArgentinaDateTime(fallback) : null
+  return fallbackDate && Number.isFinite(fallbackDate.getTime()) ? fallbackDate.toISOString() : null
 }
 
 /**

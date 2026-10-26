@@ -7,6 +7,7 @@ import { getRentalsInRadius } from './rentals.service.js'
 import { getAccessibilityAnalysis } from './accessibility.service.js'
 import { CRITERIA, buildSummary } from './reportCriteria.service.js'
 import { httpError } from '../utils/httpErrors.js'
+import { formatArgentinaDate } from '../utils/dates.js'
 
 // Franja horaria que se le pide al servicio de afluencia según las respuestas.
 // La franja pico de la subcategoría es más precisa que el horario general.
@@ -106,15 +107,11 @@ function buildAnswerReaders(answers, survey) {
   }
 }
 
-/** Fecha en la zona horaria de Buenos Aires, la misma con la que la muestra el front. */
-function formatArgentinaDate(value) {
-  return new Date(value).toLocaleDateString('es-AR', { timeZone: 'America/Argentina/Buenos_Aires' })
-}
-
+// Las fechas van en hora de Buenos Aires: el servidor puede estar en UTC
 function buildSources({ competition, traffic, density, rent, accessibility }) {
   const sources = []
   if (competition.status === 'ok') {
-    const date = new Date(competition.data.queryDate).toLocaleDateString('es-AR')
+    const date = formatArgentinaDate(competition.data.queryDate)
     sources.push(`Competencia: ${competition.data.source}, consultado el ${date}.`)
   }
   // El servicio de afluencia usa un perfil por rubro, no consulta el punto
@@ -132,7 +129,7 @@ function buildSources({ competition, traffic, density, rent, accessibility }) {
     )
   }
   if (accessibility?.status === 'ok') {
-    const date = new Date(accessibility.data.queryDate).toLocaleDateString('es-AR')
+    const date = formatArgentinaDate(accessibility.data.queryDate)
     sources.push(`Accesibilidad: ${accessibility.data.source}, consultado el ${date}.`)
   }
   sources.push('Lugares según tu público: todavía sin fuente de datos.')
