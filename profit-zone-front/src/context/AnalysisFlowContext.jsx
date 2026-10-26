@@ -2,39 +2,15 @@ import { useEffect, useMemo, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { AnalysisFlowContext } from './analysisFlowContextValue.js'
 import { isReportReady } from '../utils/flowSteps.js'
-
-// Se guarda en sessionStorage: sobrevive a un refresh y se borra al cerrar la pestaña.
-const STORAGE_KEY = 'profitzone_analysis_flow_v1'
-
-const INITIAL_STATE = {
-  // id del análisis guardado en la API (se crea al terminar "Tu negocio")
-  analysisId: null,
-  categoryCode: null,
-  subcategoryCode: null,
-  // { [questionCode]: string[] } con los codes de las opciones elegidas
-  answers: {},
-  // Punto y radio del paso 3: { lat, lng, radius }
-  location: null,
-  // { [stepId]: string[] } codes de las preguntas obligatorias de cada paso con encuesta.
-  // Lo registra cada paso al cargar sus preguntas y sirve para saber si está completo.
-  requiredQuestions: {},
-  // id del análisis cuyo reporte se generó bien (paso 4). Cualquier cambio en el rubro,
-  // las respuestas o la ubicación lo invalida: hay que volver a "Analizar zona".
-  reportReadyFor: null,
-}
-
-function readStoredState() {
-  try {
-    const raw = sessionStorage.getItem(STORAGE_KEY)
-    return raw ? { ...INITIAL_STATE, ...JSON.parse(raw) } : INITIAL_STATE
-  } catch {
-    return INITIAL_STATE
-  }
-}
+import {
+  INITIAL_FLOW_STATE as INITIAL_STATE,
+  readFlowState,
+  writeFlowState,
+} from '../utils/analysisFlowStorage.js'
 
 /** Estado compartido entre los pasos del flujo de análisis (rubro → negocio → …). */
 export function AnalysisFlowProvider({ children }) {
-  const [state, setState] = useState(readStoredState)
+  const [state, setState] = useState(readFlowState)
   const location = useLocation()
   const navigate = useNavigate()
   const startsNewAnalysis = Boolean(location.state?.newAnalysis)
@@ -56,16 +32,17 @@ export function AnalysisFlowProvider({ children }) {
   }, [startsNewAnalysis, location, navigate])
 
   useEffect(() => {
-    try {
-      sessionStorage.setItem(STORAGE_KEY, JSON.stringify(state))
-    } catch {
-      // ignorar error de cuota o sessionStorage bloqueado
-    }
+    writeFlowState(state)
   }, [state])
 
   const value = useMemo(
     () => ({
       ...state,
+      // Cierra el análisis en curso justo antes de navegar fuera del flujo (al guardar el
+      // reporte o al salir). Solo vacía sessionStorage: al salir el provider se desmonta y,
+      // al volver, arranca de cero. No toca el estado para que el paso actual no reaccione
+      // (ej. Ubicación redirige a "Tu negocio" si se vacían las respuestas) antes de salir.
+      closeFlow: () => writeFlowState(INITIAL_STATE),
       setRubro: (categoryCode, subcategoryCode) => {
         setState((prev) => {
           // Las respuestas dependen del rubro: si cambia, se empieza de cero

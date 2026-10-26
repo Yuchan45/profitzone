@@ -1,0 +1,48 @@
+.editable-name {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-4);
+  min-width: 0;
+}
+
+/* El lápiz y el campo quedan por encima de un link estirado sobre la card (ReportCard):
+   se pueden tocar sin abrir el reporte */
+.editable-name .icon-button,
+.editable-name-form {
+  position: relative;
+  z-index: 1;
+}
+
+.editable-name-form {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  align-items: stretch;
+  gap: var(--space-4);
+  max-width: 420px;
+}
+
+.editable-name-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+}
+
+/* Más bajo que el Input de formulario: entra en la fila del título */
+.input.editable-name-input {
+  flex: 1;
+  min-width: 0;
+  height: 36px;
+  padding: 0 var(--space-10);
+  font-size: var(--text-15);
+}
+
+/* Guardar resalta sobre Cancelar */
+.icon-button.editable-name-save {
+  color: var(--color-primary-dark);
+}
+
+.editable-name-error {
+  color: var(--color-error);
+  font-size: var(--text-13);
+}

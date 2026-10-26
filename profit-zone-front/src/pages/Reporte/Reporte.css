@@ -28,3 +28,12 @@
   flex: 1;
   min-width: 240px;
 }
+
+/* "Nuevo análisis" y "Guardar reporte" van juntos a la derecha, aunque no esté "Volver al análisis" */
+.reporte-actions-end {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-16);
+  margin-left: auto;
+}

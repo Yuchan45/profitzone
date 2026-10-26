@@ -64,9 +64,15 @@ function Reporte() {
             Volver al análisis
           </Button>
         )}
-        <Button variant="text" {...NEW_ANALYSIS_LINK}>
-          Nuevo análisis
-        </Button>
+        <div className="reporte-actions-end">
+          <Button variant="text" {...NEW_ANALYSIS_LINK}>
+            Nuevo análisis
+          </Button>
+          {/* El reporte ya quedó guardado al analizar la zona */}
+          <Button variant="primary" to="/mis-reportes">
+            Ir a Mis reportes
+          </Button>
+        </div>
       </div>
     </div>
   )

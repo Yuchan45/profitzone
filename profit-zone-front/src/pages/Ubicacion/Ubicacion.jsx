@@ -160,8 +160,9 @@ function Ubicacion() {
     const questionCodes = survey.data
       ? visibleQuestions(survey.data, answers).map((q) => q.code)
       : Object.keys(answers)
+    // Con la ubicación el análisis queda guardado en Mis reportes (la API lo pasa a 'saved')
     const savedId = await saveLocation.save(questionCodes)
-    if (savedId) navigate(`/analizar/analisis/${savedId}`)
+    if (savedId) navigate(`/analizar/analisis/${savedId}`, { state: { toast: 'Reporte guardado en Mis reportes' } })
   }
 
   // "Analizar zona" pide cuenta: sin sesión se abre el modal y se sigue al entrar

@@ -7,6 +7,8 @@ import {
   postAnalysis,
   putAnalysisAnswers,
   patchAnalysisLocation,
+  patchAnalysis,
+  deleteAnalysis,
 } from '../controllers/analyses.controller.js'
 
 const router = Router()
@@ -19,5 +21,7 @@ router.get('/:id', requireAuth, getAnalysisById)
 router.get('/:id/report', requireAuth, getAnalysisReport)
 router.put('/:id/answers', requireAuth, putAnalysisAnswers)
 router.patch('/:id/location', requireAuth, patchAnalysisLocation)
+router.patch('/:id', requireAuth, patchAnalysis)
+router.delete('/:id', requireAuth, deleteAnalysis)
 
 export default router

@@ -5,6 +5,8 @@ import { useFlowAnalysisReport } from '../../hooks/useFlowAnalysisReport.js'
 import { useNeighborhoods } from '../../hooks/useNeighborhoods.js'
 import { useNearbyPlaces } from '../../hooks/useNearbyPlaces.js'
 import { useSubcategorySurvey } from '../../hooks/useSubcategorySurvey.js'
+import { useNavigationToast } from '../../hooks/useNavigationToast.js'
+import Toast from '../../components/molecules/Toast/Toast.jsx'
 import Stepper from '../../components/organisms/Stepper/Stepper.jsx'
 import LocationMap from '../../components/organisms/LocationMap/LocationMap.jsx'
 import BusinessSummary from '../../components/organisms/BusinessSummary/BusinessSummary.jsx'
@@ -232,6 +234,8 @@ function Analisis() {
   const steps = useFlowSteps()
   const report = useFlowAnalysisReport(id)
   const neighborhoods = useNeighborhoods()
+  // "Analizar zona" guarda el reporte y llega con el aviso
+  const toast = useNavigationToast()
 
   // Solo el análisis en curso tiene sus respuestas en el flujo (un reporte viejo no)
   const { isCurrentAnalysis } = report
@@ -266,6 +270,7 @@ function Analisis() {
 
   return (
     <div className="flow-step analisis">
+      <Toast message={toast.message} onClose={toast.close} />
       <Stepper steps={steps} current={4} />
 
       <StepHeading title="Análisis de la zona" subtitle={subtitle} />
