@@ -3,12 +3,13 @@ import './BusinessSummary.css'
 
 // Panel "Tu negocio": resumen de lo que respondió el usuario, con link para editarlo.
 // rows: [{ label, value }]. layout: 'panel' (una fila por respuesta) | 'inline' (una
-// sola línea con los valores, como en el paso 4).
-function BusinessSummary({ rows, editTo, layout = 'panel' }) {
+// sola línea con los valores, como en el paso 4). `title`: otro nombre para el panel
+// (ej. en el reporte de ejemplo, que no es el negocio del usuario).
+function BusinessSummary({ rows, editTo, layout = 'panel', title = 'Tu negocio' }) {
   if (layout === 'inline') {
     return (
-      <section className="business-summary business-summary--inline" aria-label="Tu negocio">
-        <p className="business-summary-line">Tu negocio: {rows.map(({ value }) => value).join(' · ')}</p>
+      <section className="business-summary business-summary--inline" aria-label={title}>
+        <p className="business-summary-line">{title}: {rows.map(({ value }) => value).join(' · ')}</p>
         {editTo && (
           <Link to={editTo} className="business-summary-edit">
             Editar respuestas
@@ -22,7 +23,7 @@ function BusinessSummary({ rows, editTo, layout = 'panel' }) {
     <section className="business-summary" aria-labelledby="business-summary-title">
       <div className="business-summary-header">
         <h2 id="business-summary-title" className="business-summary-title">
-          Tu negocio
+          {title}
         </h2>
         {editTo && (
           <Link to={editTo} className="business-summary-edit">

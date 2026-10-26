@@ -117,7 +117,7 @@ function accessibilityTile(indicator) {
   return { value, caption }
 }
 
-function CompetitionCard({ report }) {
+function CompetitionCard({ report, live }) {
   const [isExpanded, setIsExpanded] = useState(false)
   const indicator = report.data?.indicators.competition
   const state = cardState(report, indicator)
@@ -170,7 +170,7 @@ function CompetitionCard({ report }) {
         .filter(Boolean)
         .join(' ')}
       callout={data.callout}
-      source={`${data.source} · en vivo · ${formatDate(data.queryDate)} · se muestran ${visiblePlaces.length} de ${total}`}
+      source={`${data.source}${live ? ' · en vivo' : ''} · ${formatDate(data.queryDate)} · se muestran ${visiblePlaces.length} de ${total}`}
     >
       <div className={`zone-analysis-table-wrap ${isExpanded ? 'zone-analysis-table-wrap--expanded' : ''}`}>
         <table className="zone-analysis-table">
@@ -318,7 +318,7 @@ function RentCard({ report }) {
   )
 }
 
-function AccessibilityCard({ report }) {
+function AccessibilityCard({ report, live }) {
   const indicator = report.data?.indicators.accessibility
   const state = cardState(report, indicator)
   const card = { icon: 'bus', title: 'Accesibilidad y transporte', ...state }
@@ -365,7 +365,7 @@ function AccessibilityCard({ report }) {
       value={total}
       caption={caption}
       callout={data.callout}
-      source={`${data.source} · en vivo · ${formatDate(data.queryDate)} · se muestran ${places.length} de ${total}`}
+      source={`${data.source}${live ? ' · en vivo' : ''} · ${formatDate(data.queryDate)} · se muestran ${places.length} de ${total}`}
     >
       <div className="zone-analysis-table-wrap">
         <table className="zone-analysis-table zone-analysis-table--transit">
@@ -400,15 +400,24 @@ function AccessibilityCard({ report }) {
 /**
  * Análisis y reporte completo de una zona: mapa, tarjetas de cada indicador, resumen,
  * fortalezas y debilidades, la zona en datos y fuentes. Lo usan el paso 4 del flujo
- * (Analisis) y el detalle de un reporte guardado (ReporteGuardado), para que un reporte
- * se vea igual en los dos lugares.
+ * (Analisis), el detalle de un reporte guardado (ReporteGuardado) y el reporte de ejemplo
+ * (ReporteEjemplo), para que un reporte se vea igual en todos lados.
  * - `report`: lo que devuelve useAnalysisReport ({ status, data, error, retry }).
  * - `point`, `categoryCode`, `subcategoryCode`: punto y rubro para el mapa mientras carga
  *   el reporte (ej. los del flujo); con el reporte se usan los suyos.
  * - `match`: criterio de competencia directa para los puntos del mapa (sin él, todos
  *   los locales se ven iguales y la referencia de "directa" no se muestra).
+ * - `live`: false si los datos no son de una consulta en el momento (ej. el reporte de
+ *   ejemplo, que viene guardado): las fuentes no dicen "en vivo".
  */
-function ZoneAnalysis({ report, point = null, categoryCode = null, subcategoryCode = null, match = null }) {
+function ZoneAnalysis({
+  report,
+  point = null,
+  categoryCode = null,
+  subcategoryCode = null,
+  match = null,
+  live = true,
+}) {
   const neighborhoods = useNeighborhoods()
   const reportData = report.data
   const analysis = reportData?.analysis
@@ -470,11 +479,11 @@ function ZoneAnalysis({ report, point = null, categoryCode = null, subcategoryCo
             </p>
           ) : (
             <>
-              <CompetitionCard report={report} />
+              <CompetitionCard report={report} live={live} />
               <TrafficCard report={report} />
             </>
           )}
-          <AccessibilityCard report={report} />
+          <AccessibilityCard report={report} live={live} />
           <PopulationCard report={report} />
           <RentCard report={report} />
         </div>
