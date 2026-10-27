@@ -20,10 +20,27 @@
 }
 
 .stat-tile--empty .stat-tile-value {
-  color: var(--color-text-tertiary);
+  color: var(--color-text-secondary);
 }
 
 .stat-tile-caption {
-  color: var(--color-text-tertiary);
+  color: var(--color-text-secondary);
   font-size: var(--text-12);
+}
+
+/* Como botón: lleva a la tarjeta con el detalle del dato */
+.stat-tile--action {
+  width: 100%;
+  border: 1px solid transparent;
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition:
+    border-color 0.15s ease,
+    background-color 0.15s ease;
+}
+
+.stat-tile--action:hover {
+  border-color: var(--color-border-strong);
+  background-color: var(--color-surface);
 }

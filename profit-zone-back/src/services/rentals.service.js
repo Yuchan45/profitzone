@@ -111,6 +111,7 @@ async function queryRentalsFromDb(lat, lng, radiusInMeters) {
       price_per_m2_ars AS pricePerM2Ars,
       price_per_m2_usd AS pricePerM2Usd,
       url,
+      location_precision AS locationPrecision,
       geom.Lat AS lat,
       geom.Long AS lng,
       ROUND(geom.STDistance(@point), 0) AS distanceMeters
@@ -150,6 +151,7 @@ function queryRentalsFromFallback(lat, lng, radiusInMeters) {
         pricePerM2Ars: p.price_per_m2_ars,
         pricePerM2Usd: p.price_per_m2_usd,
         url: p.url,
+        locationPrecision: p.location_precision,
         lat: p.lat,
         lng: p.lng,
         distanceMeters,

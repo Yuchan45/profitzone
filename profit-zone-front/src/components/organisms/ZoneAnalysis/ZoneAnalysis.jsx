@@ -1,16 +1,20 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNeighborhoods } from '../../../hooks/useNeighborhoods.js'
 import { useNearbyPlaces } from '../../../hooks/useNearbyPlaces.js'
-import LocationMap from '../LocationMap/LocationMap.jsx'
+import { useRentalListings } from '../../../hooks/useRentalListings.js'
+import ZoneMapPanel from '../ZoneMapPanel/ZoneMapPanel.jsx'
 import CriteriaTable from '../CriteriaTable/CriteriaTable.jsx'
 import StatusMessage from '../../molecules/StatusMessage/StatusMessage.jsx'
 import StatTile from '../../molecules/StatTile/StatTile.jsx'
 import IndicatorCard from '../../molecules/IndicatorCard/IndicatorCard.jsx'
 import DisclaimerCard from '../../molecules/DisclaimerCard/DisclaimerCard.jsx'
+import Badge from '../../atoms/Badge/Badge.jsx'
 import HourlyBars from '../../atoms/HourlyBars/HourlyBars.jsx'
+import ScoreMeter from '../../atoms/ScoreMeter/ScoreMeter.jsx'
 import Button from '../../atoms/Button/Button.jsx'
 import Icon from '../../atoms/Icon/Icon.jsx'
 import { formatCurrency, formatDate, formatNumber } from '../../../utils/formatters.js'
+import { READING_ICONS } from '../../../utils/reportReadings.js'
 import './ZoneAnalysis.css'
 
 // Google Places devuelve como máximo 20 locales por consulta
@@ -19,8 +23,14 @@ const COMPETITION_MAX_RESULTS = 20
 const COMPETITION_ROWS = 5
 // Google Places devuelve como máximo 20 paradas/estaciones por consulta
 const TRANSIT_MAX_RESULTS = 20
-// Paradas que se listan en la tarjeta de accesibilidad (las más cercanas)
+// Paradas que se listan en la tarjeta de accesibilidad
 const TRANSIT_ROWS = 6
+// Orden de los tipos de transporte en la tabla: los de más capacidad primero
+const TRANSIT_ORDER = ['subway', 'train', 'bus']
+const transitRank = (category) => {
+  const rank = TRANSIT_ORDER.indexOf(category)
+  return rank === -1 ? TRANSIT_ORDER.length : rank
+}
 
 const PENDING_CAPTION = 'Dato pendiente'
 
@@ -117,23 +127,47 @@ function accessibilityTile(indicator) {
   return { value, caption }
 }
 
+// Orden de la tabla de competencia. "Relevancia": primero las directas, después por cercanía
+const COMPETITION_SORTS = {
+  relevance: (a, b) =>
+    (a.type === 'Directa') === (b.type === 'Directa')
+      ? a.distanceMeters - b.distanceMeters
+      : a.type === 'Directa'
+        ? -1
+        : 1,
+  rating: (a, b) => (b.rating ?? 0) - (a.rating ?? 0),
+  reviews: (a, b) => (b.userRatingCount ?? 0) - (a.userRatingCount ?? 0),
+  distance: (a, b) => a.distanceMeters - b.distanceMeters,
+}
+
+// Encabezado que ordena la tabla al tocarlo (otra vez: vuelve al orden por relevancia)
+function SortableHeader({ sortKey, activeSort, onSort, children }) {
+  const active = activeSort === sortKey
+  // Rating y reseñas ordenan de mayor a menor; la distancia, de menor a mayor
+  const direction = sortKey === 'distance' ? 'ascending' : 'descending'
+  return (
+    <th scope="col" aria-sort={active ? direction : undefined}>
+      <button
+        type="button"
+        className={`zone-analysis-sort${active ? ' zone-analysis-sort--active' : ''}`}
+        onClick={() => onSort(active ? 'relevance' : sortKey)}
+      >
+        {children}
+        <Icon name={active && direction === 'ascending' ? 'chevron-up' : 'chevron-down'} size={12} />
+      </button>
+    </th>
+  )
+}
+
 function CompetitionCard({ report, live }) {
   const [isExpanded, setIsExpanded] = useState(false)
+  const [sort, setSort] = useState('relevance')
   const indicator = report.data?.indicators.competition
   const state = cardState(report, indicator)
   const data = indicator?.data
 
   const places = data?.places
-
-  // Ordenar primero las directas y luego por cercanía (distancia ascendente)
-  const sortedPlaces = useMemo(() => {
-    if (!places) return []
-    return [...places].sort((a, b) => {
-      if (a.type === 'Directa' && b.type !== 'Directa') return -1
-      if (a.type !== 'Directa' && b.type === 'Directa') return 1
-      return a.distanceMeters - b.distanceMeters
-    })
-  }, [places])
+  const sortedPlaces = useMemo(() => (places ? [...places].sort(COMPETITION_SORTS[sort]) : []), [places, sort])
 
   const card = { icon: 'shield-check', title: 'Competencia', ...state }
   if (state.status !== 'ok') return <IndicatorCard {...card} />
@@ -158,6 +192,11 @@ function CompetitionCard({ report, live }) {
     : data.total >= COMPETITION_MAX_RESULTS
       ? `${data.total}+`
       : formatNumber(data.total)
+  // La lista trae como máximo 20 locales (límite de Google Places); el total es de todo el radio
+  const listNote =
+    sortedPlaces.length < data.total
+      ? `Se muestran ${visiblePlaces.length} de los ${sortedPlaces.length} locales más cercanos (Google Places devuelve hasta ${COMPETITION_MAX_RESULTS} por consulta).`
+      : `Se muestran ${visiblePlaces.length} de ${sortedPlaces.length} locales.`
 
   return (
     <IndicatorCard
@@ -170,27 +209,44 @@ function CompetitionCard({ report, live }) {
         .filter(Boolean)
         .join(' ')}
       callout={data.callout}
-      source={`${data.source}${live ? ' · en vivo' : ''} · ${formatDate(data.queryDate)} · se muestran ${visiblePlaces.length} de ${total}`}
+      source={`${data.source}${live ? ' · en vivo' : ''} · ${formatDate(data.queryDate)}`}
     >
+      <p className="zone-analysis-table-note">{listNote}</p>
       <div className={`zone-analysis-table-wrap ${isExpanded ? 'zone-analysis-table-wrap--expanded' : ''}`}>
         <table className="zone-analysis-table">
+          <caption className="zone-analysis-sr-only">Locales del rubro más cercanos al punto</caption>
           <thead>
             <tr>
               <th scope="col">Local</th>
-              <th scope="col">Rating</th>
-              <th scope="col">Reseñas</th>
-              <th scope="col">Dist.</th>
+              <SortableHeader sortKey="rating" activeSort={sort} onSort={setSort}>
+                Rating
+              </SortableHeader>
+              <SortableHeader sortKey="reviews" activeSort={sort} onSort={setSort}>
+                Reseñas
+              </SortableHeader>
+              <SortableHeader sortKey="distance" activeSort={sort} onSort={setSort}>
+                Dist.
+              </SortableHeader>
               <th scope="col">Tipo</th>
             </tr>
           </thead>
           <tbody>
             {visiblePlaces.map((place) => (
               <tr key={place.id}>
-                <th scope="row">{place.name}</th>
+                {/* Nombres largos se cortan: el completo aparece al pasar el mouse */}
+                <th scope="row" title={place.name}>
+                  {place.name}
+                </th>
                 <td>{place.rating ? formatNumber(place.rating) : '—'}</td>
                 <td>{place.userRatingCount ? formatNumber(place.userRatingCount) : '—'}</td>
                 <td>{place.distanceText}</td>
-                <td>{place.type}</td>
+                <td>
+                  {place.type === 'Directa' ? (
+                    <span className="zone-analysis-direct">Directa</span>
+                  ) : (
+                    place.type
+                  )}
+                </td>
               </tr>
             ))}
           </tbody>
@@ -205,7 +261,7 @@ function CompetitionCard({ report, live }) {
             onClick={() => setIsExpanded((prev) => !prev)}
             aria-expanded={isExpanded}
           >
-            <span>{isExpanded ? 'Ver menos' : `Ver todas las competencias (${sortedPlaces.length})`}</span>
+            <span>{isExpanded ? 'Ver menos' : `Ver los ${sortedPlaces.length} locales`}</span>
             <Icon name={isExpanded ? 'chevron-up' : 'chevron-down'} size={14} />
           </button>
         </div>
@@ -230,6 +286,7 @@ function TrafficCard({ report }) {
       callout={data.callout}
       source={data.source}
     >
+      <ScoreMeter value={data.score} max={data.scoreMax} label={`Actividad en tu franja: ${data.score} de ${data.scoreMax}`} />
       <HourlyBars
         hours={data.hourlyActivity}
         summary={`Actividad estimada por hora. Tu franja (${data.timeSlot}) promedia ${data.score} de ${data.scoreMax}.`}
@@ -258,6 +315,7 @@ function PopulationCard({ report }) {
   return (
     <IndicatorCard
       {...card}
+      badge="Estimado"
       value={formatNumber(data.poblacionEstimada)}
       caption="habitantes estimados en el radio."
       source="Censo nacional · INDEC · por radio censal, ponderado por área"
@@ -274,7 +332,60 @@ function PopulationCard({ report }) {
   )
 }
 
-function RentCard({ report }) {
+// Avisos que se listan en la tarjeta de alquiler (los más cercanos con dirección exacta)
+const RENT_ROWS = 6
+
+/**
+ * Lista de avisos con dirección exacta: cada dirección se puede ver en el mapa
+ * (`onShowOnMap(id)`) y la fila del aviso marcado en el mapa (`selectedId`) se resalta.
+ */
+function RentListings({ listings, selectedId, onShowOnMap }) {
+  const money = (value) => (value ? formatCurrency(value, 'ARS', { decimals: 0 }) : '—')
+  return (
+    <>
+      <p className="zone-analysis-table-note">Avisos con dirección publicada, del más cercano al más lejano</p>
+      <div className="zone-analysis-table-wrap">
+        <table className="zone-analysis-table zone-analysis-table--rent">
+          <caption className="zone-analysis-sr-only">Avisos de alquiler con dirección publicada</caption>
+          <thead>
+            <tr>
+              <th scope="col">Dirección</th>
+              <th scope="col">Alquiler</th>
+              <th scope="col">Sup.</th>
+              <th scope="col">Dist.</th>
+            </tr>
+          </thead>
+          <tbody>
+            {listings.slice(0, RENT_ROWS).map((listing) => (
+              <tr
+                key={listing.id}
+                id={`aviso-${listing.id}`}
+                className={selectedId === `rent-${listing.id}` ? 'zone-analysis-row--selected' : undefined}
+              >
+                <th scope="row">
+                  <button
+                    type="button"
+                    className="zone-analysis-map-link"
+                    onClick={() => onShowOnMap(listing.id)}
+                    aria-label={`Ver ${listing.address} en el mapa`}
+                  >
+                    <Icon name="map-pin" size={13} />
+                    {listing.address}
+                  </button>
+                </th>
+                <td>{money(listing.priceArs)}</td>
+                <td>{listing.surfaceM2 ? `${formatNumber(listing.surfaceM2)} m²` : '—'}</td>
+                <td>{listing.distanceText}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </>
+  )
+}
+
+function RentCard({ report, listings, selectedId, onShowOnMap }) {
   const indicator = report.data?.indicators.rent
   const state = cardState(report, indicator)
   const card = { icon: 'store', title: 'Alquiler comercial', ...state }
@@ -295,13 +406,13 @@ function RentCard({ report }) {
     )
   }
 
-  const listings = data.pricedInRadius === 1 ? '1 aviso' : `${formatNumber(data.pricedInRadius)} avisos`
+  const pricedText = data.pricedInRadius === 1 ? '1 aviso' : `${formatNumber(data.pricedInRadius)} avisos`
   const money = (value) => (value ? formatCurrency(value, 'ARS', { decimals: 0 }) : null)
   return (
     <IndicatorCard
       {...card}
       value={money(data.medianRentArs)}
-      caption={`por mes, mediana de ${listings} en el radio.`}
+      caption={`por mes, mediana de ${pricedText} en el radio.`}
       source="ZonaProp · avisos de locales comerciales en alquiler"
     >
       <DetailRows
@@ -314,6 +425,9 @@ function RentCard({ report }) {
           },
         ]}
       />
+      {listings?.length > 0 && (
+        <RentListings listings={listings} selectedId={selectedId} onShowOnMap={onShowOnMap} />
+      )}
     </IndicatorCard>
   )
 }
@@ -338,7 +452,14 @@ function AccessibilityCard({ report, live }) {
     )
   }
 
-  const places = (data.places || []).slice(0, TRANSIT_ROWS)
+  // Agrupado por tipo (subte, tren, colectivo, otros) y por cercanía dentro de cada uno:
+  // un subte a 400 m pesa más que el sexto colectivo a 200 m
+  const places = [...(data.places || [])]
+    .sort(
+      (a, b) =>
+        transitRank(a.category) - transitRank(b.category) || a.distanceMeters - b.distanceMeters,
+    )
+    .slice(0, TRANSIT_ROWS)
   const total = data.total >= TRANSIT_MAX_RESULTS ? `${data.total}+` : formatNumber(data.total)
 
   const breakdown = []
@@ -397,11 +518,100 @@ function AccessibilityCard({ report, live }) {
   )
 }
 
+// Tarjetas de detalle: id para los saltos desde los datos clave y los criterios, y la
+// capa del mapa que acompaña su lectura (null: el mapa se queda con la que tenga)
+const SECTIONS = {
+  competition: { id: 'zona-competencia', layer: 'places' },
+  traffic: { id: 'zona-afluencia', layer: 'places' },
+  accessibility: { id: 'zona-accesibilidad', layer: null },
+  population: { id: 'zona-poblacion', layer: null },
+  rent: { id: 'zona-alquiler', layer: 'rentals' },
+}
+
+// Criterio del cuadro "Fortalezas y debilidades" → tarjeta con su evidencia
+const CRITERIA_EVIDENCE = {
+  cost: 'rent',
+  audience: 'population',
+  schedule: 'traffic',
+  arrival: 'population',
+  competition: 'competition',
+  accessibility: 'accessibility',
+}
+
+// Conteo de lecturas del veredicto, en el orden en que se muestran
+const VERDICT_READINGS = [
+  { reading: 'strength', one: 'fortaleza', many: 'fortalezas' },
+  { reading: 'alert', one: 'alerta', many: 'alertas' },
+  { reading: 'weakness', one: 'debilidad', many: 'debilidades' },
+  { reading: 'not_evaluated', one: 'sin datos', many: 'sin datos' },
+]
+
+// Preferencia "mapa oculto": por navegador, sin datos del usuario
+const MAP_PREFERENCE_KEY = 'profitzone_analysis_map_collapsed_v1'
+
+function readMapCollapsed() {
+  try {
+    return localStorage.getItem(MAP_PREFERENCE_KEY) === '1'
+  } catch {
+    return false
+  }
+}
+
+function writeMapCollapsed(collapsed) {
+  try {
+    localStorage.setItem(MAP_PREFERENCE_KEY, collapsed ? '1' : '0')
+  } catch {
+    // ignorar almacenamiento bloqueado: el mapa vuelve a mostrarse la próxima vez
+  }
+}
+
+const prefersReducedMotion = () => window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false
+// Mismo corte que ZoneMapPanel.css: debajo, el mapa es una franja y se amplía como panel
+const isNarrowScreen = () => window.matchMedia?.('(max-width: 1023px)').matches ?? false
+
+// Lleva a una tarjeta de detalle y le pasa el foco (para teclado y lectores de pantalla)
+function goToSection(key) {
+  const element = document.getElementById(SECTIONS[key].id)
+  if (!element) return
+  element.scrollIntoView({ behavior: prefersReducedMotion() ? 'auto' : 'smooth', block: 'start' })
+  element.focus({ preventScroll: true })
+}
+
+function Verdict({ summary, criteria }) {
+  const counts = VERDICT_READINGS.map((item) => ({
+    ...item,
+    count: criteria.filter((criterion) => criterion.reading === item.reading).length,
+  })).filter((item) => item.count > 0)
+
+  return (
+    <section className="zone-analysis-verdict" aria-labelledby="zone-analysis-verdict-title">
+      <h2 id="zone-analysis-verdict-title" className="zone-analysis-verdict-title">
+        Resumen
+      </h2>
+      {summary && <p className="zone-analysis-summary">{summary}</p>}
+      {counts.length > 0 && (
+        <ul className="zone-analysis-verdict-counts" aria-label="Lectura de los criterios">
+          {counts.map((item) => (
+            <li key={item.reading}>
+              <Badge variant={item.reading} icon={READING_ICONS[item.reading]}>
+                {item.count} {item.count === 1 ? item.one : item.many}
+              </Badge>
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
+  )
+}
+
 /**
- * Análisis y reporte completo de una zona: mapa, tarjetas de cada indicador, resumen,
- * fortalezas y debilidades, la zona en datos y fuentes. Lo usan el paso 4 del flujo
- * (Analisis), el detalle de un reporte guardado (ReporteGuardado) y el reporte de ejemplo
- * (ReporteEjemplo), para que un reporte se vea igual en todos lados.
+ * Análisis y reporte completo de una zona. Lo usan el paso 4 del flujo (Analisis), el
+ * detalle de un reporte guardado (ReporteGuardado) y el reporte de ejemplo (ReporteEjemplo),
+ * para que un reporte se vea igual en todos lados.
+ * Orden de lectura: primero la conclusión (resumen y conteo de lecturas), los datos clave
+ * y las fortalezas y debilidades; después la evidencia (tarjetas de cada dato) y al final
+ * las fuentes. El mapa acompaña toda la lectura (ZoneMapPanel) y muestra la capa de la
+ * sección que se está leyendo.
  * - `report`: lo que devuelve useAnalysisReport ({ status, data, error, retry }).
  * - `point`, `categoryCode`, `subcategoryCode`: punto y rubro para el mapa mientras carga
  *   el reporte (ej. los del flujo); con el reporte se usan los suyos.
@@ -423,6 +633,12 @@ function ZoneAnalysis({
   const analysis = reportData?.analysis
   const location = analysis?.location ?? point
   const neighborhood = neighborhoods.data?.[0] ?? null
+  const mainRef = useRef(null)
+
+  const [mapCollapsed, setMapCollapsed] = useState(readMapCollapsed)
+  const [mapExpanded, setMapExpanded] = useState(false)
+  const [mapLayer, setMapLayer] = useState('places')
+  const [selectedId, setSelectedId] = useState(null)
 
   // Puntos del mapa: negocios del rubro según OpenStreetMap. Los locales de Google Places
   // van solo en la tabla: sus términos no permiten mostrarlos sobre un mapa que no es de Google.
@@ -434,113 +650,230 @@ function ZoneAnalysis({
     subcategory: analysis?.subcategory.code ?? subcategoryCode,
     match,
   })
+  // Avisos de alquiler con dirección exacta (nuestra base): capa "Alquileres" y su lista
+  const rentals = useRentalListings({
+    lat: location?.lat ?? null,
+    lng: location?.lng ?? null,
+    radius: location?.radius,
+  })
+  const listings = rentals.data ?? []
 
-  const noPublic = reportData?.indicators?.competition?.status === 'not_applicable'
+  const indicators = reportData?.indicators
+  const noPublic = indicators?.competition?.status === 'not_applicable'
+  const totalRentals = indicators?.rent?.data?.totalInRadius ?? null
+
+  // El mapa sigue la lectura: cuando una tarjeta con capa propia pasa por la franja de
+  // lectura (un poco arriba del centro de la pantalla), el mapa muestra su capa
+  const reportReady = report.status === 'ok'
+  useEffect(() => {
+    if (!reportReady || !mainRef.current) return undefined
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const visible = entries.find((entry) => entry.isIntersecting && entry.target.dataset.mapLayer)
+        if (visible) setMapLayer(visible.target.dataset.mapLayer)
+      },
+      { rootMargin: '-30% 0px -60% 0px' },
+    )
+    mainRef.current.querySelectorAll('[data-map-layer]').forEach((element) => observer.observe(element))
+    return () => observer.disconnect()
+  }, [reportReady])
+
+  const changeMapCollapsed = (collapsed) => {
+    setMapCollapsed(collapsed)
+    writeMapCollapsed(collapsed)
+  }
+
+  // Desde la lista de avisos: muestra el aviso en el mapa (en mobile, ampliado)
+  const showRentalOnMap = (listingId) => {
+    setMapLayer('rentals')
+    setSelectedId(`rent-${listingId}`)
+    if (mapCollapsed) changeMapCollapsed(false)
+    if (isNarrowScreen()) setMapExpanded(true)
+  }
+
+  // Desde el mapa: marca el punto y, si es un aviso, lleva a su fila en la lista
+  const selectOnMap = (id) => {
+    setSelectedId(id)
+    if (!id?.startsWith('rent-') || mapExpanded) return
+    document
+      .getElementById(`aviso-${id.slice('rent-'.length)}`)
+      ?.scrollIntoView({ behavior: prefersReducedMotion() ? 'auto' : 'smooth', block: 'nearest' })
+  }
+
+  const money = (value) => formatCurrency(value, 'ARS', { decimals: 0 })
+  const mapLayers = [
+    {
+      id: 'places',
+      label: 'Locales del rubro',
+      places: nearbyPlaces.data?.places ?? [],
+      legend: match
+        ? [
+            { label: 'Competencia directa', tone: 'direct' },
+            { label: 'Otros locales del rubro', tone: 'place' },
+          ]
+        : [{ label: 'Locales del rubro', tone: 'place' }],
+      note: 'Locales según OpenStreetMap. La tabla de competencia usa Google Places, que no se puede mostrar en este mapa.',
+    },
+    {
+      id: 'rentals',
+      label: 'Alquileres',
+      places: listings.map((listing) => ({
+        id: `rent-${listing.id}`,
+        lat: listing.lat,
+        lng: listing.lng,
+        name: listing.priceArs ? `${listing.address} · ${money(listing.priceArs)}` : listing.address,
+        variant: 'rent',
+      })),
+      legend: [{ label: 'Local en alquiler con dirección publicada', tone: 'rent' }],
+      note:
+        totalRentals === null
+          ? 'Solo se ven los avisos con la dirección exacta.'
+          : `Se ven ${formatNumber(listings.length)} de ${formatNumber(totalRentals)} avisos del radio: el resto no publica la dirección exacta.`,
+    },
+  ]
+
+  const placeLabel = location
+    ? [analysis?.address, `radio ${location.radius} m`].filter(Boolean).join(' · ')
+    : null
 
   return (
-    <>
-      {report.status === 'error' && (
-        <div className="zone-analysis-error">
-          <StatusMessage variant="error">No pudimos analizar la zona: {report.error}</StatusMessage>
-          <Button variant="secondary" size="m" onClick={report.retry}>
-            Reintentar
-          </Button>
-        </div>
-      )}
-
-      {/* 1. Mapa estirado a ancho completo */}
-      <div className="zone-analysis-map-stretched">
-        {location && neighborhoods.status !== 'loading' ? (
-          <LocationMap
-            center={neighborhood?.center ?? location}
-            bounds={neighborhood?.bounds}
-            boundary={neighborhood?.boundary}
-            point={location}
-            radius={location.radius}
-            places={nearbyPlaces.data?.places}
-            readOnly
-          />
-        ) : (
-          <div className="flow-skeleton zone-analysis-map-skeleton" aria-busy="true" aria-label="Cargando el mapa" />
+    <div className={`zone-analysis${mapCollapsed ? ' zone-analysis--map-collapsed' : ''}`}>
+      <div className="zone-analysis-main" ref={mainRef}>
+        {report.status === 'error' && (
+          <div className="zone-analysis-error">
+            <StatusMessage variant="error">No pudimos analizar la zona: {report.error}</StatusMessage>
+            <Button variant="secondary" size="m" onClick={report.retry}>
+              Reintentar
+            </Button>
+          </div>
         )}
-        <ul className="zone-analysis-legend" aria-label="Referencias del mapa">
-          {match && <li className="zone-analysis-legend-item zone-analysis-legend-item--direct">Competencia directa</li>}
-          <li className="zone-analysis-legend-item">{match ? 'Otros locales del rubro' : 'Locales del rubro'}</li>
-        </ul>
-      </div>
 
-      {/* 2. Todos los cuadros con datos en una columna */}
-      {report.status !== 'error' && (
-        <div className="zone-analysis-cards">
-          {noPublic ? (
-            <p className="zone-analysis-notice">
-              <Icon name="info" size={18} />
-              Como elegiste “Sin atención al público”, no mostramos competencia ni afluencia.
-            </p>
-          ) : (
-            <>
-              <CompetitionCard report={report} live={live} />
-              <TrafficCard report={report} />
-            </>
-          )}
-          <AccessibilityCard report={report} live={live} />
-          <PopulationCard report={report} />
-          <RentCard report={report} />
-        </div>
-      )}
+        {report.status === 'loading' && (
+          <div className="zone-analysis-loading" aria-busy="true" aria-label="Generando el reporte">
+            <div className="flow-skeleton" />
+            <div className="flow-skeleton zone-analysis-skeleton-tall" />
+          </div>
+        )}
 
-      {/* 3. El reporte: resumen, fortalezas y debilidades, datos y fuentes */}
-      {report.status === 'loading' && (
-        <div className="zone-analysis-loading" aria-busy="true" aria-label="Generando el reporte">
-          <div className="flow-skeleton" />
-          <div className="flow-skeleton zone-analysis-skeleton-tall" />
-        </div>
-      )}
+        {/* 1. La conclusión: resumen, datos clave y fortalezas y debilidades */}
+        {reportReady && reportData && (
+          <>
+            <Verdict summary={reportData.summary} criteria={reportData.criteria} />
 
-      {report.status === 'ok' && reportData && (
-        <>
-          {reportData.summary && (
-            <section className="zone-analysis-card" aria-labelledby="zone-analysis-summary-title">
-              <h2 id="zone-analysis-summary-title" className="zone-analysis-card-title">
-                Resumen
-              </h2>
-              <p className="zone-analysis-summary">{reportData.summary}</p>
+            <section className="zone-analysis-kpis" aria-label="Datos clave de la zona">
+              <StatTile
+                label="Competencia"
+                {...competitionTile(indicators?.competition)}
+                onClick={noPublic ? undefined : () => goToSection('competition')}
+              />
+              <StatTile
+                label="Afluencia (estimada)"
+                {...trafficTile(indicators?.traffic)}
+                onClick={noPublic ? undefined : () => goToSection('traffic')}
+              />
+              <StatTile
+                label="Población"
+                {...populationTile(indicators?.density)}
+                onClick={() => goToSection('population')}
+              />
+              <StatTile label="Alquiler" {...rentTile(indicators?.rent)} onClick={() => goToSection('rent')} />
+              <StatTile
+                label="Accesibilidad"
+                {...accessibilityTile(indicators?.accessibility)}
+                onClick={() => goToSection('accessibility')}
+              />
             </section>
-          )}
 
-          <CriteriaTable criteria={reportData.criteria} />
+            <CriteriaTable
+              criteria={reportData.criteria}
+              hasEvidence={(code) => {
+                const section = CRITERIA_EVIDENCE[code]
+                return Boolean(section) && !(noPublic && ['competition', 'traffic'].includes(section))
+              }}
+              onShowEvidence={(code) => goToSection(CRITERIA_EVIDENCE[code])}
+            />
+          </>
+        )}
 
-          <section className="zone-analysis-card" aria-labelledby="zone-analysis-data-title">
-            <h2 id="zone-analysis-data-title" className="zone-analysis-card-title">
-              La zona en datos
+        {/* 2. La evidencia: el detalle de cada dato (con carga y error por tarjeta) */}
+        {report.status !== 'error' && (
+          <section className="zone-analysis-details" aria-labelledby="zone-analysis-details-title">
+            <h2 id="zone-analysis-details-title" className="zone-analysis-section-title">
+              Los datos de la zona
             </h2>
-            <div className="zone-analysis-tiles">
-              <StatTile label="Competencia" {...competitionTile(reportData.indicators?.competition)} />
-              <StatTile label="Afluencia (estimada)" {...trafficTile(reportData.indicators?.traffic)} />
-              <StatTile label="Población" {...populationTile(reportData.indicators?.density)} />
-              <StatTile label="Alquiler" {...rentTile(reportData.indicators?.rent)} />
-              <StatTile label="Accesibilidad" {...accessibilityTile(reportData.indicators?.accessibility)} />
+            <div className="zone-analysis-cards">
+              {noPublic ? (
+                <p className="zone-analysis-notice">
+                  <Icon name="info" size={18} />
+                  Como elegiste “Sin atención al público”, no mostramos competencia ni afluencia.
+                </p>
+              ) : (
+                <>
+                  <div id={SECTIONS.competition.id} className="zone-analysis-anchor" tabIndex={-1} data-map-layer="places">
+                    <CompetitionCard report={report} live={live} />
+                  </div>
+                  <div id={SECTIONS.traffic.id} className="zone-analysis-anchor" tabIndex={-1} data-map-layer="places">
+                    <TrafficCard report={report} />
+                  </div>
+                </>
+              )}
+              <div id={SECTIONS.accessibility.id} className="zone-analysis-anchor" tabIndex={-1}>
+                <AccessibilityCard report={report} live={live} />
+              </div>
+              <div id={SECTIONS.population.id} className="zone-analysis-anchor" tabIndex={-1}>
+                <PopulationCard report={report} />
+              </div>
+              <div id={SECTIONS.rent.id} className="zone-analysis-anchor" tabIndex={-1} data-map-layer="rentals">
+                <RentCard
+                  report={report}
+                  listings={listings}
+                  selectedId={selectedId}
+                  onShowOnMap={showRentalOnMap}
+                />
+              </div>
             </div>
           </section>
+        )}
 
-          {((reportData.notices && reportData.notices.length > 0) ||
-            (reportData.sources && reportData.sources.length > 0)) && (
-            <section className="zone-analysis-card" aria-labelledby="zone-analysis-sources-title">
-              <h2 id="zone-analysis-sources-title" className="zone-analysis-card-title">
-                Fuentes y avisos
-              </h2>
-              <ul className="zone-analysis-notes">
-                {[...(reportData.notices || []), ...(reportData.sources || [])].map((note) => (
-                  <li key={note}>{note}</li>
-                ))}
-              </ul>
-            </section>
-          )}
+        {/* 3. Avisos sobre los datos (plegados) y el descargo. Las fuentes ya están al pie
+            de cada tarjeta: acá van solo los avisos generales, para no repetirlas */}
+        {reportReady && reportData && (
+          <>
+            {reportData.notices?.length > 0 && (
+              <details className="zone-analysis-sources">
+                <summary className="zone-analysis-sources-summary">
+                  <span>Cómo leer estos datos</span>
+                  <Icon name="chevron-down" size={16} />
+                </summary>
+                <ul className="zone-analysis-notes">
+                  {reportData.notices.map((note) => (
+                    <li key={note}>{note}</li>
+                  ))}
+                </ul>
+              </details>
+            )}
 
-          <DisclaimerCard />
-        </>
-      )}
-    </>
+            <DisclaimerCard />
+          </>
+        )}
+      </div>
+
+      <ZoneMapPanel
+        location={location}
+        neighborhood={neighborhood}
+        loading={neighborhoods.status === 'loading'}
+        placeLabel={placeLabel}
+        layers={mapLayers}
+        layer={mapLayer}
+        onLayerChange={setMapLayer}
+        selectedId={selectedId}
+        onSelect={selectOnMap}
+        collapsed={mapCollapsed}
+        onCollapsedChange={changeMapCollapsed}
+        expanded={mapExpanded}
+        onExpandedChange={setMapExpanded}
+      />
+    </div>
   )
 }
 

@@ -74,6 +74,13 @@
   stroke-width: 2;
 }
 
+/* Aviso de alquiler (capa "Alquileres" del análisis) */
+.location-map-place--rent {
+  fill: var(--color-navy-700);
+  fill-opacity: 0.85;
+  stroke-width: 1.5;
+}
+
 /* Negocio con la ficha abierta: anillo oscuro para ubicarlo en el mapa */
 .location-map-place--selected {
   fill-opacity: 1;

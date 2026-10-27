@@ -61,7 +61,7 @@
   align-items: flex-start;
   gap: var(--space-6);
   margin: 0;
-  color: var(--color-text-tertiary);
+  color: var(--color-text-secondary);
   font-size: var(--text-12);
   line-height: 1.4;
 }
@@ -152,5 +152,40 @@
   .indicator-card-skeleton-line,
   .indicator-card-skeleton-block {
     animation: none;
+  }
+}
+
+/* Detalle (tabla, filas, barras) y fuente: mismo ritmo que el resto de la tarjeta */
+.indicator-card-detail {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-16);
+}
+
+/* "Ver detalle": solo en mobile, donde el detalle arranca plegado */
+.indicator-card-toggle {
+  display: none;
+}
+
+@media (max-width: 720px) {
+  .indicator-card-toggle {
+    display: inline-flex;
+    align-items: center;
+    align-self: flex-start;
+    gap: var(--space-6);
+    min-height: 44px;
+    padding: 0 var(--space-14);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background-color: var(--color-surface);
+    color: var(--color-text);
+    font-family: inherit;
+    font-size: var(--text-14);
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  .indicator-card-detail:not(.indicator-card-detail--open) {
+    display: none;
   }
 }

@@ -6,3 +6,10 @@ export const READING_LABELS = {
   neutral: 'Neutral',
   not_evaluated: 'No evaluado',
 }
+
+// Ícono de cada lectura: la lectura no se comunica solo con el color
+export const READING_ICONS = {
+  strength: 'check',
+  alert: 'shield-alert',
+  weakness: 'x',
+}

@@ -1,3 +1,23 @@
+/* Escritorio: el reporte a la izquierda y el mapa fijo a la derecha (ZoneMapPanel).
+   Con el mapa oculto, su columna queda como un riel angosto. */
+.zone-analysis {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(340px, 40%);
+  align-items: start;
+  gap: var(--space-24);
+}
+
+.zone-analysis--map-collapsed {
+  grid-template-columns: minmax(0, 1fr) 56px;
+}
+
+.zone-analysis-main {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-24);
+  min-width: 0;
+}
+
 .zone-analysis-error {
   display: flex;
   flex-wrap: wrap;
@@ -10,62 +30,82 @@
   min-width: 240px;
 }
 
-/* El mapa queda estirado a ancho completo */
-.zone-analysis-map-stretched {
+/* 1. La conclusión: lo primero que se lee, con más cuerpo que el resto */
+.zone-analysis-verdict {
   display: flex;
   flex-direction: column;
   gap: var(--space-12);
-  width: 100%;
+  padding: var(--space-28);
+  border-radius: var(--radius-xl);
+  background-color: var(--color-primary-10);
 }
 
-.zone-analysis-map-stretched .location-map {
-  min-height: 480px;
-  width: 100%;
+.zone-analysis-verdict-title {
+  margin: 0;
+  color: var(--color-text);
+  font-size: var(--text-14);
+  font-weight: 700;
 }
 
-.zone-analysis-map-skeleton {
-  min-height: 480px;
-  width: 100%;
+.zone-analysis-summary {
+  max-width: 68ch;
+  margin: 0;
+  color: var(--color-text);
+  font-size: var(--text-18);
+  line-height: 1.55;
+  text-wrap: pretty;
 }
 
-.zone-analysis-legend {
+.zone-analysis-verdict-counts {
   display: flex;
   flex-wrap: wrap;
-  gap: var(--space-8) var(--space-20);
-  margin: 0;
+  gap: var(--space-8);
+  margin: var(--space-4) 0 0;
   padding: 0;
-  color: var(--color-text-secondary);
-  font-size: var(--text-12);
   list-style: none;
 }
 
-.zone-analysis-legend-item {
+/* Datos clave: cada uno lleva a su tarjeta */
+.zone-analysis-kpis {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: var(--space-10);
+}
+
+/* 2. La evidencia */
+.zone-analysis-details {
   display: flex;
-  align-items: center;
-  gap: var(--space-6);
+  flex-direction: column;
+  gap: var(--space-16);
+  margin-top: var(--space-16);
 }
 
-/* Mismos colores que los puntos de LocationMap */
-.zone-analysis-legend-item::before {
-  content: '';
-  width: 8px;
-  height: 8px;
-  border-radius: var(--radius-full);
-  background-color: var(--color-info);
-  opacity: 0.6;
+.zone-analysis-section-title {
+  margin: 0;
+  font-size: var(--text-20);
+  font-weight: 700;
 }
 
-.zone-analysis-legend-item--direct::before {
-  background-color: var(--color-warning);
-  opacity: 1;
-}
-
-/* Todos los cuadros con datos en una sola columna */
 .zone-analysis-cards {
   display: flex;
   flex-direction: column;
   gap: var(--space-20);
   width: 100%;
+}
+
+/* Destino de los saltos: queda un poco debajo del borde al llegar y marca el foco */
+.zone-analysis-anchor {
+  scroll-margin-top: var(--space-24);
+  border-radius: var(--radius-xl);
+  outline-offset: 4px;
+}
+
+.zone-analysis-anchor:focus {
+  outline: none;
+}
+
+.zone-analysis-anchor:focus-visible {
+  outline: 2px solid var(--color-primary);
 }
 
 .zone-analysis-notice {
@@ -96,12 +136,13 @@
   display: flex;
   margin-top: var(--space-8);
   padding-top: var(--space-8);
-  border-top: 1px solid var(--color-border-subtle, #f0f0f0);
+  border-top: 1px solid var(--color-border);
 }
 
 .zone-analysis-expand-btn {
   display: inline-flex;
   align-items: center;
+  min-height: 36px;
   gap: var(--space-6);
   padding: var(--space-6) var(--space-10);
   border: 1px solid var(--color-border);
@@ -132,6 +173,25 @@
   width: 100%;
   border-collapse: collapse;
   font-size: var(--text-13);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Nota de la tabla: afuera del contenedor con scroll, para que no se corte */
+.zone-analysis-table-note {
+  margin: 0 0 calc(-1 * var(--space-8));
+  color: var(--color-text-secondary);
+  font-size: var(--text-12);
+  line-height: 1.45;
+}
+
+/* Solo para lectores de pantalla */
+.zone-analysis-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
 }
 
 .zone-analysis-table th,
@@ -142,7 +202,7 @@
 }
 
 .zone-analysis-table thead th {
-  color: var(--color-text-tertiary);
+  color: var(--color-text-secondary);
   font-size: var(--text-12);
   font-weight: 500;
 }
@@ -204,6 +264,45 @@
   white-space: nowrap;
 }
 
+/* Avisos de alquiler: cada dirección se ve en el mapa */
+.zone-analysis-table--rent tbody th {
+  max-width: none;
+  overflow: visible;
+}
+
+.zone-analysis-map-link {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-6);
+  min-height: 32px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--color-text);
+  font-family: inherit;
+  font-size: inherit;
+  font-weight: 500;
+  text-align: left;
+  text-decoration: underline;
+  text-decoration-color: var(--color-border-strong);
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+.zone-analysis-map-link .icon {
+  flex-shrink: 0;
+  color: var(--color-navy-700);
+}
+
+.zone-analysis-map-link:hover {
+  text-decoration-color: currentColor;
+}
+
+/* Aviso marcado en el mapa */
+.zone-analysis-table .zone-analysis-row--selected > * {
+  background-color: var(--color-primary-10);
+}
+
 /* Filas de detalle (población, alquiler) */
 .zone-analysis-rows {
   display: flex;
@@ -226,46 +325,49 @@
 .zone-analysis-row dd {
   margin: 0;
   color: var(--color-text-secondary);
+  font-variant-numeric: tabular-nums;
   text-align: right;
 }
 
-/* Tarjetas del reporte (Resumen, La zona en datos, Fuentes y avisos) */
-.zone-analysis-card {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-12);
-  padding: var(--space-28);
+/* 3. Fuentes y avisos: plegados, se abren a pedido */
+.zone-analysis-sources {
   border: 1px solid var(--color-border);
   border-radius: var(--radius-xl);
   background-color: var(--color-surface);
 }
 
-.zone-analysis-card-title {
-  margin: 0;
-  font-size: var(--text-20);
-  font-weight: 700;
-}
-
-.zone-analysis-summary {
-  margin: 0;
-  font-size: var(--text-16);
-  line-height: 1.625;
-  color: var(--color-text);
-}
-
-.zone-analysis-tiles {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+.zone-analysis-sources-summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
   gap: var(--space-12);
-  margin-top: var(--space-4);
+  min-height: 52px;
+  padding: var(--space-12) var(--space-24);
+  font-weight: 600;
+  list-style: none;
+  cursor: pointer;
+}
+
+.zone-analysis-sources-summary::-webkit-details-marker {
+  display: none;
+}
+
+.zone-analysis-sources-summary .icon {
+  color: var(--color-text-secondary);
+  transition: transform 0.2s ease;
+}
+
+.zone-analysis-sources[open] .zone-analysis-sources-summary .icon {
+  transform: rotate(180deg);
 }
 
 .zone-analysis-notes {
   display: flex;
   flex-direction: column;
   gap: var(--space-6);
+  max-width: 75ch;
   margin: 0;
-  padding-left: var(--space-16);
+  padding: 0 var(--space-24) var(--space-20) var(--space-40);
   color: var(--color-text-secondary);
   font-size: var(--text-13);
   line-height: 1.55;
@@ -274,24 +376,94 @@
 .zone-analysis-loading {
   display: flex;
   flex-direction: column;
-  gap: var(--space-28);
+  gap: var(--space-24);
 }
 
 .zone-analysis-skeleton-tall {
   min-height: 360px;
 }
 
-@media (max-width: 720px) {
-  .zone-analysis-map-stretched .location-map,
-  .zone-analysis-map-stretched .zone-analysis-map-skeleton {
-    min-height: 340px;
+/* Mobile y tablets: una columna, con el mapa como franja fija arriba */
+@media (max-width: 1023px) {
+  .zone-analysis,
+  .zone-analysis--map-collapsed {
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-20);
   }
 
-  .zone-analysis-card {
+  .zone-analysis > .zone-map-panel {
+    order: -1;
+  }
+}
+
+@media (max-width: 720px) {
+  .zone-analysis-verdict {
     padding: var(--space-20);
   }
 
-  .zone-analysis-tiles {
+  .zone-analysis-summary {
+    font-size: var(--text-16);
+  }
+
+  .zone-analysis-kpis {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
+}
+
+/* Pantallas táctiles: controles de al menos 44 px de alto */
+@media (pointer: coarse) {
+  .zone-analysis-expand-btn,
+  .zone-analysis-map-link {
+    min-height: 44px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .zone-analysis-sources-summary .icon {
+    transition: none;
+  }
+}
+
+/* Encabezados que ordenan la tabla de competencia */
+.zone-analysis-sort {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-4);
+  min-height: 24px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+.zone-analysis-sort .icon {
+  opacity: 0.45;
+}
+
+.zone-analysis-sort:hover,
+.zone-analysis-sort--active {
+  color: var(--color-text);
+}
+
+.zone-analysis-sort--active .icon {
+  opacity: 1;
+}
+
+/* "Directa": mismo color que la competencia directa en el mapa */
+.zone-analysis-direct {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-6);
+  color: var(--color-text);
+  font-weight: 600;
+}
+
+.zone-analysis-direct::before {
+  content: '';
+  width: 8px;
+  height: 8px;
+  border-radius: var(--radius-full);
+  background-color: var(--color-warning);
 }
