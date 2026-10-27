@@ -406,6 +406,68 @@ function AccessibilityCard({ report }) {
   )
 }
 
+// "universidades e institutos" → "Universidades e institutos"
+const capitalize = (text) => text.charAt(0).toLocaleUpperCase('es-AR') + text.slice(1)
+
+/** Lugares que atraen al público elegido (escuelas, universidades, oficinas...) dentro del radio. */
+function AudiencePlacesCard({ report }) {
+  const indicator = report.data?.indicators.audiencePlaces
+  const state = cardState(report, indicator)
+  const card = { icon: 'map-pin', title: 'Lugares que atraen a tu público', ...state }
+  if (state.status !== 'ok') return <IndicatorCard {...card} />
+
+  const { data } = indicator
+  if (data.byKind.length === 0) {
+    return <IndicatorCard {...card} status="empty" empty={{ title: 'No elegiste a qué público apuntás.' }} />
+  }
+  if (data.total === 0) {
+    return (
+      <IndicatorCard
+        {...card}
+        status="empty"
+        empty={{
+          title: `No encontramos ${data.byKind.map((item) => item.label).join(', ')} en este radio.`,
+          text: 'Puede ser una zona residencial o con pocos lugares cargados en OpenStreetMap. Probá ampliar el radio para comparar.',
+        }}
+      />
+    )
+  }
+
+  const updated = data.updatedAt ? ` · actualizado el ${formatDate(data.updatedAt)}` : ''
+  return (
+    <IndicatorCard
+      {...card}
+      value={formatNumber(data.total)}
+      caption={`${data.total === 1 ? 'lugar' : 'lugares'} en el radio que suelen reunir a tu público.`}
+      source={`${data.source}${updated}`}
+    >
+      <DetailRows rows={data.byKind.map((item) => ({ label: capitalize(item.label), value: formatNumber(item.count) }))} />
+      {data.nearest.length > 0 && (
+        <div className="zone-analysis-table-wrap">
+          <table className="zone-analysis-table">
+            <thead>
+              <tr>
+                <th scope="col">Más cercanos</th>
+                <th scope="col">Tipo</th>
+                <th scope="col">Dist.</th>
+              </tr>
+            </thead>
+            <tbody>
+              {data.nearest.map((place) => (
+                <tr key={`${place.kind}-${place.name}-${place.distanceMeters}`}>
+                  <th scope="row">{place.name}</th>
+                  <td>{capitalize(place.label)}</td>
+                  <td>{place.distanceText}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </IndicatorCard>
+  )
+}
+
 /**
  * Análisis y reporte completo de una zona: mapa, tarjetas de cada indicador, resumen,
  * fortalezas y debilidades, la zona en datos y fuentes. Lo usan el paso 4 del flujo
@@ -485,7 +547,8 @@ function ZoneAnalysis({
           {noPublic ? (
             <p className="zone-analysis-notice">
               <Icon name="info" size={18} />
-              Como elegiste “Sin atención al público”, no mostramos competencia ni afluencia.
+              Como elegiste “Sin atención al público”, no mostramos competencia, afluencia ni lugares que atraen a tu
+              público.
             </p>
           ) : (
             <>
@@ -495,6 +558,7 @@ function ZoneAnalysis({
           )}
           <AccessibilityCard report={report} />
           <PopulationCard report={report} />
+          {!noPublic && <AudiencePlacesCard report={report} />}
           <RentCard report={report} />
         </div>
       )}

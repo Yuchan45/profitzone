@@ -40,6 +40,7 @@ con un error que indica cómo levantarlo.
 | `npm run db:seed:census` | Carga los 3.554 radios censales de CABA en `census_data.census_radios` con geometrías e índice espacial |
 | `npm run db:seed:rentals` | Carga los 3.800 locales comerciales en alquiler de CABA en `commercial_data.commercial_rentals` con geometrías e índice espacial |
 | `npm run db:seed:osm-places` | Carga en `osm_data.places` los restaurantes, cafés, gimnasios y estudios de pilates de OpenStreetMap del barrio disponible (+2 km), para la vista previa del paso 3 |
+| `npm run db:seed:osm-audience` | Carga en `osm_data.audience_places` los lugares de OpenStreetMap que atraen a cada público (escuelas, universidades, oficinas, centros de jubilados…) del barrio disponible (+2 km), para el criterio "Según tu público" del reporte |
 | `npm run db:seed:all` | Aplica las migraciones y corre todos los seeds en orden (catálogo, censo, locales, OSM) con un resumen al final. Saltea los locales si falta el JSON de Zonaprop y OSM si falla el censo |
 
 ## Variables de entorno
@@ -505,6 +506,21 @@ geometry|	MultiPolygon|	Coordenadas vectoriales exactas de los límites de las m
 | `geom` | `geography` | Punto del negocio (centro, si es un edificio). |
 | `is_active` / `last_seen_at` | `bit` / `datetime2` | Si apareció en la última carga, y cuándo. |
 | `details` | `nvarchar(max)` (JSON) | Datos para la ficha del local que tenga cargados en OSM: dirección, horarios, teléfono, web, redes y servicios (mesas afuera, delivery, take away, accesibilidad). |
+
+### Lugares que atraen a cada público (seed)
+
+`npm run db:seed:osm-audience` baja de Overpass, con el mismo cliente y la misma zona que el seed anterior, los lugares que suelen reunir a cada público de "¿A qué público apuntás?" y los guarda en `osm_data.audience_places` (migración `0015`, índice espacial `IX_audience_places_geom`). Lo usa el criterio "Según tu público" del reporte. Es idempotente, no borra (los que dejan de aparecer quedan con `is_active = 0`) y requiere el censo cargado. En Palermo + 2 km trae unos 2.700 lugares.
+
+El mapeo público → tipos de lugar está en un solo lugar, `src/utils/audiencePlaces.js`:
+
+| Público (`target_age`) | Tipos de lugar (`kind`) | Etiquetas de OSM |
+| ---------------------- | ----------------------- | ---------------- |
+| `kids` | `kindergarten`, `school`, `playground` | `amenity=kindergarten`, `amenity=school`, `leisure=playground` |
+| `young` | `university` | `amenity=university`, `amenity=college` |
+| `adults` | `office`, `coworking` | `office=*`, `amenity=coworking_space` / `office=coworking` |
+| `seniors` | `senior_center`, `healthcare` | `social_facility:for=senior`; `amenity=hospital\|clinic\|doctors`, `healthcare=hospital\|clinic\|doctor\|centre` |
+
+La tabla tiene las mismas columnas que `osm_data.places` salvo `cuisine` y `details`. El criterio compara los lugares del radio con los que habría con la densidad de referencia de cada tipo en Palermo y alrededores (umbrales en `AUDIENCE_PLACES` de `src/services/reportCriteria.service.js`). Sin lugares cargados, el indicador falla con 503 y el criterio queda "no evaluado" (no se informa "0 lugares" como si fuera un dato).
 
 Datos © colaboradores de OpenStreetMap, licencia ODbL: el mapa del front muestra la atribución.
 
