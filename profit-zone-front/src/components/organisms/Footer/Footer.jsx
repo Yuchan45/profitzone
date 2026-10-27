@@ -8,6 +8,7 @@ const COLUMNS = [
       { label: 'Cómo funciona', href: '/#como-funciona' },
       { label: 'Qué analizamos', href: '/#que-analizamos' },
       { label: 'Reporte de ejemplo', href: '/reporte-ejemplo' },
+      { label: 'Trámites por rubro', href: '/tramites' },
     ],
   },
   {

@@ -18,6 +18,7 @@ import RecuperarContrasena from './pages/RecuperarContrasena/RecuperarContrasena
 import RestablecerContrasena from './pages/RestablecerContrasena/RestablecerContrasena.jsx'
 import Reporte from './pages/Reporte/Reporte.jsx'
 import Terminos from './pages/Terminos/Terminos.jsx'
+import Tramites from './pages/Tramites/Tramites.jsx'
 import NotFound from './pages/NotFound.jsx'
 
 // Los pasos de ubicación y análisis traen Leaflet (~150 kB): se cargan recién al entrar al paso
@@ -69,6 +70,7 @@ function App() {
       </Route>
       <Route element={<MainLayout />}>
         <Route path="/terminos" element={<Terminos />} />
+        <Route path="/tramites" element={<Tramites />} />
         {/* Requieren sesión */}
         <Route element={<ProtectedRoute />}>
           <Route path="/dashboard" element={<Dashboard />} />
