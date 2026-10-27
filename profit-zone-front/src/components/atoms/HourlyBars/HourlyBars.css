@@ -29,7 +29,7 @@
 
 .hourly-bars-label {
   overflow: visible;
-  color: var(--color-text-tertiary);
+  color: var(--color-text-secondary);
   font-size: var(--text-11);
   white-space: nowrap;
 }

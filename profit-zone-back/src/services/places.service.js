@@ -3,7 +3,7 @@ import { getSubcategorySurvey } from './questions.service.js'
 import { httpError } from '../utils/httpErrors.js'
 
 // Tipos de negocio de osm_data.places que son competencia de cada subcategoría
-const KINDS_BY_SUBCATEGORY = {
+export const KINDS_BY_SUBCATEGORY = {
   'gastronomia/restaurante': ['restaurant', 'fast_food'],
   'gastronomia/cafeteria': ['cafe'],
   'fitness/gimnasio': ['fitness'],
@@ -26,7 +26,14 @@ export async function directCriteria(categoryCode, subcategoryCode, match) {
   const option = question?.options.find((o) => o.code === optionCode)
   if (!option) throw httpError(400, `La respuesta "${match}" no corresponde a este rubro.`)
   const cuisines = option.metadata?.osmCuisine
-  return cuisines?.length ? { cuisines: new Set(cuisines), label: option.label } : null
+  return cuisines?.length
+    ? {
+        cuisines: new Set(cuisines),
+        // Tipos de Google Places de esa cocina: la tabla de competencia busca esos
+        googleTypes: option.metadata?.googleTypes ?? [],
+        label: option.label,
+      }
+    : null
 }
 
 /**

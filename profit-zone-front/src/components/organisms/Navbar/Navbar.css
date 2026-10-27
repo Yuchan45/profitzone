@@ -18,3 +18,40 @@
   align-items: center;
   gap: var(--space-8);
 }
+
+/* Link directo a Mis reportes (con sesión): el mismo peso que "Iniciar sesión" */
+.navbar-link {
+  display: inline-flex;
+  align-items: center;
+  min-height: 40px;
+  padding: 0 var(--space-12);
+  border-radius: var(--radius-md);
+  color: var(--color-text);
+  font-size: var(--text-14);
+  font-weight: 500;
+  text-decoration: none;
+  transition: background-color 0.15s ease;
+}
+
+.navbar-link:hover {
+  background-color: var(--color-surface-subtle);
+}
+
+/* Página actual: tinta primaria y subrayado, para no depender solo del color */
+.navbar-link--active {
+  color: var(--color-primary-ink);
+  font-weight: 600;
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 6px;
+}
+
+@media (max-width: 560px) {
+  .navbar {
+    padding: var(--space-12) var(--space-16);
+  }
+
+  .navbar-link {
+    padding: 0 var(--space-8);
+  }
+}

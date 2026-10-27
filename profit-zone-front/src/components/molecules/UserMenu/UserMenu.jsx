@@ -4,7 +4,8 @@ import Icon from '../../atoms/Icon/Icon.jsx'
 import './UserMenu.css'
 
 /**
- * Botón del usuario logueado que despliega sus opciones (perfil, análisis, cerrar sesión).
+ * Botón del usuario logueado que despliega sus opciones (perfil y cerrar sesión). "Mis reportes" va
+ * como link directo en la Navbar, no acá.
  * Cierra con un click afuera, con Escape (devuelve el foco al botón) o al elegir una opción.
  */
 function UserMenu({ initials, name, onLogout }) {
@@ -47,6 +48,7 @@ function UserMenu({ initials, name, onLogout }) {
         type="button"
         className="user-menu-trigger"
         ref={triggerRef}
+        aria-label={`Menú de ${name}`}
         aria-expanded={open}
         aria-controls={menuId}
         onClick={() => setOpen((current) => !current)}
@@ -54,7 +56,7 @@ function UserMenu({ initials, name, onLogout }) {
         <span className="user-menu-avatar" aria-hidden="true">
           {initials}
         </span>
-        <span>{name}</span>
+        <span className="user-menu-name">{name}</span>
         <Icon name="chevron-down" size={16} className="user-menu-chevron" />
       </button>
 
@@ -63,12 +65,6 @@ function UserMenu({ initials, name, onLogout }) {
           <NavLink to="/perfil" className="user-menu-item" onClick={close}>
             <Icon name="user-round" size={16} />
             Mi perfil
-          </NavLink>
-        </li>
-        <li>
-          <NavLink to="/mis-reportes" className="user-menu-item" onClick={close}>
-            <Icon name="chart-column" size={16} />
-            Mis reportes
           </NavLink>
         </li>
         <li className="user-menu-list-footer">

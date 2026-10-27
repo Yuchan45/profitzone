@@ -44,9 +44,11 @@
 
 .disclaimer-card__link {
   align-self: flex-start;
+  min-height: 24px;
+  padding: var(--space-4) 0 0;
   font-size: var(--text-13);
   font-weight: 600;
-  color: var(--color-primary-dark);
+  color: var(--color-primary-ink);
   text-decoration: underline;
   text-underline-offset: 3px;
   transition: opacity 0.15s ease;

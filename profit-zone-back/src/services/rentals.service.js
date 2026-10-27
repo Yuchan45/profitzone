@@ -107,6 +107,7 @@ async function queryRentalsFromDb(lat, lng, radiusInMeters) {
       price_per_m2_usd AS pricePerM2Usd,
       url,
       scraped_at AS scrapedAt,
+      location_precision AS locationPrecision,
       geom.Lat AS lat,
       geom.Long AS lng,
       ROUND(geom.STDistance(@point), 0) AS distanceMeters
@@ -147,6 +148,7 @@ function queryRentalsFromFallback(lat, lng, radiusInMeters) {
         pricePerM2Usd: p.price_per_m2_usd,
         url: p.url,
         scrapedAt: catalog.scraped_at ?? null,
+        locationPrecision: p.location_precision,
         lat: p.lat,
         lng: p.lng,
         distanceMeters,
@@ -156,6 +158,11 @@ function queryRentalsFromFallback(lat, lng, radiusInMeters) {
 
   matching.sort((a, b) => a.distanceMeters - b.distanceMeters)
   return matching
+}
+
+/** Tipo de cambio con el que se pasan a pesos los avisos publicados solo en dólares. */
+export function rentalExchangeRate() {
+  return getFallbackCatalog()?.exchange_rate_official || { rate: 1540.0, source: 'DolarAPI Oficial' }
 }
 
 /**
@@ -197,8 +204,7 @@ export async function getRentalsInRadius({ lat, lng, radiusInMeters = 1000 }) {
     source = 'Dataset Local (zonaprop_locales_caba_alquiler.json)'
   }
 
-  const fallbackCatalog = getFallbackCatalog()
-  const exchangeRate = fallbackCatalog?.exchange_rate_official || { rate: 1540.0, source: 'DolarAPI Oficial' }
+  const exchangeRate = rentalExchangeRate()
 
   if (!rows || rows.length === 0) {
     return {

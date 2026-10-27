@@ -1,3 +1,5 @@
+import { useId, useState } from 'react'
+import { Link } from 'react-router-dom'
 import IconTile from '../../atoms/IconTile/IconTile.jsx'
 import Badge from '../../atoms/Badge/Badge.jsx'
 import Button from '../../atoms/Button/Button.jsx'
@@ -5,8 +7,15 @@ import Icon from '../../atoms/Icon/Icon.jsx'
 import './IndicatorCard.css'
 
 /**
- * Tarjeta de un indicador del análisis: ícono, título, dato principal con su aclaración,
- * detalle (`children`), una lectura destacada (`callout`) y la fuente.
+ * Tarjeta de un indicador del análisis: ícono, título, la lectura (`callout`) primero,
+ * después el dato principal con su aclaración, el detalle (`children`) y la fuente.
+ * El título es h3: las tarjetas van dentro de la sección "Los datos de la zona".
+ * En mobile el detalle y la fuente arrancan plegados ("Ver detalle"): la tarjeta muestra
+ * primero la lectura y el número, y la página no se hace interminable.
+ * `titleAside` (opcional): algo junto al título, como un ⓘ con la explicación del dato.
+ * `benchmark` (opcional): la comparación con el barrio, debajo del dato (siempre visible).
+ * `method` (opcional): { text, anchor } para el desplegable "¿Cómo se calcula?", con link a
+ * la sección `anchor` de la página de metodología.
  * status: 'loading' | 'error' | 'empty' | 'ok'.
  * - error: muestra `error` y, con `onRetry`, el botón para reintentar.
  * - empty: el dato existe pero no hay nada que mostrar (`empty`: { title, text }).
@@ -14,22 +23,32 @@ import './IndicatorCard.css'
 function IndicatorCard({
   icon,
   title,
+  titleAside,
   badge,
   status = 'ok',
   value,
   caption,
   callout,
+  benchmark,
+  method,
   source,
   error,
   empty,
   onRetry,
   children,
 }) {
+  const detailId = useId()
+  const [detailOpen, setDetailOpen] = useState(false)
+  const hasDetail = Boolean(children || source || method)
+
   return (
     <section className="indicator-card" aria-busy={status === 'loading' || undefined}>
       <header className="indicator-card-header">
         <IconTile icon={icon} size="m" />
-        <h2 className="indicator-card-title">{title}</h2>
+        <h3 className="indicator-card-title">
+          {title}
+          {titleAside}
+        </h3>
         {badge && status === 'ok' && <Badge variant="alert">{badge}</Badge>}
       </header>
 
@@ -64,17 +83,51 @@ function IndicatorCard({
 
       {status === 'ok' && (
         <>
+          {/* Primero qué significa el dato; después el dato y su detalle */}
+          {callout && <p className="indicator-card-callout">{callout}</p>}
           <p className="indicator-card-headline">
             <span className="indicator-card-value">{value}</span>
             {caption && <span className="indicator-card-caption">{caption}</span>}
           </p>
-          {children}
-          {callout && <p className="indicator-card-callout">{callout}</p>}
-          {source && (
-            <p className="indicator-card-source">
-              <Icon name="info" size={12} />
-              {source}
-            </p>
+          {benchmark}
+          {hasDetail && (
+            <>
+              {/* Solo se ve en mobile (en escritorio el detalle siempre está abierto) */}
+              <button
+                type="button"
+                className="indicator-card-toggle"
+                aria-expanded={detailOpen}
+                aria-controls={detailId}
+                onClick={() => setDetailOpen((open) => !open)}
+              >
+                {detailOpen ? 'Ocultar detalle' : 'Ver detalle'}
+                <Icon name={detailOpen ? 'chevron-up' : 'chevron-down'} size={14} />
+              </button>
+              <div
+                id={detailId}
+                className={`indicator-card-detail${detailOpen ? ' indicator-card-detail--open' : ''}`}
+              >
+                {children}
+                {method && (
+                  <details className="indicator-card-method">
+                    <summary className="indicator-card-method-summary">
+                      ¿Cómo se calcula?
+                      <Icon name="chevron-down" size={14} />
+                    </summary>
+                    <p className="indicator-card-method-text">{method.text}</p>
+                    <Link className="indicator-card-method-link" to={`/metodologia#${method.anchor}`}>
+                      Ver la metodología completa
+                    </Link>
+                  </details>
+                )}
+                {source && (
+                  <p className="indicator-card-source">
+                    <Icon name="info" size={12} />
+                    {source}
+                  </p>
+                )}
+              </div>
+            </>
           )}
         </>
       )}

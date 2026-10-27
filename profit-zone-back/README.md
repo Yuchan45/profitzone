@@ -40,7 +40,8 @@ con un error que indica cómo levantarlo.
 | `npm run db:seed:census` | Carga los 3.554 radios censales de CABA en `census_data.census_radios` con geometrías e índice espacial |
 | `npm run db:seed:rentals` | Carga los 3.800 locales comerciales en alquiler de CABA en `commercial_data.commercial_rentals` con geometrías e índice espacial |
 | `npm run db:seed:osm-places` | Carga en `osm_data.places` los restaurantes, cafés, gimnasios y estudios de pilates de OpenStreetMap del barrio disponible (+2 km), para la vista previa del paso 3 |
-| `npm run db:seed:all` | Aplica las migraciones y corre todos los seeds en orden (catálogo, censo, locales, OSM) con un resumen al final. Saltea los locales si falta el JSON de Zonaprop y OSM si falla el censo |
+| `npm run db:seed:osm-transit` | Carga en `osm_data.transit_stops` las paradas de colectivo y estaciones de subte y tren de OpenStreetMap del barrio disponible (+2 km), con sus líneas, para el indicador de accesibilidad |
+| `npm run db:seed:all` | Aplica las migraciones y corre todos los seeds en orden (catálogo, censo, locales, negocios y transporte de OSM) con un resumen al final. Saltea los locales si falta el JSON de Zonaprop y OSM si falla el censo |
 
 ## Variables de entorno
 
@@ -59,7 +60,7 @@ un formato inválido, el proceso falla con un mensaje explicando qué corregir.
 | `DB_PASSWORD`  | Sí          | —             | Clave: 8+ caracteres, 3 de 4 tipos (A-Z, a-z, 0-9, símbolo). Sin `$`. Docker la usa para crear `sa` |
 | `DB_LOGGING`   | No          | `false`       | `true` muestra en consola el SQL de Sequelize          |
 | `GOOGLE_PLACES_API_KEY` | No | —             | Clave de API de Google Places (New) para competidores en el radio |
-| `BESTTIME_API_KEY`      | No | —             | Clave de API opcional para afluencia BestTime (fallback a modelo estimado) |
+| `BESTTIME_API_KEY`      | No | —             | Reservada para integrar BestTime más adelante. **Todavía no se usa**: la afluencia es un perfil horario fijo por rubro, igual en todo Palermo |
 | `JWT_ACCESS_SECRET`     | Sí | —             | Secreto para firmar los JWT de acceso (32+ caracteres aleatorios) |
 | `JWT_ACCESS_TTL`        | No | `15m`         | Vida del JWT de acceso (número + `s`/`m`/`h`/`d`) |
 | `REFRESH_TOKEN_TTL_DAYS` | No | `7`          | Vida del refresh token (cookie httpOnly) en días, de 1 a 90 |
@@ -86,6 +87,7 @@ headers `Content-Type` y `Authorization`, y cachea el preflight 24 h.
 | `GET`  | `/api/density` | Densidad poblacional y demografía en un punto con radio en CABA (query: `lat`, `lng`, `radius`) |
 | `GET`  | `/api/competition` | Análisis de competidores directos e indirectos en un radio con Google Places. **Requiere sesión** (consume una API paga) |
 | `GET`  | `/api/places/nearby?lat=&lng=&radius=&category=&subcategory=&match=` | Vista previa del paso 3: negocios del rubro dentro del círculo (radio de 100 a 2000 m), desde OpenStreetMap (`osm_data.places`, gratis, sin sesión). `match` (opcional, `pregunta:opción`, ej. `cuisine_type:asian`) marca como `direct` los que coinciden con la cocina elegida. Responde `{ source, updatedAt, total, directTotal, directLabel, places: [{ id, name, lat, lng, direct }] }`. 400 si los parámetros son inválidos |
+| `GET`  | `/api/sample-report` | Reporte de ejemplo de la home ("Ver reporte de ejemplo"): restaurante de cocina asiática en Palermo Soho. Misma forma que `GET /api/analyses/:id/report`, más `business` (`{ categoryCode, subcategoryCode, answers }`). Público y sin consultas pagas: sale de `src/data/sampleReport.json`, con los locales de Google Places anonimizados |
 | `GET`  | `/api/places/:id` | Ficha de un negocio de la vista previa (datos de OpenStreetMap, sin sesión): `{ id, kind, name, cuisines, lat, lng, details, source, updatedAt }`. `details` trae solo lo que el local tenga cargado en OSM (`street`, `houseNumber`, `openingHours`, `phone`, `website`, `instagram`, `facebook`, `outdoorSeating`, `delivery`, `takeaway`, `wheelchair`). 404 si no existe |
 | `GET`  | `/api/traffic` | Estimación de afluencia horaria (7h a 23h) y score por franja horaria |
 | `GET`  | `/api/rentals` | Promedio y estadísticas de alquileres comerciales en un radio (query: `lat`, `lng`, `radius` entero de 100 a 2000 m, default 1000). Devuelve solo las estadísticas (mediana, promedio, precio por m², `scrapedAt` con la fecha del relevamiento), sin el listado de avisos. 400 si los parámetros son inválidos; 503 si no hay avisos cargados) |
@@ -97,7 +99,7 @@ headers `Content-Type` y `Authorization`, y cachea el preflight 24 h.
 | `GET`  | `/api/analyses` | Mis análisis ("Mis reportes"), del más reciente al más viejo, con estado, nombre (`null` si no lo renombró), rubro, ubicación, dirección y fechas (sin respuestas). `?status=saved` (default: reportes guardados, los que ya analizaron la zona) o `?status=draft` (borradores: sin ubicación todavía); 400 con otro valor |
 | `POST` | `/api/analyses` | Crea un análisis en borrador con el rubro y las respuestas (`{ categoryCode, subcategoryCode, answers }`). 201; 400 si faltan obligatorias o hay respuestas inválidas. Queda a nombre del usuario. **Todos los endpoints de `/api/analyses` requieren sesión** (401 sin ella) y cada análisis solo lo ve su dueño (404 para el resto) |
 | `GET`  | `/api/analyses/:id` | Un análisis con su rubro, ubicación y respuestas (404 si no existe) |
-| `GET`  | `/api/analyses/:id/report` | Reporte de zona: indicadores del punto y radio, cuadro de fortalezas y debilidades cruzado con las respuestas y resumen (409 si el análisis no tiene ubicación) |
+| `GET`  | `/api/analyses/:id/report` | Reporte de zona: indicadores del punto y radio, cuadro de fortalezas y debilidades cruzado con las respuestas, resumen y `benchmarks`: cada dato comparado con Palermo (mediana y percentil del punto entre los 295 centros de radios censales del barrio, medidos con el mismo radio; densidad contra el promedio del barrio; `null` si no se pudieron calcular). Ver la página `/metodologia` del front (409 si el análisis no tiene ubicación) |
 | `PUT`  | `/api/analyses/:id/answers` | Reemplaza todas las respuestas (`{ answers }`), con las mismas validaciones que el alta |
 | `PATCH` | `/api/analyses/:id/location` | Guarda el punto y el radio (`{ lat, lng, radius }`, radio entero entre 100 y 2000 m, dentro de Palermo; 422 si cae afuera; más de 600 m solo para los roles `premium` y `admin`, si no 403). Se llama al tocar "Analizar zona": el análisis pasa a `saved` y aparece en Mis reportes (volver a analizar actualiza el mismo reporte). Busca y guarda la dirección del punto (`address`); si la búsqueda falla, se guarda igual sin dirección |
 | `PATCH` | `/api/analyses/:id` | Renombra el análisis (`{ name }`, texto de hasta 80 caracteres; vacío o `null` vuelve a mostrar el rubro). 400 si es más largo |
@@ -179,7 +181,13 @@ El cálculo se ejecuta en el motor espacial nativo de SQL Server 2022 (`geograph
 
 ### `GET /api/competition`
 
-Obtiene el análisis de competidores directos e indirectos en un radio alrededor de unas coordenadas usando la API de Google Places (New).
+Obtiene el análisis de competidores directos e indirectos en un radio alrededor de unas coordenadas usando la API de Google Places (New), con una sola consulta.
+
+- Con `match` de una cocina (ej. `cuisine_type:asian`) la consulta pide los tipos de Google de esa cocina (`metadata.googleTypes` de la opción en el catálogo) y `listMode` es `cuisine`; sin cocina, pide los tipos generales del rubro (`general`). Google devuelve hasta 20 locales, los más populares.
+- Los competidores directos que están en OpenStreetMap y Google no trajo se suman a `places` sin rating (`source: "osm"`).
+- `places` viene ordenado por fuerza: directos primero, después por `strength` (rating ajustado por cantidad de reseñas); sin datos de Google, al final.
+- `total` y `directCount` son los locales de OpenStreetMap en el radio más los que solo trajo Google. `averageRating` es `null` si ningún local tiene calificaciones.
+- Si Google falla (por ejemplo, cuota diaria agotada) el endpoint responde con error: no se muestran datos inventados. Solo sin `GOOGLE_PLACES_API_KEY` se usan datos de desarrollo.
 
 #### Parámetros de consulta (Query Params)
 
@@ -188,7 +196,9 @@ Obtiene el análisis de competidores directos e indirectos en un radio alrededor
 | `lat`         | `number` | Sí        | —             | Latitud en grados decimales (`-90` a `90`). Ej: `-34.5880`. |
 | `lng`         | `number` | Sí        | —             | Longitud en grados decimales (`-180` a `180`). Ej: `-58.4300`. |
 | `radius`      | `number` | No        | `1000`        | Radio en metros (`10` a `20000`). Ej: `1000`. |
+| `category`    | `string` | No        | según rubro   | Código de la categoría (`gastronomia`, `fitness`). |
 | `subcategory` | `string` | No        | `restaurante` | Código del rubro (`restaurante`, `cafeteria`, `gimnasio`, `pilates`). |
+| `match`       | `string` | No        | —             | Respuesta que define la competencia directa, como `pregunta:opción`. Ej: `cuisine_type:asian`. |
 
 #### Ejemplo de solicitud y respuesta
 
@@ -205,6 +215,8 @@ Host: localhost:8080
   "averageRating": 4.5,
   "subcategory": "cafeteria",
   "subcategoryName": "cafeterías",
+  "listMode": "general",
+  "cuisineLabel": null,
   "callout": "Hay bastante competencia directa y bien valorada cerca del punto.",
   "source": "Google Places",
   "places": [
@@ -219,7 +231,9 @@ Host: localhost:8080
       "location": {
         "lat": -34.58899,
         "lng": -58.43153
-      }
+      },
+      "source": "google",
+      "strength": 4.396
     }
   ]
 }
@@ -227,7 +241,7 @@ Host: localhost:8080
 
 ### `GET /api/accessibility`
 
-Obtiene el análisis de conectividad y transporte público (estaciones de subte, tren y paradas de colectivos) en un radio alrededor de unas coordenadas usando la API de Google Places (New). **Requiere sesión** (`requireAuth`).
+Obtiene el análisis de conectividad y transporte público (estaciones de subte, tren y paradas de colectivos) en un radio alrededor de unas coordenadas, con los datos de OpenStreetMap de `osm_data.transit_stops` (gratis, ver "Transporte de OpenStreetMap"). Cada parada o estación cuenta una vez aunque OSM la tenga en varios puntos (una por vereda, un andén por línea), trae las líneas que paran ahí (`lines`) y su ubicación (para la capa "Transporte" del mapa). `busLineCount` es la cantidad de líneas de colectivo distintas del radio y `updatedAt` la fecha de la última carga de OSM. **Requiere sesión** (`requireAuth`).
 
 #### Parámetros de consulta (Query Params)
 
@@ -246,25 +260,30 @@ Host: localhost:8080
 
 ```json
 {
-  "total": 7,
-  "subwayCount": 2,
-  "trainCount": 1,
-  "busCount": 4,
+  "total": 17,
+  "subwayCount": 1,
+  "trainCount": 0,
+  "busCount": 16,
+  "busLineCount": 26,
   "otherCount": 0,
   "level": "alta",
-  "callout": "Excelente conectividad con subte a 180 m y 4 paradas de colectivo en la zona.",
-  "source": "Google Places",
+  "callout": "Excelente conectividad con subte a 51 m más 16 paradas de colectivo en la zona.",
+  "source": "OpenStreetMap",
+  "updatedAt": "2026-10-27T05:10:00.000Z",
   "places": [
     {
-      "id": "mock-place-1",
-      "name": "Estación Pueyrredón (Línea D)",
+      "id": "transit-2841",
+      "name": "Plaza Italia",
+      "cleanName": "Est. Plaza Italia",
       "category": "subway",
-      "primaryType": "subway_station",
-      "distanceMeters": 180,
-      "distanceText": "180 m",
+      "type": "Subte",
+      "lines": "Línea D",
+      "lineCount": 1,
+      "distanceMeters": 51,
+      "distanceText": "51 m",
       "location": {
-        "lat": -34.5868,
-        "lng": -58.429
+        "lat": -34.58138,
+        "lng": -58.42103
       }
     }
   ]
@@ -310,7 +329,7 @@ Host: localhost:8080
   ],
   "callout": "La actividad sube fuerte a la mañana, en línea con tu franja de desayuno.",
   "badge": "Estimado",
-  "source": "BestTime (popular times de locales del radio) · forecast 2026 · mide entradas a locales, no peatones"
+  "source": "Perfil horario típico del rubro en CABA · estimado · no se mide en este punto"
 }
 ```
 
@@ -507,6 +526,21 @@ geometry|	MultiPolygon|	Coordenadas vectoriales exactas de los límites de las m
 | `details` | `nvarchar(max)` (JSON) | Datos para la ficha del local que tenga cargados en OSM: dirección, horarios, teléfono, web, redes y servicios (mesas afuera, delivery, take away, accesibilidad). |
 
 Datos © colaboradores de OpenStreetMap, licencia ODbL: el mapa del front muestra la atribución.
+
+### Transporte de OpenStreetMap (seed)
+
+`npm run db:seed:osm-transit` baja de Overpass las paradas de colectivo (`highway=bus_stop` y andenes con `bus=yes`) y las estaciones de subte y tren (`railway=station|halt`) del barrio disponible con 2 km de margen, y las guarda en `osm_data.transit_stops` con índice espacial (`IX_transit_stops_geom`). Las líneas salen de los recorridos de OSM que pasan por cada parada: colectivos por número (los ramales "39-3" o "151C" cuentan como 39 y 151), subte por letra (tomada de los andenes de la estación) y tren por la red (`network`, ej. "San Martín"). Mismo comportamiento que el seed de negocios: idempotente, no borra (`is_active = 0`) y requiere el censo cargado.
+
+| Variable | Tipo | Significado |
+| -------- | ---- | ----------- |
+| `osm_type` / `osm_id` | `char(1)` / `bigint` | Identificador del elemento en OSM. |
+| `kind` | `varchar(10)` | `bus`, `subway` o `train`. |
+| `name` | `nvarchar(200)` | Nombre de la parada (ej. "Honduras y Thames") o de la estación (puede faltar). |
+| `lines` | `nvarchar(400)` | Líneas separadas por coma: "39,55,151", "D" o "San Martín". En Palermo la tiene más del 90% de las paradas. |
+| `geom` | `geography` | Punto de la parada o estación. |
+| `is_active` / `last_seen_at` | `bit` / `datetime2` | Si apareció en la última carga, y cuándo. |
+
+OSM tiene un punto por vereda en cada esquina y uno por andén en las estaciones: el servicio de accesibilidad los junta (mismo tipo y nombre a menos de 80 m para colectivos y 300 m para estaciones) para contar cada parada una vez.
 
 ## Estructura
 

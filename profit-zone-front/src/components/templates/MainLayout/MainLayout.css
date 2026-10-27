@@ -12,7 +12,35 @@
   margin: 0 auto;
 }
 
+/* Reportes con mapa: las mismas medidas que FlowLayout (hasta 1080 px y, desde 1366 px,
+   margen de 48 px y hasta 1600 px), así se ven igual que el paso 4 del análisis */
+.app-content--wide {
+  --wide-max-width: 1080px;
+  --wide-gutter: var(--space-24);
+
+  max-width: calc(var(--wide-max-width) + 2 * var(--wide-gutter));
+  padding: var(--space-40) var(--wide-gutter) var(--space-64);
+}
+
+@media (min-width: 1366px) {
+  .app-content--wide {
+    --wide-max-width: 1600px;
+    --wide-gutter: var(--space-48);
+  }
+}
+
+@media (max-width: 720px) {
+  .app-content--wide {
+    --wide-gutter: var(--space-16);
+
+    padding-top: var(--space-24);
+    padding-bottom: var(--space-48);
+  }
+}
+
 .app-content--full {
   flex: 1;
   width: 100%;
+  /* La home tiene brillos decorativos que se salen unos píxeles: sin scroll horizontal */
+  overflow-x: clip;
 }

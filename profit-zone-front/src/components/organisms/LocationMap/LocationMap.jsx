@@ -66,6 +66,29 @@ function FitMinZoom({ bounds }) {
   return null
 }
 
+// Leaflet calcula su tamaño una sola vez: si el contenedor cambia (ej. el panel del mapa
+// se pliega, se amplía o pasa a franja en mobile) hay que avisarle para que no queden huecos
+function FitOnResize() {
+  const map = useMap()
+  useEffect(() => {
+    const observer = new ResizeObserver(() => map.invalidateSize())
+    observer.observe(map.getContainer())
+    return () => observer.disconnect()
+  }, [map])
+  return null
+}
+
+// Bloquea arrastrar y hacer zoom (ej. el mapa como franja fija en mobile: deslizar el
+// dedo tiene que mover la página, no el mapa)
+function LockInteraction({ locked }) {
+  const map = useMap()
+  useEffect(() => {
+    const handlers = [map.dragging, map.touchZoom, map.doubleClickZoom, map.scrollWheelZoom, map.boxZoom, map.keyboard]
+    handlers.forEach((handler) => (locked ? handler?.disable() : handler?.enable()))
+  }, [locked, map])
+  return null
+}
+
 // Centra el mapa en el punto cuando viene de afuera (ej. el buscador de direcciones)
 function FollowPoint({ point, focusKey }) {
   const map = useMap()
@@ -90,7 +113,9 @@ function FollowPoint({ point, focusKey }) {
  * `places` (opcional): negocios del rubro en el radio, como puntos; los de
  * competencia directa (`direct`) se destacan. Un click en un negocio llama a
  * `onPlaceSelect(id)` (no mueve el punto) y `selectedPlaceId` lo marca en el mapa.
+ * Cada punto puede traer `variant` (ej. 'rent' para avisos de alquiler) para otro color.
  * `readOnly`: solo muestra el punto y el radio, sin moverlos (paso 4, Análisis).
+ * `locked`: tampoco se puede arrastrar ni hacer zoom (el mapa queda como vista fija).
  */
 function LocationMap({
   center,
@@ -107,6 +132,7 @@ function LocationMap({
   selectedPlaceId = null,
   onPlaceSelect,
   readOnly = false,
+  locked = false,
 }) {
   // Memo: FitMinZoom depende de este objeto
   const maxBounds = useMemo(
@@ -130,7 +156,7 @@ function LocationMap({
     else onOutsidePick?.()
   }
   return (
-    <div className={`location-map${outside ? ' location-map--outside' : ''}`}>
+    <div className={`location-map${outside ? ' location-map--outside' : ''}${locked ? ' location-map--locked' : ''}`}>
       <MapContainer
         center={point ? [point.lat, point.lng] : [center.lat, center.lng]}
         zoom={DEFAULT_ZOOM}
@@ -170,6 +196,7 @@ function LocationMap({
                 pathOptions={{
                   className: [
                     'location-map-place',
+                    place.variant && `location-map-place--${place.variant}`,
                     place.direct && 'location-map-place--direct',
                     place.id === selectedPlaceId && 'location-map-place--selected',
                   ]
@@ -215,6 +242,8 @@ function LocationMap({
         {!readOnly && <PickOnClick onPick={handleMapClick} />}
         <FitMinZoom bounds={maxBounds} />
         <WatchZoom onZoom={setZoom} />
+        <FitOnResize />
+        <LockInteraction locked={locked} />
         <FollowPoint point={point} focusKey={focusKey} />
       </MapContainer>
       {!readOnly && (
