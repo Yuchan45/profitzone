@@ -5,6 +5,7 @@ import { getTrafficAnalysis } from './traffic.service.js'
 import { getDensityInRadius } from './density.service.js'
 import { getRentalsInRadius } from './rentals.service.js'
 import { getAccessibilityAnalysis } from './accessibility.service.js'
+import { getAudiencePlacesInRadius } from './audiencePlaces.service.js'
 import { CRITERIA, buildSummary } from './reportCriteria.service.js'
 import { httpError } from '../utils/httpErrors.js'
 import { formatArgentinaDate } from '../utils/dates.js'
@@ -108,7 +109,7 @@ function buildAnswerReaders(answers, survey) {
 }
 
 // Las fechas van en hora de Buenos Aires: el servidor puede estar en UTC
-function buildSources({ competition, traffic, density, rent, accessibility }) {
+function buildSources({ competition, traffic, density, rent, accessibility, audiencePlaces }) {
   const sources = []
   if (competition.status === 'ok') {
     const date = formatArgentinaDate(competition.data.queryDate)
@@ -133,7 +134,11 @@ function buildSources({ competition, traffic, density, rent, accessibility }) {
     const date = formatArgentinaDate(accessibility.data.queryDate)
     sources.push(`Accesibilidad: ${accessibility.data.source}${date ? `, consultado el ${date}` : ''}.`)
   }
-  sources.push('Lugares según tu público: todavía sin fuente de datos.')
+  if (audiencePlaces.status === 'ok' && audiencePlaces.data.byKind.length > 0) {
+    const kinds = audiencePlaces.data.byKind.map((item) => item.label).join(', ')
+    const date = audiencePlaces.data.updatedAt && formatArgentinaDate(audiencePlaces.data.updatedAt)
+    sources.push(`Lugares según tu público: ${kinds} de OpenStreetMap${date ? `, actualizados el ${date}` : ''}.`)
+  }
   return sources
 }
 
@@ -180,8 +185,8 @@ export async function buildAnalysisReport(id, userId) {
   const subcategory = analysis.subcategory.code
   const notApplicable = { status: 'not_applicable' }
 
-  // Sin atención al público no se muestran competencia ni afluencia (estados-y-variantes)
-  const [competition, traffic, density, rent, accessibility] = await Promise.all([
+  // Sin atención al público no se muestran competencia, afluencia ni lugares que atraen al público
+  const [competition, traffic, density, rent, accessibility, audiencePlaces] = await Promise.all([
     noPublic
       ? notApplicable
       : settleIndicator('competencia', () =>
@@ -200,6 +205,11 @@ export async function buildAnalysisReport(id, userId) {
     settleIndicator('densidad', () => getDensityInRadius(point)),
     settleIndicator('alquiler', () => getRentalsInRadius(point)),
     settleIndicator('accesibilidad', () => getAccessibilityAnalysis(point)),
+    noPublic
+      ? notApplicable
+      : settleIndicator('lugares según tu público', () =>
+          getAudiencePlacesInRadius({ ...point, audiences: answerCodes('target_age') }),
+        ),
   ])
 
   const criteria = CRITERIA.map((buildCriterion) =>
@@ -215,6 +225,7 @@ export async function buildAnalysisReport(id, userId) {
       density,
       rent,
       accessibility,
+      audiencePlaces,
       noPublic,
     }),
   )
@@ -238,8 +249,9 @@ export async function buildAnalysisReport(id, userId) {
       accessibility,
       // Sin el listado de avisos: el reporte solo muestra el resumen del alquiler
       rent: rent.status === 'ok' ? { status: 'ok', data: summarizeRent(rent.data) } : rent,
+      audiencePlaces,
     },
-    sources: buildSources({ competition, traffic, density, rent, accessibility }),
+    sources: buildSources({ competition, traffic, density, rent, accessibility, audiencePlaces }),
     notices: NOTICES,
     generatedAt: new Date().toISOString(),
   }

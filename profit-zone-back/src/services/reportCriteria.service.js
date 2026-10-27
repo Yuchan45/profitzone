@@ -1,4 +1,5 @@
 import { calculateMedian } from '../utils/stats.js'
+import { describeKindCount } from '../utils/audiencePlaces.js'
 
 // Reglas del cuadro "Fortalezas y debilidades" del reporte (PZ-20).
 // Cada criterio cruza una respuesta del paso 2 con un indicador de la zona y
@@ -55,16 +56,31 @@ const AUDIENCE = {
   minAlertCount: 500,
 }
 
-const NO_DATA = 'Sin datos para esta zona todavía'
+// Lugares que atraen al público elegido (escuelas, oficinas...) en el radio, contra los
+// que habría con la densidad de referencia: lugares por km² de cada tipo en Palermo y
+// alrededores según OpenStreetMap (25 km², octubre de 2026)
+const AUDIENCE_PLACES = {
+  referencePerKm2: {
+    kindergarten: 3.3,
+    school: 7.7,
+    playground: 2.7,
+    university: 3.4,
+    office: 10.5,
+    coworking: 0.2,
+    senior_center: 0.2,
+    healthcare: 3.9,
+  },
+  // Desde la referencia es fortaleza; desde esta fracción, alerta; menos, debilidad
+  strengthRatio: 1,
+  weaknessRatio: 0.5,
+  // Con menos lugares esperados (radio chico o tipos poco frecuentes) no hay lectura firme
+  minExpected: 2,
+}
+
 const NO_PUBLIC = 'No aplica sin atención al público'
 
 function criterion(code, label, yourBusiness, zone, reading, extra = {}) {
   return { code, label, yourBusiness, zone, reading, ...extra }
-}
-
-// Criterio cuyo dato todavía no tiene fuente (no es un error de carga)
-function noSourceCriterion(code, label, yourBusiness) {
-  return criterion(code, label, yourBusiness, NO_DATA, 'not_evaluated', { noSource: true })
 }
 
 // El usuario respondió "no sé" o no definió el dato: no es una falla de la fuente
@@ -350,9 +366,44 @@ export function accessibilityCriterion({ answerCode, answerLabel, accessibility,
   return criterion('accessibility', label, yourBusiness, zone, reading)
 }
 
-/** Lugares de interés según el público (ej. institutos educativos): sin fuente todavía. */
-export function placesForAudienceCriterion({ answerLabel }) {
-  return noSourceCriterion('places_for_audience', 'Según tu público', answerLabel('target_age'))
+/**
+ * Según tu público: lugares que atraen a los públicos elegidos (ej. escuelas para
+ * familias, universidades para jóvenes, oficinas para adultos) dentro del radio,
+ * contra los que habría con la densidad de referencia de la zona.
+ */
+export function placesForAudienceCriterion({ answerCodes, answerLabel, audiencePlaces, noPublic }) {
+  const yourBusiness = answerLabel('target_age')
+  const audiences = answerCodes ? answerCodes('target_age') : []
+  const label = 'Según tu público'
+  const code = 'places_for_audience'
+
+  if (audiences.length === 0) {
+    return undefinedAnswerCriterion(code, label, yourBusiness, 'Sin público objetivo definido')
+  }
+  if (noPublic) {
+    return notApplicableCriterion(code, label, yourBusiness)
+  }
+  if (!audiencePlaces || audiencePlaces.status !== 'ok') {
+    return criterion(code, label, yourBusiness, 'No pudimos obtener los lugares cercanos', 'not_evaluated')
+  }
+
+  const { total, byKind, radiusInMeters } = audiencePlaces.data
+  const found = byKind.filter((item) => item.count > 0).map((item) => describeKindCount(item.kind, item.count))
+  const zone =
+    total === 0
+      ? `Sin ${joinPhrases(byKind.map((item) => item.label))} en el radio`
+      : `${formatInt(total)} ${total === 1 ? 'lugar que atrae' : 'lugares que atraen'} a tu público: ${joinPhrases(found)}`
+
+  const areaKm2 = Math.PI * (radiusInMeters / 1000) ** 2
+  const expected = byKind.reduce((sum, item) => sum + (AUDIENCE_PLACES.referencePerKm2[item.kind] ?? 0) * areaKm2, 0)
+  if (expected < AUDIENCE_PLACES.minExpected) {
+    return criterion(code, label, yourBusiness, zone, 'neutral')
+  }
+
+  const ratio = total / expected
+  const reading =
+    ratio >= AUDIENCE_PLACES.strengthRatio ? 'strength' : ratio >= AUDIENCE_PLACES.weaknessRatio ? 'alert' : 'weakness'
+  return criterion(code, label, yourBusiness, zone, reading)
 }
 
 export const CRITERIA = [
@@ -412,9 +463,8 @@ export function buildSummary(criteria) {
     .map((c) => SUMMARY_PHRASES[c.code][READING_PHRASE[c.reading]])
   const schedule = criteria.find((c) => c.code === 'schedule' && c.estimated)
   const notApplicable = criteria.filter((c) => c.notApplicable).length
-  const noSource = criteria.filter((c) => c.noSource).length
   const failed = criteria.filter(
-    (c) => c.reading === 'not_evaluated' && !c.notApplicable && !c.noSource && !c.undefinedAnswer,
+    (c) => c.reading === 'not_evaluated' && !c.notApplicable && !c.undefinedAnswer,
   ).length
 
   const sentences = []
@@ -429,20 +479,15 @@ export function buildSummary(criteria) {
     sentences.push('Tu franja tiene poca actividad típica para el rubro (estimado).')
   }
   if (notApplicable > 0) {
-    sentences.push('Como elegiste sin atención al público, no evaluamos competencia, horario ni cómo llega el cliente.')
+    sentences.push(
+      'Como elegiste sin atención al público, no evaluamos los criterios que dependen de la gente que pasa o visita la zona.',
+    )
   }
   if (failed > 0) {
     sentences.push(
       failed === 1
         ? 'Un criterio no se pudo evaluar porque su dato no está disponible para este punto.'
         : `${failed} criterios no se pudieron evaluar porque sus datos no están disponibles para este punto.`,
-    )
-  }
-  if (noSource > 0) {
-    sentences.push(
-      noSource === 1
-        ? 'Un criterio todavía no tiene fuente de datos.'
-        : `${noSource} criterios todavía no tienen fuente de datos.`,
     )
   }
   return sentences.join(' ')
