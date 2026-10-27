@@ -19,6 +19,9 @@ import Reporte from './pages/Reporte/Reporte.jsx'
 import Terminos from './pages/Terminos/Terminos.jsx'
 import Tramites from './pages/Tramites/Tramites.jsx'
 import Metodologia from './pages/Metodologia/Metodologia.jsx'
+import SobreNosotros from './pages/SobreNosotros/SobreNosotros.jsx'
+import Contacto from './pages/Contacto/Contacto.jsx'
+import Privacidad from './pages/Privacidad/Privacidad.jsx'
 import NotFound from './pages/NotFound.jsx'
 
 // Las páginas con mapa traen Leaflet (~150 kB): se cargan recién al entrar
@@ -77,6 +80,9 @@ function App() {
         <Route path="/terminos" element={<Terminos />} />
         <Route path="/tramites" element={<Tramites />} />
         <Route path="/metodologia" element={<Metodologia />} />
+        <Route path="/sobre-nosotros" element={<SobreNosotros />} />
+        <Route path="/contacto" element={<Contacto />} />
+        <Route path="/privacidad" element={<Privacidad />} />
         {/* Requieren sesión */}
         <Route element={<ProtectedRoute />}>
           <Route path="/dashboard" element={<Dashboard />} />

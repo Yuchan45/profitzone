@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom'
+import { Link, NavLink } from 'react-router-dom'
 import { useAuth } from '../../../hooks/useAuth.js'
 import Logo from '../../atoms/Logo/Logo.jsx'
 import Button from '../../atoms/Button/Button.jsx'
@@ -20,6 +20,11 @@ function Navbar() {
           <Button variant="text" size="m" to="/login">
             Iniciar sesión
           </Button>
+        )}
+        {status === 'authenticated' && (
+          <NavLink to="/mis-reportes" className={({ isActive }) => `navbar-link${isActive ? ' navbar-link--active' : ''}`}>
+            Mis reportes
+          </NavLink>
         )}
         <Button variant="primary" size="m" {...NEW_ANALYSIS_LINK}>
           Analizar una zona

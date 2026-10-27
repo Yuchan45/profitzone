@@ -100,3 +100,15 @@
 .user-menu-item--danger:hover {
   background: var(--color-error-12);
 }
+
+/* En pantallas angostas queda solo el avatar (el botón conserva su nombre accesible) */
+@media (max-width: 560px) {
+  .user-menu-name,
+  .user-menu-trigger .user-menu-chevron {
+    display: none;
+  }
+
+  .user-menu-trigger {
+    padding: 6px;
+  }
+}
