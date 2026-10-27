@@ -202,7 +202,7 @@ export async function getTrafficAnalysis({
     hourlyActivity: hoursList,
     callout,
     badge: 'Estimado',
-    source: 'BestTime (popular times de locales del radio) · forecast 2026 · mide entradas a locales, no peatones',
+    source: 'Perfil horario típico del rubro en CABA · estimado · no se mide en este punto',
     center: { lat, lng },
     radiusInMeters,
     subcategory: normSub,

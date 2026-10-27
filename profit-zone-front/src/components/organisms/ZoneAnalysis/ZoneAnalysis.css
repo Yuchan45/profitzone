@@ -467,3 +467,24 @@
   border-radius: var(--radius-full);
   background-color: var(--color-warning);
 }
+
+/* Nombre del local: lleva a su ficha de Google Maps */
+.zone-analysis-place-link {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-4);
+  max-width: 100%;
+  color: var(--color-text);
+  text-decoration: underline;
+  text-decoration-color: var(--color-border-strong);
+  text-underline-offset: 3px;
+}
+
+.zone-analysis-place-link:hover {
+  text-decoration-color: currentColor;
+}
+
+.zone-analysis-place-link .icon {
+  flex-shrink: 0;
+  color: var(--color-text-secondary);
+}

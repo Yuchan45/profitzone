@@ -6,6 +6,7 @@ import ZoneMapPanel from '../ZoneMapPanel/ZoneMapPanel.jsx'
 import CriteriaTable from '../CriteriaTable/CriteriaTable.jsx'
 import StatusMessage from '../../molecules/StatusMessage/StatusMessage.jsx'
 import StatTile from '../../molecules/StatTile/StatTile.jsx'
+import InfoTip from '../../molecules/InfoTip/InfoTip.jsx'
 import IndicatorCard from '../../molecules/IndicatorCard/IndicatorCard.jsx'
 import DisclaimerCard from '../../molecules/DisclaimerCard/DisclaimerCard.jsx'
 import Badge from '../../atoms/Badge/Badge.jsx'
@@ -15,6 +16,7 @@ import Button from '../../atoms/Button/Button.jsx'
 import Icon from '../../atoms/Icon/Icon.jsx'
 import { formatCurrency, formatDate, formatNumber } from '../../../utils/formatters.js'
 import { READING_ICONS } from '../../../utils/reportReadings.js'
+import { googlePlaceUrl } from '../../../utils/placeDisplay.js'
 import './ZoneAnalysis.css'
 
 // Google Places devuelve como máximo 20 locales por consulta
@@ -233,9 +235,23 @@ function CompetitionCard({ report, live }) {
           <tbody>
             {visiblePlaces.map((place) => (
               <tr key={place.id}>
-                {/* Nombres largos se cortan: el completo aparece al pasar el mouse */}
+                {/* Nombres largos se cortan: el completo aparece al pasar el mouse.
+                    Los locales reales llevan a su ficha de Google Maps (los del ejemplo son ficticios) */}
                 <th scope="row" title={place.name}>
-                  {place.name}
+                  {place.id.startsWith('sample-') ? (
+                    place.name
+                  ) : (
+                    <a
+                      className="zone-analysis-place-link"
+                      href={googlePlaceUrl(place.name, place.id)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      aria-label={`${place.name}, ver en Google Maps (se abre en otra pestaña)`}
+                    >
+                      {place.name}
+                      <Icon name="external-link" size={12} />
+                    </a>
+                  )}
                 </th>
                 <td>{place.rating ? formatNumber(place.rating) : '—'}</td>
                 <td>{place.userRatingCount ? formatNumber(place.userRatingCount) : '—'}</td>
@@ -273,7 +289,18 @@ function CompetitionCard({ report, live }) {
 function TrafficCard({ report }) {
   const indicator = report.data?.indicators.traffic
   const state = cardState(report, indicator)
-  const card = { icon: 'chart-line', title: 'Afluencia a locales del radio', ...state }
+  const card = {
+    icon: 'chart-line',
+    title: 'Afluencia típica del rubro',
+    titleAside: (
+      <InfoTip label="Qué es la afluencia">
+        En qué horarios suele haber más clientes en locales de tu rubro, de 0 (nada) a 100 (el pico
+        del día). Es un perfil típico del rubro en CABA: no se mide en este punto, así que es igual
+        en cualquier lugar de Palermo. Sirve para ver si tu franja coincide con las horas fuertes.
+      </InfoTip>
+    ),
+    ...state,
+  }
   if (state.status !== 'ok') return <IndicatorCard {...card} />
 
   const { data } = indicator
@@ -282,7 +309,7 @@ function TrafficCard({ report }) {
       {...card}
       badge={data.badge}
       value={`${data.score}/${data.scoreMax}`}
-      caption={`de actividad media en tu franja (${data.timeSlot}).`}
+      caption={`de actividad típica del rubro en tu franja (${data.timeSlot}).`}
       callout={data.callout}
       source={data.source}
     >
@@ -692,9 +719,10 @@ function ZoneAnalysis({
   }
 
   // Desde el mapa: marca el punto y, si es un aviso, lleva a su fila en la lista
+  // `id` null cierra la ficha. Los negocios de OSM tienen id numérico; los avisos, "rent-…"
   const selectOnMap = (id) => {
     setSelectedId(id)
-    if (!id?.startsWith('rent-') || mapExpanded) return
+    if (id == null || !String(id).startsWith('rent-') || mapExpanded) return
     document
       .getElementById(`aviso-${id.slice('rent-'.length)}`)
       ?.scrollIntoView({ behavior: prefersReducedMotion() ? 'auto' : 'smooth', block: 'nearest' })
@@ -723,6 +751,8 @@ function ZoneAnalysis({
         lng: listing.lng,
         name: listing.priceArs ? `${listing.address} · ${money(listing.priceArs)}` : listing.address,
         variant: 'rent',
+        // Datos para la ficha del aviso al tocar el punto
+        listing,
       })),
       legend: [{ label: 'Local en alquiler con dirección publicada', tone: 'rent' }],
       note:

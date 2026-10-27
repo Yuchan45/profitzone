@@ -115,6 +115,16 @@ export function googleMapsUrl(place) {
   return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`
 }
 
+/**
+ * Link a la ficha de Google Maps de un local de Google Places (tabla de competencia).
+ * Con `placeId` abre ese local exacto; el nombre queda como respaldo de la búsqueda.
+ * Enlazar a Google Maps está permitido por sus términos (mostrar sus datos en nuestro mapa, no).
+ */
+export function googlePlaceUrl(name, placeId) {
+  const query = encodeURIComponent(`${name}, Palermo, Buenos Aires`)
+  return `https://www.google.com/maps/search/?api=1&query=${query}&query_place_id=${encodeURIComponent(placeId)}`
+}
+
 /** Servicios que el local tiene marcados como "yes" en OSM. */
 export function placeAmenities(details) {
   const amenities = []

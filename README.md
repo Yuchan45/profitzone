@@ -99,7 +99,7 @@ de su carpeta.
 | `DB_PASSWORD`  | Sí          | —             | 8+ caracteres, 3 de 4 tipos (A-Z, a-z, 0-9, símbolo), sin `$` |
 | `DB_LOGGING`   | No          | `false`       | `true` loguea el SQL de Sequelize                  |
 | `GOOGLE_PLACES_API_KEY` | No | —             | Clave de API de Google Places (New) para competidores en el radio |
-| `BESTTIME_API_KEY`      | No | —             | Clave de API opcional de BestTime para afluencia estimada |
+| `BESTTIME_API_KEY`      | No | —             | Reservada para integrar BestTime más adelante. **Todavía no se usa**: la afluencia es un perfil horario fijo por rubro |
 | `JWT_ACCESS_SECRET`     | Sí | —             | Secreto para firmar los JWT de acceso (32+ caracteres aleatorios) |
 | `JWT_ACCESS_TTL`        | No | `15m`         | Vida del JWT de acceso (número + `s`/`m`/`h`/`d`) |
 | `REFRESH_TOKEN_TTL_DAYS` | No | `7`          | Vida del refresh token (cookie httpOnly) en días, de 1 a 90 |

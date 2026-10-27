@@ -59,7 +59,7 @@ un formato inválido, el proceso falla con un mensaje explicando qué corregir.
 | `DB_PASSWORD`  | Sí          | —             | Clave: 8+ caracteres, 3 de 4 tipos (A-Z, a-z, 0-9, símbolo). Sin `$`. Docker la usa para crear `sa` |
 | `DB_LOGGING`   | No          | `false`       | `true` muestra en consola el SQL de Sequelize          |
 | `GOOGLE_PLACES_API_KEY` | No | —             | Clave de API de Google Places (New) para competidores en el radio |
-| `BESTTIME_API_KEY`      | No | —             | Clave de API opcional para afluencia BestTime (fallback a modelo estimado) |
+| `BESTTIME_API_KEY`      | No | —             | Reservada para integrar BestTime más adelante. **Todavía no se usa**: la afluencia es un perfil horario fijo por rubro, igual en todo Palermo |
 | `JWT_ACCESS_SECRET`     | Sí | —             | Secreto para firmar los JWT de acceso (32+ caracteres aleatorios) |
 | `JWT_ACCESS_TTL`        | No | `15m`         | Vida del JWT de acceso (número + `s`/`m`/`h`/`d`) |
 | `REFRESH_TOKEN_TTL_DAYS` | No | `7`          | Vida del refresh token (cookie httpOnly) en días, de 1 a 90 |
@@ -311,7 +311,7 @@ Host: localhost:8080
   ],
   "callout": "La actividad sube fuerte a la mañana, en línea con tu franja de desayuno.",
   "badge": "Estimado",
-  "source": "BestTime (popular times de locales del radio) · forecast 2026 · mide entradas a locales, no peatones"
+  "source": "Perfil horario típico del rubro en CABA · estimado · no se mide en este punto"
 }
 ```
 

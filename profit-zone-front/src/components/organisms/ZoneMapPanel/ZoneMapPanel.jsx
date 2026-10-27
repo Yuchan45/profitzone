@@ -1,9 +1,13 @@
 import { useEffect, useRef } from 'react'
 import { useMediaQuery } from '../../../hooks/useMediaQuery.js'
+import { usePlace } from '../../../hooks/usePlace.js'
 import LocationMap from '../LocationMap/LocationMap.jsx'
+import PlaceCard from '../PlaceCard/PlaceCard.jsx'
+import RentalCard from '../RentalCard/RentalCard.jsx'
 import Chip from '../../atoms/Chip/Chip.jsx'
 import IconButton from '../../atoms/IconButton/IconButton.jsx'
 import Icon from '../../atoms/Icon/Icon.jsx'
+import { distanceMeters } from '../../../utils/geo.js'
 import './ZoneMapPanel.css'
 
 /**
@@ -14,7 +18,9 @@ import './ZoneMapPanel.css'
  *   franja el mapa no se arrastra: deslizar el dedo tiene que mover la página.
  * Muestra una capa a la vez (`layers`: [{ id, label, places, legend, note }]); el padre
  * decide cuál con `layer` (sigue la sección que se está leyendo) y `onLayerChange`.
- * `selectedId` marca un punto y `onSelect(id)` avisa el click en uno.
+ * `selectedId` marca un punto y `onSelect(id)` avisa el click en uno (`onSelect(null)` cierra).
+ * Con un punto marcado se abre su ficha sobre el mapa: la del negocio (OpenStreetMap, como
+ * en el paso 3) o la del aviso de alquiler (puntos con `listing`).
  */
 function ZoneMapPanel({
   location,
@@ -37,6 +43,10 @@ function ZoneMapPanel({
   const activeLayer = layers.find((candidate) => candidate.id === layer) ?? layers[0]
   // Mismo corte que ZoneMapPanel.css: debajo, el panel es una franja
   const isStrip = useMediaQuery('(max-width: 1023px)') && !expanded
+  // Punto marcado en la capa visible: aviso (trae sus datos) o negocio (se piden a la API)
+  const selectedPoint = activeLayer.places.find((place) => place.id === selectedId) ?? null
+  const selectedBusiness = usePlace(selectedPoint && !selectedPoint.listing ? selectedPoint.id : null)
+  const closeSelection = () => onSelect(null)
 
   // Al ampliar, el foco va al botón para volver; al cerrar, vuelve al de ampliar.
   // Solo cuando cambia de verdad (no al cargar la página)
@@ -142,6 +152,20 @@ function ZoneMapPanel({
             />
           ) : (
             <div className="flow-skeleton zone-map-panel-skeleton" aria-busy="true" aria-label="Cargando el mapa" />
+          )}
+          {selectedPoint && !isStrip && (
+            selectedPoint.listing ? (
+              <RentalCard listing={selectedPoint.listing} onClose={closeSelection} />
+            ) : (
+              <PlaceCard
+                status={selectedBusiness.status === 'idle' ? 'loading' : selectedBusiness.status}
+                place={selectedBusiness.data}
+                error={selectedBusiness.error}
+                direct={Boolean(selectedPoint.direct)}
+                distance={location && selectedBusiness.data ? distanceMeters(location, selectedBusiness.data) : null}
+                onClose={closeSelection}
+              />
+            )
           )}
           {/* En la franja, tocar el mapa lo amplía (para teclado está el botón "Ampliar mapa") */}
           {isStrip && location && !loading && (

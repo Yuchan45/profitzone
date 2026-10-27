@@ -11,6 +11,7 @@ import './IndicatorCard.css'
  * El título es h3: las tarjetas van dentro de la sección "Los datos de la zona".
  * En mobile el detalle y la fuente arrancan plegados ("Ver detalle"): la tarjeta muestra
  * primero la lectura y el número, y la página no se hace interminable.
+ * `titleAside` (opcional): algo junto al título, como un ⓘ con la explicación del dato.
  * status: 'loading' | 'error' | 'empty' | 'ok'.
  * - error: muestra `error` y, con `onRetry`, el botón para reintentar.
  * - empty: el dato existe pero no hay nada que mostrar (`empty`: { title, text }).
@@ -18,6 +19,7 @@ import './IndicatorCard.css'
 function IndicatorCard({
   icon,
   title,
+  titleAside,
   badge,
   status = 'ok',
   value,
@@ -37,7 +39,10 @@ function IndicatorCard({
     <section className="indicator-card" aria-busy={status === 'loading' || undefined}>
       <header className="indicator-card-header">
         <IconTile icon={icon} size="m" />
-        <h3 className="indicator-card-title">{title}</h3>
+        <h3 className="indicator-card-title">
+          {title}
+          {titleAside}
+        </h3>
         {badge && status === 'ok' && <Badge variant="alert">{badge}</Badge>}
       </header>
 
