@@ -9,7 +9,6 @@ import Home from './pages/Home.jsx'
 import Dashboard from './pages/Dashboard.jsx'
 import Perfil from './pages/Perfil/Perfil.jsx'
 import MisReportes from './pages/MisReportes/MisReportes.jsx'
-import ReporteGuardado from './pages/ReporteGuardado/ReporteGuardado.jsx'
 import Rubro from './pages/Rubro/Rubro.jsx'
 import Negocio from './pages/Negocio/Negocio.jsx'
 import Registro from './pages/Registro/Registro.jsx'
@@ -19,11 +18,17 @@ import RestablecerContrasena from './pages/RestablecerContrasena/RestablecerCont
 import Reporte from './pages/Reporte/Reporte.jsx'
 import Terminos from './pages/Terminos/Terminos.jsx'
 import Tramites from './pages/Tramites/Tramites.jsx'
+import Metodologia from './pages/Metodologia/Metodologia.jsx'
 import NotFound from './pages/NotFound.jsx'
 
-// Los pasos de ubicación y análisis traen Leaflet (~150 kB): se cargan recién al entrar al paso
+// Las páginas con mapa traen Leaflet (~150 kB): se cargan recién al entrar
 const Ubicacion = lazy(() => import('./pages/Ubicacion/Ubicacion.jsx'))
 const Analisis = lazy(() => import('./pages/Analisis/Analisis.jsx'))
+const ReporteGuardado = lazy(() => import('./pages/ReporteGuardado/ReporteGuardado.jsx'))
+const ReporteEjemplo = lazy(() => import('./pages/ReporteEjemplo/ReporteEjemplo.jsx'))
+
+// Placeholder mientras baja el código de una página con mapa (MainLayout)
+const reportFallback = <div className="flow-skeleton" aria-busy="true" aria-label="Cargando el reporte" />
 
 function App() {
   return (
@@ -71,12 +76,28 @@ function App() {
       <Route element={<MainLayout />}>
         <Route path="/terminos" element={<Terminos />} />
         <Route path="/tramites" element={<Tramites />} />
+        <Route path="/metodologia" element={<Metodologia />} />
+        <Route
+          path="/reporte-ejemplo"
+          element={
+            <Suspense fallback={reportFallback}>
+              <ReporteEjemplo />
+            </Suspense>
+          }
+        />
         {/* Requieren sesión */}
         <Route element={<ProtectedRoute />}>
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/perfil" element={<Perfil />} />
           <Route path="/mis-reportes" element={<MisReportes />} />
-          <Route path="/mis-reportes/:id" element={<ReporteGuardado />} />
+          <Route
+            path="/mis-reportes/:id"
+            element={
+              <Suspense fallback={reportFallback}>
+                <ReporteGuardado />
+              </Suspense>
+            }
+          />
         </Route>
         <Route path="*" element={<NotFound />} />
       </Route>

@@ -9,6 +9,7 @@ const COLUMNS = [
       { label: 'Qué analizamos', href: '/#que-analizamos' },
       { label: 'Reporte de ejemplo', href: '/reporte-ejemplo' },
       { label: 'Trámites por rubro', href: '/tramites' },
+      { label: 'Cómo calculamos los datos', href: '/metodologia' },
     ],
   },
   {

@@ -1,8 +1,30 @@
 .criteria-table {
+  /* Se apila según su propio ancho: en el análisis comparte la pantalla con el mapa */
+  container: criteria-table / inline-size;
   padding: var(--space-28);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-xl);
   background-color: var(--color-surface);
+}
+
+/* "Ver datos": lleva a la tarjeta con el detalle del criterio */
+.criteria-table-evidence {
+  display: block;
+  min-height: 24px;
+  padding: var(--space-4) 0 0;
+  border: 0;
+  background: none;
+  color: var(--color-text);
+  font-family: inherit;
+  font-size: var(--text-12);
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+.criteria-table-evidence:hover {
+  color: var(--color-text);
 }
 
 .criteria-table-header {
@@ -46,7 +68,7 @@
 }
 
 .criteria-table-grid thead th {
-  color: var(--color-text-tertiary);
+  color: var(--color-text-secondary);
   font-size: var(--text-12);
   font-weight: 500;
   text-transform: uppercase;
@@ -68,7 +90,7 @@
 }
 
 .criteria-table-estimated {
-  color: var(--color-text-tertiary);
+  color: var(--color-text-secondary);
 }
 
 .criteria-table-grid .criteria-table-reading {
@@ -77,12 +99,14 @@
   white-space: nowrap;
 }
 
-/* En mobile cada criterio pasa a ser una tarjeta apilada */
 @media (max-width: 720px) {
   .criteria-table {
     padding: var(--space-20);
   }
+}
 
+/* Con poco ancho (mobile o al lado del mapa) cada criterio pasa a ser una fila apilada */
+@container criteria-table (max-width: 680px) {
   .criteria-table-grid thead {
     display: none;
   }

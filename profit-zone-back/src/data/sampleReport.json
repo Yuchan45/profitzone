@@ -1,0 +1,915 @@
+{
+  "analysis": {
+    "id": "sample",
+    "name": "Restaurante asiático en Palermo Soho",
+    "address": "Serrano 1598",
+    "category": {
+      "code": "gastronomia",
+      "name": "Gastronomía"
+    },
+    "subcategory": {
+      "code": "restaurante",
+      "name": "Restaurante"
+    },
+    "location": {
+      "lat": -34.5887,
+      "lng": -58.4303,
+      "radius": 500
+    },
+    "createdAt": "2026-10-26T22:26:08.553Z"
+  },
+  "summary": "La zona muestra buena presencia de tu público, mucha gente viviendo cerca para el cliente de paso y buena accesibilidad. Como puntos a considerar, hay un alquiler por encima de tu presupuesto y competencia directa alta. Tu franja coincide con el horario de más actividad típica del rubro (estimado). Un criterio todavía no tiene fuente de datos.",
+  "criteria": [
+    {
+      "code": "cost",
+      "label": "Costo",
+      "yourBusiness": "$1M – $2M",
+      "zone": "Alquiler mediano de $5.500.000/mes (101 avisos)",
+      "reading": "weakness"
+    },
+    {
+      "code": "audience",
+      "label": "Público",
+      "yourBusiness": "Jóvenes (15–34) y Adultos (35–59)",
+      "zone": "6.105 hab. de tu rango (65,8% del radio · 54,6% mujeres y 45,4% varones)",
+      "reading": "strength"
+    },
+    {
+      "code": "schedule",
+      "label": "Horario",
+      "yourBusiness": "Nocturno (20 a 2 h)",
+      "zone": "Afluencia típica del rubro de 81/100 (noche, 20 a 23 h)",
+      "reading": "strength",
+      "estimated": true
+    },
+    {
+      "code": "arrival",
+      "label": "Cómo llega el cliente",
+      "yourBusiness": "Depende del que pasa (de paso)",
+      "zone": "11.825 hab/km² en el radio",
+      "reading": "strength"
+    },
+    {
+      "code": "competition",
+      "label": "Competencia",
+      "yourBusiness": "Restaurante · propuesta de precio: Media",
+      "zone": "19 directos en el radio, rating promedio 4,3",
+      "reading": "weakness"
+    },
+    {
+      "code": "accessibility",
+      "label": "Accesibilidad",
+      "yourBusiness": "Depende del que pasa (de paso)",
+      "zone": "19 paradas de colectivo en el radio",
+      "reading": "strength"
+    },
+    {
+      "code": "places_for_audience",
+      "label": "Según tu público",
+      "yourBusiness": "Jóvenes (15–34) y Adultos (35–59)",
+      "zone": "Sin datos para esta zona todavía",
+      "reading": "not_evaluated",
+      "noSource": true
+    }
+  ],
+  "indicators": {
+    "competition": {
+      "status": "ok",
+      "data": {
+        "total": 102,
+        "directCount": 19,
+        "indirectCount": 83,
+        "averageRating": 4.3,
+        "subcategory": "restaurante",
+        "subcategoryName": "Restaurante",
+        "listMode": "cuisine",
+        "cuisineLabel": "Asiática",
+        "callout": "Hay competencia directa consolidada con oportunidades de diferenciación por servicio y calidad.",
+        "source": "Google Places",
+        "queryDate": "2026-10-26T22:26:09.994Z",
+        "isExact": true,
+        "places": [
+          {
+            "id": "sample-place-1",
+            "name": "Wok Serrano",
+            "rating": 4.9,
+            "userRatingCount": 224,
+            "distanceMeters": 220,
+            "distanceText": "220 m",
+            "type": "Directa",
+            "source": "google",
+            "strength": 4.791
+          },
+          {
+            "id": "sample-place-2",
+            "name": "Sushi Gurruchaga",
+            "rating": 4.9,
+            "userRatingCount": 219,
+            "distanceMeters": 301,
+            "distanceText": "301 m",
+            "type": "Directa",
+            "source": "google",
+            "strength": 4.788
+          },
+          {
+            "id": "sample-place-3",
+            "name": "Kaze Ramen Bar",
+            "rating": 4.7,
+            "userRatingCount": 708,
+            "distanceMeters": 357,
+            "distanceText": "357 m",
+            "type": "Directa",
+            "source": "google",
+            "strength": 4.674
+          },
+          {
+            "id": "sample-place-4",
+            "name": "Bao House Soho",
+            "rating": 4.6,
+            "userRatingCount": 3035,
+            "distanceMeters": 445,
+            "distanceText": "445 m",
+            "type": "Directa",
+            "source": "google",
+            "strength": 4.595
+          },
+          {
+            "id": "sample-place-5",
+            "name": "Tanuki Izakaya",
+            "rating": 4.6,
+            "userRatingCount": 274,
+            "distanceMeters": 339,
+            "distanceText": "339 m",
+            "type": "Directa",
+            "source": "google",
+            "strength": 4.554
+          },
+          {
+            "id": "sample-place-6",
+            "name": "Nikkei Thames",
+            "rating": 4.6,
+            "userRatingCount": 252,
+            "distanceMeters": 148,
+            "distanceText": "148 m",
+            "type": "Directa",
+            "source": "google",
+            "strength": 4.55
+          },
+          {
+            "id": "sample-place-7",
+            "name": "Dragón de Jade",
+            "rating": 4.5,
+            "userRatingCount": 2347,
+            "distanceMeters": 233,
+            "distanceText": "233 m",
+            "type": "Directa",
+            "source": "google",
+            "strength": 4.496
+          },
+          {
+            "id": "sample-place-8",
+            "name": "Sakura Palermo",
+            "rating": 4.5,
+            "userRatingCount": 1405,
+            "distanceMeters": 297,
+            "distanceText": "297 m",
+            "type": "Directa",
+            "source": "google",
+            "strength": 4.493
+          },
+          {
+            "id": "sample-place-9",
+            "name": "Pho Honduras",
+            "rating": 4.5,
+            "userRatingCount": 324,
+            "distanceMeters": 488,
+            "distanceText": "488 m",
+            "type": "Directa",
+            "source": "google",
+            "strength": 4.473
+          },
+          {
+            "id": "sample-place-10",
+            "name": "Sumo Sushi Club",
+            "rating": 4.5,
+            "userRatingCount": 110,
+            "distanceMeters": 320,
+            "distanceText": "320 m",
+            "type": "Directa",
+            "source": "google",
+            "strength": 4.438
+          },
+          {
+            "id": "sample-place-11",
+            "name": "Kimchi & Co",
+            "rating": 4.4,
+            "userRatingCount": 1229,
+            "distanceMeters": 258,
+            "distanceText": "258 m",
+            "type": "Directa",
+            "source": "google",
+            "strength": 4.396
+          },
+          {
+            "id": "sample-place-12",
+            "name": "Seúl Barrio Grill",
+            "rating": 4.3,
+            "userRatingCount": 158,
+            "distanceMeters": 103,
+            "distanceText": "103 m",
+            "type": "Directa",
+            "source": "google",
+            "strength": 4.3
+          },
+          {
+            "id": "sample-place-13",
+            "name": "Thai Lemongrass",
+            "rating": 3.7,
+            "userRatingCount": 3,
+            "distanceMeters": 484,
+            "distanceText": "484 m",
+            "type": "Directa",
+            "source": "google",
+            "strength": 4.266
+          },
+          {
+            "id": "sample-place-14",
+            "name": "Gyoza Corner",
+            "rating": 4.1,
+            "userRatingCount": 68,
+            "distanceMeters": 471,
+            "distanceText": "471 m",
+            "type": "Directa",
+            "source": "google",
+            "strength": 4.185
+          },
+          {
+            "id": "sample-place-15",
+            "name": "Bambú Asian Kitchen",
+            "rating": 4.1,
+            "userRatingCount": 112,
+            "distanceMeters": 495,
+            "distanceText": "495 m",
+            "type": "Directa",
+            "source": "google",
+            "strength": 4.162
+          },
+          {
+            "id": "sample-place-16",
+            "name": "Shanghai Express",
+            "rating": 4.1,
+            "userRatingCount": 120,
+            "distanceMeters": 313,
+            "distanceText": "313 m",
+            "type": "Directa",
+            "source": "google",
+            "strength": 4.159
+          },
+          {
+            "id": "sample-place-17",
+            "name": "Casa Mandarín",
+            "rating": 2.7,
+            "userRatingCount": 172,
+            "distanceMeters": 484,
+            "distanceText": "484 m",
+            "type": "Directa",
+            "source": "google",
+            "strength": 3.06
+          },
+          {
+            "id": "sample-place-18",
+            "name": "Maki Lab",
+            "rating": null,
+            "userRatingCount": null,
+            "distanceMeters": 264,
+            "distanceText": "264 m",
+            "type": "Directa",
+            "source": "osm",
+            "strength": null
+          },
+          {
+            "id": "sample-place-19",
+            "name": "Wasabi Norte",
+            "rating": null,
+            "userRatingCount": null,
+            "distanceMeters": 434,
+            "distanceText": "434 m",
+            "type": "Directa",
+            "source": "osm",
+            "strength": null
+          }
+        ]
+      }
+    },
+    "traffic": {
+      "status": "ok",
+      "data": {
+        "score": 81,
+        "scoreMax": 100,
+        "timeSlot": "noche, 20 a 23 h",
+        "startHour": 20,
+        "endHour": 23,
+        "hourlyActivity": [
+          {
+            "hour": 7,
+            "label": "7 h",
+            "value": 5,
+            "isHighlighted": false
+          },
+          {
+            "hour": 8,
+            "label": "8 h",
+            "value": 8,
+            "isHighlighted": false
+          },
+          {
+            "hour": 9,
+            "label": "9 h",
+            "value": 10,
+            "isHighlighted": false
+          },
+          {
+            "hour": 10,
+            "label": "10 h",
+            "value": 15,
+            "isHighlighted": false
+          },
+          {
+            "hour": 11,
+            "label": "11 h",
+            "value": 30,
+            "isHighlighted": false
+          },
+          {
+            "hour": 12,
+            "label": "12 h",
+            "value": 78,
+            "isHighlighted": false
+          },
+          {
+            "hour": 13,
+            "label": "13 h",
+            "value": 96,
+            "isHighlighted": false
+          },
+          {
+            "hour": 14,
+            "label": "14 h",
+            "value": 88,
+            "isHighlighted": false
+          },
+          {
+            "hour": 15,
+            "label": "15 h",
+            "value": 40,
+            "isHighlighted": false
+          },
+          {
+            "hour": 16,
+            "label": "16 h",
+            "value": 20,
+            "isHighlighted": false
+          },
+          {
+            "hour": 17,
+            "label": "17 h",
+            "value": 18,
+            "isHighlighted": false
+          },
+          {
+            "hour": 18,
+            "label": "18 h",
+            "value": 28,
+            "isHighlighted": false
+          },
+          {
+            "hour": 19,
+            "label": "19 h",
+            "value": 48,
+            "isHighlighted": false
+          },
+          {
+            "hour": 20,
+            "label": "20 h",
+            "value": 82,
+            "isHighlighted": true
+          },
+          {
+            "hour": 21,
+            "label": "21 h",
+            "value": 98,
+            "isHighlighted": true
+          },
+          {
+            "hour": 22,
+            "label": "22 h",
+            "value": 90,
+            "isHighlighted": true
+          },
+          {
+            "hour": 23,
+            "label": "23 h",
+            "value": 55,
+            "isHighlighted": true
+          }
+        ],
+        "callout": "Pico de afluencia nocturno concentrado en el servicio de cena y after.",
+        "badge": "Estimado",
+        "source": "Perfil horario típico del rubro en CABA · estimado · no se mide en este punto",
+        "center": {
+          "lat": -34.5887,
+          "lng": -58.4303
+        },
+        "radiusInMeters": 500,
+        "subcategory": "restaurante"
+      }
+    },
+    "density": {
+      "status": "ok",
+      "data": {
+        "center": {
+          "lat": -34.5887,
+          "lng": -58.4303
+        },
+        "radiusInMeters": 500,
+        "bufferAreaKm2": 0.7854,
+        "bufferAreaHa": 78.54,
+        "radiosInterceptados": 26,
+        "poblacionEstimada": 9287,
+        "densidadHabKm2": 11825,
+        "densidadHabHa": 118.25,
+        "viviendasEstimadas": 5269,
+        "hogaresEstimados": 3945,
+        "hogaresNbiEstimados": 256,
+        "porcentajeNbi": 6.49,
+        "distribucionPorEdad": {
+          "kids": {
+            "code": "kids",
+            "label": "Familias / niños (0–14)",
+            "range": "0-14",
+            "poblacionEstimada": 990,
+            "porcentaje": 10.66
+          },
+          "young": {
+            "code": "young",
+            "label": "Jóvenes (15–34)",
+            "range": "15-34",
+            "poblacionEstimada": 2925,
+            "porcentaje": 31.5
+          },
+          "adults": {
+            "code": "adults",
+            "label": "Adultos (35–59)",
+            "range": "35-59",
+            "poblacionEstimada": 3180,
+            "porcentaje": 34.25
+          },
+          "seniors": {
+            "code": "seniors",
+            "label": "Adultos mayores (60+)",
+            "range": "60+",
+            "poblacionEstimada": 2191,
+            "porcentaje": 23.59
+          },
+          "grupoPredominante": {
+            "code": "adults",
+            "label": "Adultos (35–59)",
+            "porcentaje": 34.25
+          }
+        },
+        "distribucionPorSexo": {
+          "mujeresEstimadas": 5069,
+          "varonesEstimados": 4217,
+          "porcentajeMujeres": 54.59,
+          "porcentajeVarones": 45.41,
+          "indiceFeminidad": 120.2,
+          "diferencia": 852,
+          "predominio": "mujeres",
+          "callout": "En la zona hay más mujeres que varones (54,59% vs. 45,41%, 120,2 mujeres cada 100 varones)."
+        },
+        "barrios": [
+          "PALERMO",
+          "VILLA CRESPO"
+        ],
+        "comunas": [
+          14,
+          15
+        ],
+        "inCoverage": true
+      }
+    },
+    "accessibility": {
+      "status": "ok",
+      "data": {
+        "total": 19,
+        "subwayCount": 0,
+        "trainCount": 0,
+        "busCount": 19,
+        "busLineCount": 5,
+        "otherCount": 0,
+        "level": "alta",
+        "closestPlace": {
+          "id": "transit-2791",
+          "name": "Plaza Julio Cortázar",
+          "cleanName": "Plaza Julio Cortázar",
+          "category": "bus",
+          "type": "Colectivo",
+          "lines": null,
+          "lineCount": 0,
+          "distanceMeters": 140,
+          "distanceText": "140 m",
+          "location": {
+            "lat": -34.5881134,
+            "lng": -58.4289461
+          }
+        },
+        "closestSubway": null,
+        "closestTrain": null,
+        "callout": "Conectividad con 19 paradas de colectivo en el radio.",
+        "source": "OpenStreetMap",
+        "queryDate": "2026-10-26T22:26:10.037Z",
+        "updatedAt": "2026-10-27T02:02:36.043Z",
+        "places": [
+          {
+            "id": "transit-2791",
+            "name": "Plaza Julio Cortázar",
+            "cleanName": "Plaza Julio Cortázar",
+            "category": "bus",
+            "type": "Colectivo",
+            "lines": null,
+            "lineCount": 0,
+            "distanceMeters": 140,
+            "distanceText": "140 m",
+            "location": {
+              "lat": -34.5881134,
+              "lng": -58.4289461
+            }
+          },
+          {
+            "id": "transit-2793",
+            "name": "El Salvador y Borges",
+            "cleanName": "El Salvador y Borges",
+            "category": "bus",
+            "type": "Colectivo",
+            "lines": "Línea 39",
+            "lineCount": 1,
+            "distanceMeters": 144,
+            "distanceText": "144 m",
+            "location": {
+              "lat": -34.5881642,
+              "lng": -58.4288657
+            }
+          },
+          {
+            "id": "transit-2698",
+            "name": "Uriarte y Honduras",
+            "cleanName": "Uriarte y Honduras",
+            "category": "bus",
+            "type": "Colectivo",
+            "lines": "Líneas 39 y 55",
+            "lineCount": 2,
+            "distanceMeters": 217,
+            "distanceText": "217 m",
+            "location": {
+              "lat": -34.5873019,
+              "lng": -58.4319516
+            }
+          },
+          {
+            "id": "transit-1288",
+            "name": "Costa Rica y Borges",
+            "cleanName": "Costa Rica y Borges",
+            "category": "bus",
+            "type": "Colectivo",
+            "lines": "Línea 39",
+            "lineCount": 1,
+            "distanceMeters": 235,
+            "distanceText": "235 m",
+            "location": {
+              "lat": -34.587341,
+              "lng": -58.4283365
+            }
+          },
+          {
+            "id": "transit-2608",
+            "name": "Costa Rica y Thames",
+            "cleanName": "Costa Rica y Thames",
+            "category": "bus",
+            "type": "Colectivo",
+            "lines": null,
+            "lineCount": 0,
+            "distanceMeters": 243,
+            "distanceText": "243 m",
+            "location": {
+              "lat": -34.5866527,
+              "lng": -58.4293619
+            }
+          },
+          {
+            "id": "transit-2611",
+            "name": "Cabrera al 5100",
+            "cleanName": "Cabrera al 5100",
+            "category": "bus",
+            "type": "Colectivo",
+            "lines": "Línea 55",
+            "lineCount": 1,
+            "distanceMeters": 297,
+            "distanceText": "297 m",
+            "location": {
+              "lat": -34.5889723,
+              "lng": -58.4335233
+            }
+          },
+          {
+            "id": "transit-2612",
+            "name": "Uriarte y Costa Rica",
+            "cleanName": "Uriarte y Costa Rica",
+            "category": "bus",
+            "type": "Colectivo",
+            "lines": "Línea 55",
+            "lineCount": 1,
+            "distanceMeters": 301,
+            "distanceText": "301 m",
+            "location": {
+              "lat": -34.5859969,
+              "lng": -58.4299962
+            }
+          },
+          {
+            "id": "transit-1090",
+            "name": "Godoy Cruz y Honduras",
+            "cleanName": "Godoy Cruz y Honduras",
+            "category": "bus",
+            "type": "Colectivo",
+            "lines": "Líneas 39 y 55",
+            "lineCount": 2,
+            "distanceMeters": 314,
+            "distanceText": "314 m",
+            "location": {
+              "lat": -34.5869769,
+              "lng": -58.4330136
+            }
+          },
+          {
+            "id": "transit-2697",
+            "name": "Uriarte y Cabrera",
+            "cleanName": "Uriarte y Cabrera",
+            "category": "bus",
+            "type": "Colectivo",
+            "lines": "Línea 55",
+            "lineCount": 1,
+            "distanceMeters": 321,
+            "distanceText": "321 m",
+            "location": {
+              "lat": -34.5885208,
+              "lng": -58.4337889
+            }
+          },
+          {
+            "id": "transit-2609",
+            "name": "Godoy Cruz y Costa Rica",
+            "cleanName": "Godoy Cruz y Costa Rica",
+            "category": "bus",
+            "type": "Colectivo",
+            "lines": "Líneas 39 y 55",
+            "lineCount": 2,
+            "distanceMeters": 349,
+            "distanceText": "349 m",
+            "location": {
+              "lat": -34.5856645,
+              "lng": -58.4313145
+            }
+          },
+          {
+            "id": "transit-2792",
+            "name": "Plaza Armenia",
+            "cleanName": "Plaza Armenia",
+            "category": "bus",
+            "type": "Colectivo",
+            "lines": "Línea 39",
+            "lineCount": 1,
+            "distanceMeters": 352,
+            "distanceText": "352 m",
+            "location": {
+              "lat": -34.5885959,
+              "lng": -58.4264624
+            }
+          },
+          {
+            "id": "transit-1289",
+            "name": "Borges y Nicaragua",
+            "cleanName": "Borges y Nicaragua",
+            "category": "bus",
+            "type": "Colectivo",
+            "lines": null,
+            "lineCount": 0,
+            "distanceMeters": 354,
+            "distanceText": "354 m",
+            "location": {
+              "lat": -34.5868161,
+              "lng": -58.4271835
+            }
+          },
+          {
+            "id": "transit-312",
+            "name": "Niceto Vega y Serrano",
+            "cleanName": "Niceto Vega y Serrano",
+            "category": "bus",
+            "type": "Colectivo",
+            "lines": "Líneas 140, 151 y 168",
+            "lineCount": 3,
+            "distanceMeters": 383,
+            "distanceText": "383 m",
+            "location": {
+              "lat": -34.590785,
+              "lng": -58.4336242
+            }
+          },
+          {
+            "id": "transit-306",
+            "name": "Niceto Vega y Armenia",
+            "cleanName": "Niceto Vega y Armenia",
+            "category": "bus",
+            "type": "Colectivo",
+            "lines": "Líneas 140, 151 y 168",
+            "lineCount": 3,
+            "distanceMeters": 393,
+            "distanceText": "393 m",
+            "location": {
+              "lat": -34.5920475,
+              "lng": -58.431717
+            }
+          },
+          {
+            "id": "transit-2794",
+            "name": "El Salvador y Malabia",
+            "cleanName": "El Salvador y Malabia",
+            "category": "bus",
+            "type": "Colectivo",
+            "lines": "Línea 39",
+            "lineCount": 1,
+            "distanceMeters": 445,
+            "distanceText": "445 m",
+            "location": {
+              "lat": -34.5902056,
+              "lng": -58.4258093
+            }
+          },
+          {
+            "id": "transit-1065",
+            "name": "Córdoba y Gurruchaga",
+            "cleanName": "Córdoba y Gurruchaga",
+            "category": "bus",
+            "type": "Colectivo",
+            "lines": "Líneas 151 y 168",
+            "lineCount": 2,
+            "distanceMeters": 468,
+            "distanceText": "468 m",
+            "location": {
+              "lat": -34.5923454,
+              "lng": -58.4328608
+            }
+          },
+          {
+            "id": "transit-1073",
+            "name": "Córdoba y Serrano",
+            "cleanName": "Córdoba y Serrano",
+            "category": "bus",
+            "type": "Colectivo",
+            "lines": "Líneas 140, 151 y 168",
+            "lineCount": 3,
+            "distanceMeters": 470,
+            "distanceText": "470 m",
+            "location": {
+              "lat": -34.5915553,
+              "lng": -58.4340825
+            }
+          },
+          {
+            "id": "transit-1066",
+            "name": "Córdoba y Armenia",
+            "cleanName": "Córdoba y Armenia",
+            "category": "bus",
+            "type": "Colectivo",
+            "lines": "Línea 140",
+            "lineCount": 1,
+            "distanceMeters": 473,
+            "distanceText": "473 m",
+            "location": {
+              "lat": -34.5925058,
+              "lng": -58.4326314
+            }
+          },
+          {
+            "id": "transit-516",
+            "name": "Avenida Córdoba",
+            "cleanName": "Avenida Córdoba",
+            "category": "bus",
+            "type": "Colectivo",
+            "lines": "Línea 55",
+            "lineCount": 1,
+            "distanceMeters": 494,
+            "distanceText": "494 m",
+            "location": {
+              "lat": -34.5906527,
+              "lng": -58.4351403
+            }
+          }
+        ]
+      }
+    },
+    "rent": {
+      "status": "ok",
+      "data": {
+        "totalInRadius": 105,
+        "pricedInRadius": 101,
+        "medianRentArs": 5500000,
+        "averageRentArs": 6401788,
+        "medianPricePerM2Ars": 30030,
+        "averageSurfaceM2": 222
+      }
+    }
+  },
+  "sources": [
+    "Competencia: Google Places, consultado el 26/10/2026.",
+    "Afluencia: perfil horario típico del rubro (estimado).",
+    "Demografía: censo nacional (INDEC) por radio censal y estructura por edad y sexo del Geoportal INDEC (Censo 2022), ponderados por área.",
+    "Alquiler: avisos de locales comerciales en alquiler publicados en ZonaProp.",
+    "Accesibilidad: paradas y estaciones de OpenStreetMap, con sus líneas, datos al 26/10/2026.",
+    "Lugares según tu público: todavía sin fuente de datos."
+  ],
+  "notices": [
+    "Reporte de ejemplo: los nombres de los locales son ficticios. El resto de los datos sale de una consulta real de octubre de 2026 y puede no estar actualizado.",
+    "La afluencia es un perfil típico del rubro por franja horaria: es estimada y no está medida en este punto.",
+    "La demografía viene de los radios censales que tocan el círculo, ponderada por superficie: no refleja diferencias cuadra por cuadra.",
+    "Este reporte describe la zona. No indica si conviene o no abrir."
+  ],
+  "business": {
+    "categoryCode": "gastronomia",
+    "subcategoryCode": "restaurante",
+    "answers": {
+      "service_mode": [
+        "street"
+      ],
+      "target_age": [
+        "young",
+        "adults"
+      ],
+      "schedule": [
+        "night"
+      ],
+      "arrival_type": [
+        "walk_in"
+      ],
+      "budget": [
+        "1m_2m"
+      ],
+      "cuisine_type": [
+        "asian"
+      ],
+      "service_channels": [
+        "dine_in",
+        "take_away",
+        "delivery"
+      ],
+      "price_level": [
+        "medium"
+      ]
+    }
+  },
+  "benchmarks": {
+    "neighborhood": "Palermo",
+    "radiusInMeters": 500,
+    "referencePoints": 295,
+    "competition": {
+      "value": 90,
+      "median": 43,
+      "percentile": 97,
+      "referenceCount": 295
+    },
+    "direct": {
+      "value": 6,
+      "median": 2,
+      "percentile": 93,
+      "referenceCount": 295
+    },
+    "transit": {
+      "value": 19,
+      "median": 21,
+      "percentile": 37,
+      "referenceCount": 295
+    },
+    "rent": {
+      "value": 5500000,
+      "median": 4800000,
+      "percentile": 75,
+      "referenceCount": 266
+    },
+    "population": {
+      "value": 11825,
+      "average": 14174,
+      "ratio": 0.83
+    }
+  },
+  "generatedAt": "2026-10-26T22:26:10.045Z"
+}

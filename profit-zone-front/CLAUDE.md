@@ -51,6 +51,7 @@ src/pages/     vistas ruteadas; arman la pantalla con organisms/molecules/atoms
 - El mapa queda limitado al barrio: no se puede mover ni alejar fuera de sus límites, y un click o un arrastre fuera del polígono no mueve el punto (`onOutsidePick`).
 - Vista previa de competencia en el mapa: `GET /api/places/nearby` (datos de OpenStreetMap en nuestra base, gratis y sin sesión) con `hooks/useNearbyPlaces.js`. No usar `/api/competition` antes del análisis: consume Google Places (pago) y exige sesión.
 - Ficha del competidor (click en un punto): `organisms/PlaceCard` con `GET /api/places/:id` (datos de OSM) y un link "Ver en Google Maps" para fotos y reseñas. No traer datos de Google Places a la ficha: es pago por click y sus términos no permiten mostrarlos sobre un mapa que no sea de Google.
+- Capa "Transporte" del análisis: las paradas y estaciones que ya trae el reporte (`indicators.accessibility.data.places`, datos de OpenStreetMap, se pueden dibujar) y su ficha en `organisms/TransitCard`. Sin pedidos extra a la API.
 - Radio de análisis: de 100 m a 2 km. Hasta 600 m es para todos; más allá, solo los roles `premium` y `admin` (constantes en `pages/Ubicacion/Ubicacion.jsx`; el tramo bloqueado lo pinta `RangeSlider` con la prop `limit`).
 - Los colores de círculos, polígonos y marcadores van por `className` (`pathOptions={{ className }}`) y CSS con tokens: los atributos SVG no resuelven `var(--…)`.
 - Las páginas con Leaflet se cargan con `React.lazy` desde `App.jsx`.

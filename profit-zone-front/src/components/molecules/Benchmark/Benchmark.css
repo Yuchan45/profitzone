@@ -1,0 +1,79 @@
+.benchmark {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+  padding: var(--space-12) var(--space-16);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background-color: var(--color-surface-soft);
+}
+
+.benchmark-label {
+  margin: 0;
+  color: var(--color-text-secondary);
+  font-size: var(--text-12);
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+.benchmark-summary {
+  margin: 0;
+  color: var(--color-text);
+  font-size: var(--text-15);
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+/* Escala de Palermo: de "menos" a "más", con la mediana al medio y la marca del punto */
+.benchmark-scale {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  margin-top: var(--space-4);
+}
+
+.benchmark-track {
+  position: relative;
+  height: 6px;
+  border-radius: var(--radius-full);
+  background-color: var(--color-border);
+}
+
+.benchmark-median {
+  position: absolute;
+  top: -3px;
+  left: 50%;
+  width: 2px;
+  height: 12px;
+  border-radius: var(--radius-full);
+  background-color: var(--color-text-tertiary);
+  transform: translateX(-50%);
+}
+
+.benchmark-marker {
+  position: absolute;
+  top: 50%;
+  left: var(--benchmark-position);
+  width: 14px;
+  height: 14px;
+  border: 3px solid var(--color-surface);
+  border-radius: var(--radius-full);
+  background-color: var(--color-primary-ink);
+  box-shadow: 0 0 0 1px var(--color-primary-ink);
+  transform: translate(-50%, -50%);
+}
+
+.benchmark-ends {
+  display: flex;
+  justify-content: space-between;
+  color: var(--color-text-tertiary);
+  font-size: var(--text-11);
+}
+
+.benchmark-detail {
+  margin: 0;
+  color: var(--color-text-secondary);
+  font-size: var(--text-13);
+  line-height: 1.45;
+}

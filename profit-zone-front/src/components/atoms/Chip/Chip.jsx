@@ -1,10 +1,11 @@
 import './Chip.css'
 
-function Chip({ selected = false, onClick, children }) {
+// size: 'm' (por defecto) | 's' (compacto, para filtros dentro de una tarjeta)
+function Chip({ selected = false, size = 'm', onClick, children }) {
   return (
     <button
       type="button"
-      className={`chip${selected ? ' chip--selected' : ''}`}
+      className={`chip${size === 's' ? ' chip--s' : ''}${selected ? ' chip--selected' : ''}`}
       aria-pressed={selected}
       onClick={onClick}
     >

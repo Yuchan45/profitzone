@@ -19,6 +19,7 @@
     "db:seed:census": "node scripts/seed-census.js",
     "db:seed:rentals": "node scripts/seed-commercial-rentals.js",
     "db:seed:osm-places": "node scripts/seed-osm-places.js",
+    "db:seed:osm-transit": "node scripts/seed-osm-transit.js",
     "db:seed:all": "node scripts/seed-all.js"
   },
   "keywords": [],

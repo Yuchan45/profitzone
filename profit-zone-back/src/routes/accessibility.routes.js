@@ -4,7 +4,7 @@ import { getAccessibility } from '../controllers/accessibility.controller.js'
 
 const router = Router()
 
-// Consume Google Places (pago por consulta): solo con sesión
+// Datos de OpenStreetMap en nuestra base (gratis); con sesión, como el resto del reporte
 router.get('/', requireAuth, getAccessibility)
 
 export default router

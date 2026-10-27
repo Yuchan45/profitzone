@@ -1,0 +1,306 @@
+/* Panel del mapa. Escritorio: columna fija (sticky) del alto de la ventana.
+   Mobile: franja fija arriba. Ampliado: capa sobre la página. */
+.zone-map-panel {
+  --zone-map-panel-gap: var(--space-24);
+
+  position: sticky;
+  top: var(--zone-map-panel-gap);
+  z-index: 5;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-10);
+  height: calc(100dvh - 2 * var(--zone-map-panel-gap));
+  min-height: 420px;
+  padding: var(--space-12);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-xl);
+  background-color: var(--color-surface);
+}
+
+.zone-map-panel-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-8);
+}
+
+.zone-map-panel-place {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-6);
+  min-width: 0;
+  margin: 0;
+  color: var(--color-text);
+  font-size: var(--text-13);
+  font-weight: 600;
+}
+
+.zone-map-panel-place span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.zone-map-panel-place .icon {
+  flex-shrink: 0;
+  color: var(--color-primary-dark);
+}
+
+.zone-map-panel-actions {
+  display: flex;
+  flex-shrink: 0;
+  gap: var(--space-4);
+}
+
+.zone-map-panel-layers {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-6);
+}
+
+/* Chips más bajos que en los formularios: son un selector de capa */
+.zone-map-panel-layers .chip {
+  height: 32px;
+  padding: 0 var(--space-12);
+  font-size: var(--text-13);
+}
+
+.zone-map-panel-map {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+}
+
+/* Franja de mobile: una capa transparente sobre el mapa bloqueado que lo amplía al tocarlo */
+.zone-map-panel-tap {
+  position: absolute;
+  inset: 0;
+  z-index: 500;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding: var(--space-10);
+  border: 0;
+  border-radius: var(--radius-lg);
+  background: transparent;
+  cursor: pointer;
+}
+
+.zone-map-panel-tap-hint {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-6);
+  padding: var(--space-6) var(--space-12);
+  border-radius: var(--radius-full);
+  background-color: var(--color-surface);
+  box-shadow: var(--shadow-sm);
+  color: var(--color-text);
+  font-family: inherit;
+  font-size: var(--text-12);
+  font-weight: 600;
+}
+
+/* Bloqueado: sin controles de zoom ni atribución larga ocupando la franja */
+.zone-map-panel .location-map--locked .leaflet-control-zoom {
+  display: none;
+}
+
+.zone-map-panel .location-map--locked .leaflet-control-attribution {
+  max-width: 100%;
+  overflow: hidden;
+  font-size: 9px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* El mapa ocupa el alto que le deja el panel (LocationMap trae un alto mínimo propio) */
+.zone-map-panel-map .location-map,
+.zone-map-panel-skeleton {
+  height: 100%;
+  min-height: 0;
+  border-radius: var(--radius-lg);
+}
+
+.zone-map-panel-key {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.zone-map-panel-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-4) var(--space-16);
+  margin: 0;
+  padding: 0;
+  color: var(--color-text-secondary);
+  font-size: var(--text-12);
+  list-style: none;
+}
+
+.zone-map-panel-legend-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-6);
+}
+
+/* Mismos colores que los puntos de LocationMap */
+.zone-map-panel-legend-item::before {
+  content: '';
+  flex-shrink: 0;
+  width: 10px;
+  height: 10px;
+  border: 2px solid var(--color-surface);
+  border-radius: var(--radius-full);
+  box-shadow: 0 0 0 1px var(--color-border-strong);
+}
+
+.zone-map-panel-legend-item--direct::before {
+  background-color: var(--color-warning);
+}
+
+.zone-map-panel-legend-item--place::before {
+  background-color: var(--color-info);
+}
+
+.zone-map-panel-legend-item--rent::before {
+  background-color: var(--color-navy-700);
+}
+
+.zone-map-panel-legend-item--subway::before {
+  background-color: var(--color-primary-ink);
+}
+
+.zone-map-panel-legend-item--train::before {
+  background-color: var(--color-navy-700);
+}
+
+.zone-map-panel-legend-item--bus::before {
+  background-color: var(--color-info);
+}
+
+.zone-map-panel-note {
+  margin: 0;
+  color: var(--color-text-secondary);
+  font-size: var(--text-12);
+  line-height: 1.45;
+}
+
+/* Plegado: un riel angosto con el botón para volver a mostrarlo */
+.zone-map-panel--collapsed {
+  align-items: center;
+  height: auto;
+  min-height: 0;
+  padding: var(--space-8);
+}
+
+.zone-map-panel-reveal {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-8);
+  padding: var(--space-12) var(--space-4);
+  border: 0;
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--color-text-secondary);
+  font-family: inherit;
+  font-size: var(--text-12);
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    background-color 0.15s ease,
+    color 0.15s ease;
+}
+
+.zone-map-panel-reveal span {
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+}
+
+.zone-map-panel-reveal:hover {
+  background-color: var(--color-surface-subtle);
+  color: var(--color-text);
+}
+
+.zone-map-panel-reveal .icon {
+  color: var(--color-primary-dark);
+}
+
+/* Ampliado: capa sobre la página, por encima del contenido */
+.zone-map-panel--expanded {
+  position: fixed;
+  inset: var(--space-32);
+  z-index: 1100;
+  height: auto;
+  box-shadow: var(--shadow-md);
+}
+
+.zone-map-panel-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1090;
+  background-color: var(--color-overlay);
+}
+
+/* Mobile y tablets: franja fija arriba del reporte */
+@media (max-width: 1023px) {
+  .zone-map-panel {
+    --zone-map-panel-gap: 0px;
+
+    top: 0;
+    height: 210px;
+    min-height: 0;
+    margin: 0 calc(-1 * var(--space-8));
+    padding: var(--space-8);
+    border-radius: 0 0 var(--radius-lg) var(--radius-lg);
+    box-shadow: var(--shadow-sm);
+  }
+
+  /* En la franja no entran las capas ni las referencias: se ven al ampliar */
+  .zone-map-panel:not(.zone-map-panel--expanded) .zone-map-panel-layers,
+  .zone-map-panel:not(.zone-map-panel--expanded) .zone-map-panel-key {
+    display: none;
+  }
+
+  .zone-map-panel--collapsed {
+    flex-direction: row;
+    height: auto;
+    padding: 0;
+  }
+
+  .zone-map-panel-reveal {
+    flex-direction: row;
+    width: 100%;
+    min-height: 44px;
+    padding: var(--space-8) var(--space-12);
+  }
+
+  .zone-map-panel-reveal span {
+    writing-mode: horizontal-tb;
+    transform: none;
+  }
+
+  /* Ampliado en mobile: panel que sube desde abajo */
+  .zone-map-panel--expanded {
+    inset: auto 0 0;
+    height: 88dvh;
+    margin: 0;
+    padding: var(--space-12);
+    border-radius: var(--radius-2xl) var(--radius-2xl) 0 0;
+    animation: zone-map-panel-rise 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+}
+
+@keyframes zone-map-panel-rise {
+  from {
+    transform: translateY(24px);
+    opacity: 0.6;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .zone-map-panel--expanded {
+    animation: none;
+  }
+}

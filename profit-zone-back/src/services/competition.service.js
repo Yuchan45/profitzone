@@ -94,6 +94,14 @@ function findMatchingOsmPlace(googlePlace, osmPlaces) {
  * categorización de OpenStreetMap y el criterio elegido por el usuario (ej: tipo de cocina).
  */
 function isPlaceDirect({ place, matchedOsm, criteria, terms }) {
+  const placeTypes = [place.primaryType, ...(place.types || [])].filter(Boolean)
+
+  // 0. Si Google lo tipifica con la cocina elegida (ej. sushi_restaurant para "Asiática"),
+  // es directo: la consulta pidió justamente esos tipos
+  if (criteria?.googleTypes?.some((type) => placeTypes.includes(type))) {
+    return true
+  }
+
   // 1. Si coincide con un local de OSM, la categorización de OSM es la fuente de verdad
   if (matchedOsm) {
     return Boolean(matchedOsm.direct)
@@ -101,7 +109,6 @@ function isPlaceDirect({ place, matchedOsm, criteria, terms }) {
 
   // 2. Si no coincide con OSM pero hay un criterio de cocina/subcategoría específico (ej: Asiática, Parrilla, etc.)
   if (criteria && criteria.cuisines && criteria.cuisines.size > 0) {
-    const placeTypes = [place.primaryType, ...(place.types || [])].filter(Boolean)
     const normName = normalizeName(place.name)
     const cuisineKeywords = Array.from(criteria.cuisines)
 
@@ -183,10 +190,46 @@ function generateCallout(directCount, averageRating) {
   return 'Zona con baja competencia directa identificada dentro del radio.'
 }
 
+// Reseñas "de base" del rating ajustado: con menos reseñas que esto, el rating propio pesa
+// menos que el promedio de la zona (un 4,9 con 8 reseñas no le gana a un 4,5 con 12.000)
+const RATING_PRIOR_REVIEWS = 50
+// Tope de directos que se suman desde OpenStreetMap a la tabla (radios grandes tienen cientos)
+const MAX_OSM_DIRECT_ROWS = 30
+
 /**
- * Obtiene el análisis de competencia para un punto y radio dado,
- * utilizando la categorización de OpenStreetMap para clasificar los locales
- * en competencia directa o indirecta.
+ * Fuerza de un competidor para ordenar la tabla: rating ajustado por cantidad de reseñas
+ * (promedio bayesiano contra el rating medio de la zona). Sin rating (locales que solo
+ * están en OpenStreetMap): null, van después de los que tienen datos.
+ */
+function strengthScore(place, zoneAverage) {
+  if (typeof place.rating !== 'number') return null
+  const reviews = place.userRatingCount || 0
+  const weight = reviews / (reviews + RATING_PRIOR_REVIEWS)
+  return Number((weight * place.rating + (1 - weight) * zoneAverage).toFixed(3))
+}
+
+// Orden por defecto de la tabla: directos primero, después los más fuertes y, a igual
+// fuerza (o sin datos), los más cercanos
+function byStrength(a, b) {
+  if ((a.type === 'Directa') !== (b.type === 'Directa')) return a.type === 'Directa' ? -1 : 1
+  if (a.strength !== b.strength) {
+    if (a.strength === null) return 1
+    if (b.strength === null) return -1
+    return b.strength - a.strength
+  }
+  return a.distanceMeters - b.distanceMeters
+}
+
+/**
+ * Obtiene el análisis de competencia para un punto y radio dado.
+ * - Tabla (`places`): una sola consulta a Google Places. Con cocina elegida (`match`, ej.
+ *   "Asiática") pide los tipos de esa cocina, así la tabla muestra los competidores directos
+ *   con rating; sin cocina, los tipos generales del rubro. Google devuelve hasta 20, los más
+ *   populares. Los directos que OpenStreetMap ubica en el radio y Google no trajo se suman sin
+ *   rating (`source: 'osm'`), para que la tabla y el conteo de directos coincidan.
+ * - Conteo (`total`, `directCount`, `indirectCount`): los locales de OpenStreetMap en el radio
+ *   más los de Google que OSM no tiene (o no reconoce como directos). Sin datos de OSM, el de
+ *   los resultados de Google.
  */
 export async function getCompetitionAnalysis({
   lat,
@@ -201,10 +244,13 @@ export async function getCompetitionAnalysis({
     categoryCode || (['gimnasio', 'pilates'].includes(normalizedSubcategory) ? 'fitness' : 'gastronomia')
 
   const terms = await resolveSubcategoryTerms(normalizedSubcategory)
-  const includedTypes = [terms.primary, ...terms.indirect.slice(0, 3)]
+  // El criterio de cocina se resuelve antes: define qué tipos se le piden a Google
+  const criteria = await directCriteria(resolvedCategory, normalizedSubcategory, match).catch(() => null)
+  const byCuisine = Boolean(criteria?.googleTypes?.length)
+  const includedTypes = byCuisine ? criteria.googleTypes : [terms.primary, ...terms.indirect.slice(0, 3)]
 
   // Consulta en paralelo los locales de Google Places y los datos de OpenStreetMap
-  const [rawPlaces, osmResult, criteria] = await Promise.all([
+  const [rawPlaces, osmResult] = await Promise.all([
     searchNearbyPlaces({
       lat,
       lng,
@@ -223,21 +269,26 @@ export async function getCompetitionAnalysis({
       console.warn(`[ProfitZone] No se pudo leer datos de OSM para competencia: ${error.message}`)
       return null
     }),
-    directCriteria(resolvedCategory, normalizedSubcategory, match).catch(() => null),
   ])
 
-  let totalRatingSum = 0
-  let ratedCount = 0
+  const rated = rawPlaces.filter((p) => typeof p.rating === 'number')
+  const averageRating =
+    rated.length > 0 ? Number((rated.reduce((sum, p) => sum + p.rating, 0) / rated.length).toFixed(1)) : null
+  // Rating medio contra el que se ajustan los ratings con pocas reseñas
+  const zoneAverage = averageRating ?? 4.3
 
-  const places = rawPlaces.map((p) => {
+  const matchedOsmIds = new Set()
+  // Locales de Google que suman al conteo de OSM: los que OSM no tiene y los directos que OSM
+  // no reconoce como directos (Google los tipifica con la cocina y OSM no tiene su etiqueta)
+  let googleOnlyCount = 0
+  let googleOnlyDirectCount = 0
+  const googleRows = rawPlaces.map((p) => {
     const distanceMeters = calculateDistanceMeters(lat, lng, p.location.lat, p.location.lng)
     const matchedOsm = findMatchingOsmPlace(p, osmResult?.places)
+    if (matchedOsm) matchedOsmIds.add(matchedOsm.id)
+    else googleOnlyCount++
     const isDirect = isPlaceDirect({ place: p, matchedOsm, criteria, terms })
-
-    if (p.rating) {
-      totalRatingSum += p.rating
-      ratedCount++
-    }
+    if (isDirect && !matchedOsm?.direct) googleOnlyDirectCount++
 
     return {
       id: p.id,
@@ -248,25 +299,45 @@ export async function getCompetitionAnalysis({
       distanceText: formatDistance(distanceMeters),
       type: isDirect ? 'Directa' : 'Indirecta',
       location: p.location,
+      source: 'google',
+      strength: strengthScore(p, zoneAverage),
     }
   })
 
-  // Ordenar por distancia (los más cercanos primero, como en la tabla de la imagen)
-  // Ordenar primero las directas y luego por cercanía (distancia ascendente)
-  places.sort((a, b) => {
-    if (a.type === 'Directa' && b.type !== 'Directa') return -1
-    if (a.type !== 'Directa' && b.type === 'Directa') return 1
-    return a.distanceMeters - b.distanceMeters
-  })
+  // Directos de OSM que Google no trajo (solo con cocina elegida): sin rating, pero en la tabla
+  const osmRows = byCuisine
+    ? (osmResult?.places ?? [])
+        .filter((place) => place.direct && place.name && !matchedOsmIds.has(place.id))
+        .map((place) => {
+          const distanceMeters = calculateDistanceMeters(lat, lng, place.lat, place.lng)
+          return {
+            id: `osm-${place.id}`,
+            name: place.name,
+            rating: null,
+            userRatingCount: null,
+            distanceMeters,
+            distanceText: formatDistance(distanceMeters),
+            type: 'Directa',
+            location: { lat: place.lat, lng: place.lng },
+            source: 'osm',
+            strength: null,
+          }
+        })
+        .sort((a, b) => a.distanceMeters - b.distanceMeters)
+        .slice(0, MAX_OSM_DIRECT_ROWS)
+    : []
+
+  const places = [...googleRows, ...osmRows].sort(byStrength)
 
   const hasOsmData = osmResult && typeof osmResult.total === 'number' && osmResult.total > 0
-  const total = hasOsmData ? osmResult.total : places.length
+  // Con OSM: todos sus locales del radio más los que solo trajo Google, así el conteo nunca
+  // queda por debajo de lo que muestra la tabla
+  const total = hasOsmData ? osmResult.total + googleOnlyCount : places.length
   const directCount = hasOsmData
-    ? osmResult.directTotal
+    ? osmResult.directTotal + googleOnlyDirectCount
     : places.filter((p) => p.type === 'Directa').length
-  const indirectCount = hasOsmData ? Math.max(0, total - directCount) : total - directCount
+  const indirectCount = Math.max(0, total - directCount)
 
-  const averageRating = ratedCount > 0 ? Number((totalRatingSum / ratedCount).toFixed(1)) : 4.0
   const callout = generateCallout(directCount, averageRating)
 
   return {
@@ -276,6 +347,9 @@ export async function getCompetitionAnalysis({
     averageRating,
     subcategory: normalizedSubcategory,
     subcategoryName: terms.name,
+    // 'cuisine': la tabla trae los locales de la cocina elegida; 'general': los del rubro
+    listMode: byCuisine ? 'cuisine' : 'general',
+    cuisineLabel: criteria?.label ?? null,
     callout,
     source: 'Google Places',
     queryDate: new Date().toISOString(),

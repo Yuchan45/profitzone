@@ -74,6 +74,31 @@
   stroke-width: 2;
 }
 
+/* Aviso de alquiler (capa "Alquileres" del análisis) */
+.location-map-place--rent {
+  fill: var(--color-navy-700);
+  fill-opacity: 0.85;
+  stroke-width: 1.5;
+}
+
+/* Paradas y estaciones (capa "Transporte" del análisis): subte y tren más marcados */
+.location-map-place--transit-bus {
+  fill: var(--color-info);
+  fill-opacity: 0.75;
+}
+
+.location-map-place--transit-subway {
+  fill: var(--color-primary-ink);
+  fill-opacity: 1;
+  stroke-width: 2;
+}
+
+.location-map-place--transit-train {
+  fill: var(--color-navy-700);
+  fill-opacity: 1;
+  stroke-width: 2;
+}
+
 /* Negocio con la ficha abierta: anillo oscuro para ubicarlo en el mapa */
 .location-map-place--selected {
   fill-opacity: 1;

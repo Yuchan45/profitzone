@@ -7,6 +7,8 @@
   /* Marca */
   --color-primary: #00c9a7;
   --color-primary-dark: #009e83;
+  /* Turquesa para texto chico: ≥4,5:1 sobre blanco y sobre primary-10/12 (primary-dark no llega) */
+  --color-primary-ink: #007a66;
   --color-primary-10: #00c9a71a;
   --color-primary-12: #00c9a71f;
   --color-navy-700: #2d3e64;
@@ -31,6 +33,8 @@
   /* Estados */
   --color-success: #10b981;
   --color-success-12: #10b9811f;
+  /* Texto verde sobre fondos claros (ej. el badge "Fortaleza"): 4,9:1 sobre success-12 */
+  --color-success-dark: #047857;
   --color-warning: #f59e0b;
   --color-warning-12: #f59e0b1f;
   --color-warning-dark: #8a5a00;
