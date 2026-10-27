@@ -77,6 +77,16 @@ function App() {
         <Route path="/terminos" element={<Terminos />} />
         <Route path="/tramites" element={<Tramites />} />
         <Route path="/metodologia" element={<Metodologia />} />
+        {/* Requieren sesión */}
+        <Route element={<ProtectedRoute />}>
+          <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/perfil" element={<Perfil />} />
+          <Route path="/mis-reportes" element={<MisReportes />} />
+        </Route>
+        <Route path="*" element={<NotFound />} />
+      </Route>
+      {/* Reportes con mapa: el mismo ancho que el paso 4 del análisis */}
+      <Route element={<MainLayout wide />}>
         <Route
           path="/reporte-ejemplo"
           element={
@@ -85,11 +95,7 @@ function App() {
             </Suspense>
           }
         />
-        {/* Requieren sesión */}
         <Route element={<ProtectedRoute />}>
-          <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/perfil" element={<Perfil />} />
-          <Route path="/mis-reportes" element={<MisReportes />} />
           <Route
             path="/mis-reportes/:id"
             element={
@@ -99,7 +105,6 @@ function App() {
             }
           />
         </Route>
-        <Route path="*" element={<NotFound />} />
       </Route>
     </Routes>
   )
