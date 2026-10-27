@@ -2,6 +2,7 @@ import { searchNearbyPlaces } from './googlePlaces.service.js'
 import { Subcategory, SubcategorySearchTerm } from '../models/index.js'
 import { calculateDistanceMeters, formatDistance } from '../utils/geo.js'
 import { findNearbyPlaces, directCriteria } from './places.service.js'
+import { nameMatchesCuisine, normalizeName } from '../utils/cuisineMatch.js'
 
 export { calculateDistanceMeters, formatDistance }
 
@@ -29,19 +30,6 @@ const FALLBACK_CATEGORY_TERMS = {
     primary: 'gym',
     indirect: ['fitness_center', 'sports_club'],
   },
-}
-
-/**
- * Normaliza nombres para comparación insensible a mayúsculas, tildes y signos.
- */
-function normalizeName(str) {
-  return (str || '')
-    .toLowerCase()
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .replace(/[^a-z0-9\s]/g, ' ')
-    .replace(/\s+/g, ' ')
-    .trim()
 }
 
 /**
@@ -119,18 +107,8 @@ function isPlaceDirect({ place, matchedOsm, criteria, terms }) {
 
     const matchesName = cuisineKeywords.some((c) => c.length >= 3 && normName.includes(c))
 
-    let matchesExtra = false
-    if (criteria.cuisines.has('asian')) {
-      matchesExtra = /(sushi|nikkei|ramen|wok|asian|asiatic|japon|japones|chin[ao]|corean|thai|vietnam|poke)/i.test(normName)
-    } else if (criteria.cuisines.has('grill') || criteria.cuisines.has('steak_house')) {
-      matchesExtra = /(parrill|asador|steak|carnes?|grill|bife|costillar)/i.test(normName)
-    } else if (criteria.cuisines.has('italian') || criteria.cuisines.has('pizza')) {
-      matchesExtra = /(pizz|pastas?|italian|trattoria|pizzeria)/i.test(normName)
-    } else if (criteria.cuisines.has('international')) {
-      matchesExtra = /(autor|fusion|internacional|bistro|gourmet)/i.test(normName)
-    }
-
-    return Boolean(matchesType || matchesName || matchesExtra)
+    // Palabras del nombre que delatan la cocina: las mismas que usa el mapa
+    return Boolean(matchesType || matchesName || nameMatchesCuisine(place.name, criteria.cuisines))
   }
 
   // 3. Fallback: sin criterio de cocina (ej. cafetería, gimnasio sin filtro, o "Otra")

@@ -166,7 +166,7 @@ export const questions = [
         code: 'asian',
         label: 'Asiática',
         metadata: {
-          osmCuisine: ['asian', 'sushi', 'japanese', 'chinese', 'korean', 'thai', 'vietnamese', 'indian', 'ramen', 'poke', 'wok', 'noodle'],
+          osmCuisine: ['asian', 'sushi', 'japanese', 'chinese', 'korean', 'thai', 'vietnamese', 'indian', 'ramen', 'poke', 'wok', 'noodle', 'oriental', 'taiwanese', 'dumplings'],
           googleTypes: [
             'asian_restaurant',
             'chinese_restaurant',

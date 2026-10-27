@@ -958,7 +958,10 @@ function ZoneAnalysis({
             { label: 'Otros locales del rubro', tone: 'place' },
           ]
         : [{ label: 'Locales del rubro', tone: 'place' }],
-      note: 'Locales según OpenStreetMap. La tabla de competencia usa Google Places, que no se puede mostrar en este mapa.',
+      // El mapa y la tabla usan fuentes distintas: sin esta aclaración parece que se contradicen
+      note: match
+        ? 'Locales según OpenStreetMap. Se marcan como directos los que tienen cargada la cocina o la indican en el nombre; la tabla usa Google Places (que no se puede mostrar en este mapa) y puede tener más.'
+        : 'Locales según OpenStreetMap. La tabla de competencia usa Google Places, que no se puede mostrar en este mapa.',
     },
     {
       id: 'transit',

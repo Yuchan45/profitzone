@@ -3,6 +3,7 @@ import { calculateDistanceMeters } from '../utils/geo.js'
 import { KINDS_BY_SUBCATEGORY, directCriteria } from './places.service.js'
 import { groupStops } from './accessibility.service.js'
 import { rentalExchangeRate } from './rentals.service.js'
+import { isDirectOsmPlace } from '../utils/cuisineMatch.js'
 
 /**
  * Referencias de Palermo para leer los datos del reporte ("¿esto es mucho o poco?").
@@ -36,7 +37,7 @@ async function loadDataset() {
        FROM census_data.census_radios WHERE barrio = :barrio`,
       { barrio: REFERENCE_NEIGHBORHOOD },
     ),
-    query(`SELECT kind, cuisine, geom.Lat AS lat, geom.Long AS lng FROM osm_data.places WHERE is_active = 1`),
+    query(`SELECT kind, name, cuisine, geom.Lat AS lat, geom.Long AS lng FROM osm_data.places WHERE is_active = 1`),
     query(
       `SELECT id, kind, name, lines, geom.Lat AS lat, geom.Long AS lng
        FROM osm_data.transit_stops WHERE is_active = 1`,
@@ -140,11 +141,7 @@ export async function getBenchmarks({ lat, lng, radiusInMeters, categoryCode, su
   if (kinds) {
     const criteria = await directCriteria(categoryCode, subcategoryCode, match).catch(() => null)
     const ofRubro = dataset.places.filter((place) => kinds.includes(place.kind))
-    const direct = criteria
-      ? ofRubro.filter((place) =>
-          place.cuisine?.split(';').some((value) => criteria.cuisines.has(value.trim())),
-        )
-      : null
+    const direct = criteria ? ofRubro.filter((place) => isDirectOsmPlace(criteria, place)) : null
     const count = (items) => (pointLat, pointLng) => within(items, pointLat, pointLng, radius).length
     const rubroKey = `${categoryCode}/${subcategoryCode}`
     result.competition = compare(
