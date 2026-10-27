@@ -4,6 +4,7 @@ import { usePlace } from '../../../hooks/usePlace.js'
 import LocationMap from '../LocationMap/LocationMap.jsx'
 import PlaceCard from '../PlaceCard/PlaceCard.jsx'
 import RentalCard from '../RentalCard/RentalCard.jsx'
+import TransitCard from '../TransitCard/TransitCard.jsx'
 import Chip from '../../atoms/Chip/Chip.jsx'
 import IconButton from '../../atoms/IconButton/IconButton.jsx'
 import Icon from '../../atoms/Icon/Icon.jsx'
@@ -20,7 +21,7 @@ import './ZoneMapPanel.css'
  * decide cuál con `layer` (sigue la sección que se está leyendo) y `onLayerChange`.
  * `selectedId` marca un punto y `onSelect(id)` avisa el click en uno (`onSelect(null)` cierra).
  * Con un punto marcado se abre su ficha sobre el mapa: la del negocio (OpenStreetMap, como
- * en el paso 3) o la del aviso de alquiler (puntos con `listing`).
+ * en el paso 3), la del aviso de alquiler (puntos con `listing`) o la de la parada (con `stop`).
  */
 function ZoneMapPanel({
   location,
@@ -43,9 +44,10 @@ function ZoneMapPanel({
   const activeLayer = layers.find((candidate) => candidate.id === layer) ?? layers[0]
   // Mismo corte que ZoneMapPanel.css: debajo, el panel es una franja
   const isStrip = useMediaQuery('(max-width: 1023px)') && !expanded
-  // Punto marcado en la capa visible: aviso (trae sus datos) o negocio (se piden a la API)
+  // Punto marcado en la capa visible: aviso o parada (traen sus datos) o negocio (se piden a la API)
   const selectedPoint = activeLayer.places.find((place) => place.id === selectedId) ?? null
-  const selectedBusiness = usePlace(selectedPoint && !selectedPoint.listing ? selectedPoint.id : null)
+  const isBusiness = Boolean(selectedPoint && !selectedPoint.listing && !selectedPoint.stop)
+  const selectedBusiness = usePlace(isBusiness ? selectedPoint.id : null)
   const closeSelection = () => onSelect(null)
 
   // Al ampliar, el foco va al botón para volver; al cerrar, vuelve al de ampliar.
@@ -156,6 +158,8 @@ function ZoneMapPanel({
           {selectedPoint && !isStrip && (
             selectedPoint.listing ? (
               <RentalCard listing={selectedPoint.listing} onClose={closeSelection} />
+            ) : selectedPoint.stop ? (
+              <TransitCard stop={selectedPoint.stop} onClose={closeSelection} />
             ) : (
               <PlaceCard
                 status={selectedBusiness.status === 'idle' ? 'loading' : selectedBusiness.status}

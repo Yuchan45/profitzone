@@ -33,6 +33,11 @@ const STEPS = [
     script: 'seed-osm-places.js',
     skipIf: (results) => results.censo !== 'ok' && 'requiere el censo cargado',
   },
+  {
+    name: 'transporte OSM',
+    script: 'seed-osm-transit.js',
+    skipIf: (results) => results.censo !== 'ok' && 'requiere el censo cargado',
+  },
 ]
 
 const results = {}

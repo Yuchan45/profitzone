@@ -505,3 +505,13 @@
   flex-shrink: 0;
   color: var(--color-text-secondary);
 }
+
+/* Mismo aspecto que el link, en un botón (paradas: "ver en el mapa") */
+.zone-analysis-place-link--button {
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}

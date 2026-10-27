@@ -24,9 +24,7 @@ import './ZoneAnalysis.css'
 const COMPETITION_MAX_RESULTS = 20
 // Locales que se listan en la tarjeta de competencia (los más cercanos)
 const COMPETITION_ROWS = 5
-// Google Places devuelve como máximo 20 paradas/estaciones por consulta
-const TRANSIT_MAX_RESULTS = 20
-// Paradas que se listan en la tarjeta de accesibilidad
+// Paradas que se listan en la tarjeta de accesibilidad (todas están en el mapa)
 const TRANSIT_ROWS = 6
 // Orden de los tipos de transporte en la tabla: los de más capacidad primero
 const TRANSIT_ORDER = ['subway', 'train', 'bus']
@@ -118,7 +116,7 @@ function accessibilityTile(indicator) {
   const { status, data } = indicator
   if (status === 'not_applicable') return { value: null, caption: 'No aplica sin atención al público' }
   if (status !== 'ok') return { value: null, caption: 'No pudimos cargar este dato' }
-  const value = data.total >= 20 ? '20+' : formatNumber(data.total)
+  const value = formatNumber(data.total)
   let caption = 'paradas en el radio'
   if (data.subwayCount > 0) {
     caption = data.subwayCount === 1 ? '1 subte en el radio' : `${data.subwayCount} subtes en el radio`
@@ -509,7 +507,7 @@ function RentCard({ report, listings, selectedId, onShowOnMap }) {
   )
 }
 
-function AccessibilityCard({ report, live }) {
+function AccessibilityCard({ report, onShowOnMap }) {
   const indicator = report.data?.indicators.accessibility
   const state = cardState(report, indicator)
   const card = { icon: 'bus', title: 'Accesibilidad y transporte', ...state }
@@ -537,7 +535,7 @@ function AccessibilityCard({ report, live }) {
         transitRank(a.category) - transitRank(b.category) || a.distanceMeters - b.distanceMeters,
     )
     .slice(0, TRANSIT_ROWS)
-  const total = data.total >= TRANSIT_MAX_RESULTS ? `${data.total}+` : formatNumber(data.total)
+  const total = formatNumber(data.total)
 
   const breakdown = []
   if (data.subwayCount > 0) {
@@ -553,9 +551,18 @@ function AccessibilityCard({ report, live }) {
     breakdown.push(`${data.otherCount} otros transportes`)
   }
 
-  const caption = breakdown.length > 0
-    ? `puntos de transporte en el radio: ${breakdown.join(', ')}.`
-    : 'puntos de transporte en el radio.'
+  const caption = [
+    breakdown.length > 0
+      ? `puntos de transporte en el radio: ${breakdown.join(', ')}.`
+      : 'puntos de transporte en el radio.',
+    data.busLineCount > 0
+      ? `Pasan ${data.busLineCount} ${data.busLineCount === 1 ? 'línea' : 'líneas'} de colectivo.`
+      : null,
+  ]
+    .filter(Boolean)
+    .join(' ')
+  // Datos de nuestra copia de OSM: la fecha es la de su última actualización
+  const updated = data.updatedAt ? ` · datos al ${formatDate(data.updatedAt)}` : ''
 
   return (
     <IndicatorCard
@@ -563,15 +570,22 @@ function AccessibilityCard({ report, live }) {
       value={total}
       caption={caption}
       callout={data.callout}
-      source={`${data.source}${live ? ' · en vivo' : ''} · ${formatDate(data.queryDate)} · se muestran ${places.length} de ${total}`}
+      source={`Paradas y estaciones de ${data.source}${updated}`}
     >
+      <p className="zone-analysis-table-note">
+        {places.length < data.total
+          ? `Las ${places.length} más importantes y cercanas; las ${formatNumber(data.total)} están en el mapa.`
+          : 'Todas están en el mapa.'}{' '}
+        Cada parada cuenta una vez aunque tenga una por vereda.
+      </p>
       <div className="zone-analysis-table-wrap">
         <table className="zone-analysis-table zone-analysis-table--transit">
+          <caption className="zone-analysis-sr-only">Paradas y estaciones en el radio, subte y tren primero</caption>
           <thead>
             <tr>
               <th scope="col">Tipo</th>
-              <th scope="col">Línea / Estación</th>
-              <th scope="col">Calle / Ubicación</th>
+              <th scope="col">Parada / Estación</th>
+              <th scope="col">Líneas</th>
               <th scope="col">Dist.</th>
             </tr>
           </thead>
@@ -583,8 +597,22 @@ function AccessibilityCard({ report, live }) {
                     {place.type || 'Transporte'}
                   </span>
                 </td>
-                <th scope="row">{place.lines || place.cleanName || '—'}</th>
-                <td>{place.street || place.address || '—'}</td>
+                <th scope="row" title={place.cleanName}>
+                  {place.location ? (
+                    <button
+                      type="button"
+                      className="zone-analysis-place-link zone-analysis-place-link--button"
+                      onClick={() => onShowOnMap(place.id)}
+                      aria-label={`${place.cleanName}, ver en el mapa`}
+                    >
+                      {place.cleanName}
+                      <Icon name="map-pin" size={12} />
+                    </button>
+                  ) : (
+                    place.cleanName
+                  )}
+                </th>
+                <td>{place.lines ?? <span title="OpenStreetMap no tiene sus líneas cargadas">—</span>}</td>
                 <td>{place.distanceText}</td>
               </tr>
             ))}
@@ -600,7 +628,7 @@ function AccessibilityCard({ report, live }) {
 const SECTIONS = {
   competition: { id: 'zona-competencia', layer: 'places' },
   traffic: { id: 'zona-afluencia', layer: 'places' },
-  accessibility: { id: 'zona-accesibilidad', layer: null },
+  accessibility: { id: 'zona-accesibilidad', layer: 'transit' },
   population: { id: 'zona-poblacion', layer: null },
   rent: { id: 'zona-alquiler', layer: 'rentals' },
 }
@@ -738,6 +766,7 @@ function ZoneAnalysis({
   const indicators = reportData?.indicators
   const noPublic = indicators?.competition?.status === 'not_applicable'
   const totalRentals = indicators?.rent?.data?.totalInRadius ?? null
+  const transitStops = indicators?.accessibility?.data?.places ?? []
 
   // El mapa sigue la lectura: cuando una tarjeta con capa propia pasa por la franja de
   // lectura (un poco arriba del centro de la pantalla), el mapa muestra su capa
@@ -768,8 +797,17 @@ function ZoneAnalysis({
     if (isNarrowScreen()) setMapExpanded(true)
   }
 
+  // Desde la tabla de accesibilidad: muestra la parada en el mapa (en mobile, ampliado)
+  const showStopOnMap = (stopId) => {
+    setMapLayer('transit')
+    setSelectedId(stopId)
+    if (mapCollapsed) changeMapCollapsed(false)
+    if (isNarrowScreen()) setMapExpanded(true)
+  }
+
   // Desde el mapa: marca el punto y, si es un aviso, lleva a su fila en la lista
-  // `id` null cierra la ficha. Los negocios de OSM tienen id numérico; los avisos, "rent-…"
+  // `id` null cierra la ficha. Los negocios de OSM tienen id numérico; los avisos, "rent-…";
+  // las paradas, "transit-…"
   const selectOnMap = (id) => {
     setSelectedId(id)
     if (id == null || !String(id).startsWith('rent-') || mapExpanded) return
@@ -791,6 +829,27 @@ function ZoneAnalysis({
           ]
         : [{ label: 'Locales del rubro', tone: 'place' }],
       note: 'Locales según OpenStreetMap. La tabla de competencia usa Google Places, que no se puede mostrar en este mapa.',
+    },
+    {
+      id: 'transit',
+      label: 'Transporte',
+      places: transitStops
+        .filter((stop) => stop.location)
+        .map((stop) => ({
+          id: stop.id,
+          lat: stop.location.lat,
+          lng: stop.location.lng,
+          name: stop.lines ? `${stop.cleanName} · ${stop.lines}` : stop.cleanName,
+          variant: `transit-${stop.category}`,
+          // Datos para la ficha de la parada al tocar el punto
+          stop,
+        })),
+      legend: [
+        { label: 'Subte', tone: 'subway' },
+        { label: 'Tren', tone: 'train' },
+        { label: 'Colectivo', tone: 'bus' },
+      ],
+      note: 'Paradas y estaciones según OpenStreetMap, con las líneas que paran en cada una.',
     },
     {
       id: 'rentals',
@@ -897,8 +956,8 @@ function ZoneAnalysis({
                   </div>
                 </>
               )}
-              <div id={SECTIONS.accessibility.id} className="zone-analysis-anchor" tabIndex={-1}>
-                <AccessibilityCard report={report} live={live} />
+              <div id={SECTIONS.accessibility.id} className="zone-analysis-anchor" tabIndex={-1} data-map-layer="transit">
+                <AccessibilityCard report={report} onShowOnMap={showStopOnMap} />
               </div>
               <div id={SECTIONS.population.id} className="zone-analysis-anchor" tabIndex={-1}>
                 <PopulationCard report={report} />

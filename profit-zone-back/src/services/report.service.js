@@ -121,8 +121,10 @@ function buildSources({ competition, traffic, density, rent, accessibility }) {
   }
   if (rent.status === 'ok') sources.push('Alquiler: avisos de locales comerciales en alquiler publicados en ZonaProp.')
   if (accessibility?.status === 'ok') {
-    const date = new Date(accessibility.data.queryDate).toLocaleDateString('es-AR')
-    sources.push(`Accesibilidad: ${accessibility.data.source}, consultado el ${date}.`)
+    // Viene de nuestra copia de OSM: la fecha es la de su última actualización
+    const { updatedAt } = accessibility.data
+    const date = updatedAt ? `, datos al ${new Date(updatedAt).toLocaleDateString('es-AR')}` : ''
+    sources.push(`Accesibilidad: paradas y estaciones de ${accessibility.data.source}, con sus líneas${date}.`)
   }
   sources.push('Lugares según tu público: todavía sin fuente de datos.')
   return sources

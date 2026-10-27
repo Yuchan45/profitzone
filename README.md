@@ -69,6 +69,7 @@ si dice **"API conectada"**, el front está hablando con el back correctamente.
 | `npm run db:seed:catalog:verify` | Verifica el seed (conteos, idempotencia) |
 | `npm run db:seed:rentals` | Carga locales comerciales en alquiler en SQL Server (idempotente) |
 | `npm run db:seed:osm-places` | Carga los negocios de OpenStreetMap del barrio (+2 km) para la vista previa del paso 3 (idempotente) |
+| `npm run db:seed:osm-transit` | Carga las paradas y estaciones de OpenStreetMap del barrio (+2 km), con sus líneas, para el indicador de accesibilidad (idempotente) |
 | `npm run db:seed:all` | Migra y corre todos los seeds en orden, con resumen final (idempotente) |
 
 ### `profit-zone-front`
@@ -147,7 +148,7 @@ acepta únicamente los orígenes de `CORS_ORIGINS`; cualquier otro recibe **403*
 | `GET`  | `/api/density`     | Densidad censal y demografía en un radio de CABA (query: `lat`, `lng`, `radius`) |
 | `GET`  | `/api/rentals`     | Estadísticas de precios y locales en alquiler en un radio de CABA (query: `lat`, `lng`, `radius`; 503 si no hay avisos cargados) |
 | `GET`  | `/api/competition` | Competidores directos/indirectos en el radio con Google Places. **Requiere sesión** (consume una API paga) |
-| `GET`  | `/api/accessibility` | Accesibilidad y transporte público en el radio con Google Places (subtes, trenes y paradas de colectivo). **Requiere sesión** (consume una API paga) |
+| `GET`  | `/api/accessibility` | Accesibilidad y transporte público en el radio (subtes, trenes y paradas de colectivo con sus líneas), desde OpenStreetMap (`osm_data.transit_stops`, gratis). **Requiere sesión** |
 | `GET`  | `/api/places/nearby?lat=&lng=&radius=&category=&subcategory=&match=` | Vista previa del paso 3: negocios del rubro dentro del círculo (radio de 100 a 2000 m), desde OpenStreetMap (`osm_data.places`, gratis, sin sesión). `match` (opcional, `pregunta:opción`, ej. `cuisine_type:asian`) marca como `direct` los que coinciden con la cocina elegida. Responde `{ source, updatedAt, total, directTotal, directLabel, places: [{ id, name, lat, lng, direct }] }`. 400 si los parámetros son inválidos |
 | `GET`  | `/api/sample-report` | Reporte de ejemplo de la home ("Ver reporte de ejemplo"): restaurante de cocina asiática en Palermo Soho. Misma forma que `GET /api/analyses/:id/report`, más `business` (`{ categoryCode, subcategoryCode, answers }`). Público y sin consultas pagas: sale de `src/data/sampleReport.json`, con los locales de Google Places anonimizados |
 | `GET`  | `/api/places/:id` | Ficha de un negocio de la vista previa (datos de OpenStreetMap, sin sesión): `{ id, kind, name, cuisines, lat, lng, details, source, updatedAt }`. `details` trae solo lo que el local tenga cargado en OSM (`street`, `houseNumber`, `openingHours`, `phone`, `website`, `instagram`, `facebook`, `outdoorSeating`, `delivery`, `takeaway`, `wheelchair`). 404 si no existe |

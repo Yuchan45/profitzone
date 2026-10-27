@@ -40,7 +40,8 @@ con un error que indica cómo levantarlo.
 | `npm run db:seed:census` | Carga los 3.554 radios censales de CABA en `census_data.census_radios` con geometrías e índice espacial |
 | `npm run db:seed:rentals` | Carga los 3.800 locales comerciales en alquiler de CABA en `commercial_data.commercial_rentals` con geometrías e índice espacial |
 | `npm run db:seed:osm-places` | Carga en `osm_data.places` los restaurantes, cafés, gimnasios y estudios de pilates de OpenStreetMap del barrio disponible (+2 km), para la vista previa del paso 3 |
-| `npm run db:seed:all` | Aplica las migraciones y corre todos los seeds en orden (catálogo, censo, locales, OSM) con un resumen al final. Saltea los locales si falta el JSON de Zonaprop y OSM si falla el censo |
+| `npm run db:seed:osm-transit` | Carga en `osm_data.transit_stops` las paradas de colectivo y estaciones de subte y tren de OpenStreetMap del barrio disponible (+2 km), con sus líneas, para el indicador de accesibilidad |
+| `npm run db:seed:all` | Aplica las migraciones y corre todos los seeds en orden (catálogo, censo, locales, negocios y transporte de OSM) con un resumen al final. Saltea los locales si falta el JSON de Zonaprop y OSM si falla el censo |
 
 ## Variables de entorno
 
@@ -240,7 +241,7 @@ Host: localhost:8080
 
 ### `GET /api/accessibility`
 
-Obtiene el análisis de conectividad y transporte público (estaciones de subte, tren y paradas de colectivos) en un radio alrededor de unas coordenadas usando la API de Google Places (New). **Requiere sesión** (`requireAuth`).
+Obtiene el análisis de conectividad y transporte público (estaciones de subte, tren y paradas de colectivos) en un radio alrededor de unas coordenadas, con los datos de OpenStreetMap de `osm_data.transit_stops` (gratis, ver "Transporte de OpenStreetMap"). Cada parada o estación cuenta una vez aunque OSM la tenga en varios puntos (una por vereda, un andén por línea), trae las líneas que paran ahí (`lines`) y su ubicación (para la capa "Transporte" del mapa). `busLineCount` es la cantidad de líneas de colectivo distintas del radio y `updatedAt` la fecha de la última carga de OSM. **Requiere sesión** (`requireAuth`).
 
 #### Parámetros de consulta (Query Params)
 
@@ -259,25 +260,30 @@ Host: localhost:8080
 
 ```json
 {
-  "total": 7,
-  "subwayCount": 2,
-  "trainCount": 1,
-  "busCount": 4,
+  "total": 17,
+  "subwayCount": 1,
+  "trainCount": 0,
+  "busCount": 16,
+  "busLineCount": 26,
   "otherCount": 0,
   "level": "alta",
-  "callout": "Excelente conectividad con subte a 180 m y 4 paradas de colectivo en la zona.",
-  "source": "Google Places",
+  "callout": "Excelente conectividad con subte a 51 m más 16 paradas de colectivo en la zona.",
+  "source": "OpenStreetMap",
+  "updatedAt": "2026-10-27T05:10:00.000Z",
   "places": [
     {
-      "id": "mock-place-1",
-      "name": "Estación Pueyrredón (Línea D)",
+      "id": "transit-2841",
+      "name": "Plaza Italia",
+      "cleanName": "Est. Plaza Italia",
       "category": "subway",
-      "primaryType": "subway_station",
-      "distanceMeters": 180,
-      "distanceText": "180 m",
+      "type": "Subte",
+      "lines": "Línea D",
+      "lineCount": 1,
+      "distanceMeters": 51,
+      "distanceText": "51 m",
       "location": {
-        "lat": -34.5868,
-        "lng": -58.429
+        "lat": -34.58138,
+        "lng": -58.42103
       }
     }
   ]
@@ -528,6 +534,21 @@ geometry|	MultiPolygon|	Coordenadas vectoriales exactas de los límites de las m
 | `details` | `nvarchar(max)` (JSON) | Datos para la ficha del local que tenga cargados en OSM: dirección, horarios, teléfono, web, redes y servicios (mesas afuera, delivery, take away, accesibilidad). |
 
 Datos © colaboradores de OpenStreetMap, licencia ODbL: el mapa del front muestra la atribución.
+
+### Transporte de OpenStreetMap (seed)
+
+`npm run db:seed:osm-transit` baja de Overpass las paradas de colectivo (`highway=bus_stop` y andenes con `bus=yes`) y las estaciones de subte y tren (`railway=station|halt`) del barrio disponible con 2 km de margen, y las guarda en `osm_data.transit_stops` con índice espacial (`IX_transit_stops_geom`). Las líneas salen de los recorridos de OSM que pasan por cada parada: colectivos por número (los ramales "39-3" o "151C" cuentan como 39 y 151), subte por letra (tomada de los andenes de la estación) y tren por la red (`network`, ej. "San Martín"). Mismo comportamiento que el seed de negocios: idempotente, no borra (`is_active = 0`) y requiere el censo cargado.
+
+| Variable | Tipo | Significado |
+| -------- | ---- | ----------- |
+| `osm_type` / `osm_id` | `char(1)` / `bigint` | Identificador del elemento en OSM. |
+| `kind` | `varchar(10)` | `bus`, `subway` o `train`. |
+| `name` | `nvarchar(200)` | Nombre de la parada (ej. "Honduras y Thames") o de la estación (puede faltar). |
+| `lines` | `nvarchar(400)` | Líneas separadas por coma: "39,55,151", "D" o "San Martín". En Palermo la tiene más del 90% de las paradas. |
+| `geom` | `geography` | Punto de la parada o estación. |
+| `is_active` / `last_seen_at` | `bit` / `datetime2` | Si apareció en la última carga, y cuándo. |
+
+OSM tiene un punto por vereda en cada esquina y uno por andén en las estaciones: el servicio de accesibilidad los junta (mismo tipo y nombre a menos de 80 m para colectivos y 300 m para estaciones) para contar cada parada una vez.
 
 ## Estructura
 

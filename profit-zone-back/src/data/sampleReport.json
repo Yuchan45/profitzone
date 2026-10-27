@@ -60,7 +60,7 @@
       "code": "accessibility",
       "label": "Accesibilidad",
       "yourBusiness": "Depende del que pasa (de paso)",
-      "zone": "16 paradas de colectivo en el radio",
+      "zone": "19 paradas de colectivo en el radio",
       "reading": "strength"
     },
     {
@@ -501,204 +501,319 @@
     "accessibility": {
       "status": "ok",
       "data": {
-        "total": 16,
+        "total": 19,
         "subwayCount": 0,
         "trainCount": 0,
-        "busCount": 16,
+        "busCount": 19,
+        "busLineCount": 5,
         "otherCount": 0,
         "level": "alta",
         "closestPlace": {
-          "id": "sample-stop-1",
-          "cleanName": "Honduras y Thames",
+          "id": "transit-2791",
+          "name": "Plaza Julio Cortázar",
+          "cleanName": "Plaza Julio Cortázar",
           "category": "bus",
           "type": "Colectivo",
-          "lines": "Líneas 39, 55, 93, 108, 111, 140, 151, 168",
-          "hasExplicitLines": false,
-          "street": "Honduras y Thames",
-          "distanceMeters": 88,
-          "distanceText": "88 m"
+          "lines": null,
+          "lineCount": 0,
+          "distanceMeters": 140,
+          "distanceText": "140 m",
+          "location": {
+            "lat": -34.5881134,
+            "lng": -58.4289461
+          }
         },
         "closestSubway": null,
         "closestTrain": null,
-        "callout": "Conectividad con 16 paradas de colectivo en el radio.",
-        "source": "Google Places",
+        "callout": "Conectividad con 19 paradas de colectivo en el radio.",
+        "source": "OpenStreetMap",
         "queryDate": "2026-10-26T22:26:10.037Z",
+        "updatedAt": "2026-10-27T02:02:36.043Z",
         "places": [
           {
-            "id": "sample-stop-1",
-            "cleanName": "Honduras y Thames",
+            "id": "transit-2791",
+            "name": "Plaza Julio Cortázar",
+            "cleanName": "Plaza Julio Cortázar",
             "category": "bus",
             "type": "Colectivo",
-            "lines": "Líneas 39, 55, 93, 108, 111, 140, 151, 168",
-            "hasExplicitLines": false,
-            "street": "Honduras y Thames",
-            "distanceMeters": 88,
-            "distanceText": "88 m"
+            "lines": null,
+            "lineCount": 0,
+            "distanceMeters": 140,
+            "distanceText": "140 m",
+            "location": {
+              "lat": -34.5881134,
+              "lng": -58.4289461
+            }
           },
           {
-            "id": "sample-stop-2",
-            "cleanName": "Honduras, 4881",
+            "id": "transit-2793",
+            "name": "El Salvador y Borges",
+            "cleanName": "El Salvador y Borges",
             "category": "bus",
             "type": "Colectivo",
-            "lines": "Líneas 39, 55, 93, 108, 111, 140, 151, 168",
-            "hasExplicitLines": false,
-            "street": "Honduras, 4881",
-            "distanceMeters": 151,
-            "distanceText": "151 m"
+            "lines": "Línea 39",
+            "lineCount": 1,
+            "distanceMeters": 144,
+            "distanceText": "144 m",
+            "location": {
+              "lat": -34.5881642,
+              "lng": -58.4288657
+            }
           },
           {
-            "id": "sample-stop-3",
+            "id": "transit-2698",
+            "name": "Uriarte y Honduras",
             "cleanName": "Uriarte y Honduras",
             "category": "bus",
             "type": "Colectivo",
-            "lines": "Líneas 39, 55, 93, 108, 111, 140, 151, 168",
-            "hasExplicitLines": false,
-            "street": "Uriarte y Honduras",
-            "distanceMeters": 219,
-            "distanceText": "219 m"
+            "lines": "Líneas 39 y 55",
+            "lineCount": 2,
+            "distanceMeters": 217,
+            "distanceText": "217 m",
+            "location": {
+              "lat": -34.5873019,
+              "lng": -58.4319516
+            }
           },
           {
-            "id": "sample-stop-4",
+            "id": "transit-1288",
+            "name": "Costa Rica y Borges",
             "cleanName": "Costa Rica y Borges",
             "category": "bus",
             "type": "Colectivo",
             "lines": "Línea 39",
-            "hasExplicitLines": true,
-            "street": "Costa Rica y Borges",
+            "lineCount": 1,
             "distanceMeters": 235,
-            "distanceText": "235 m"
+            "distanceText": "235 m",
+            "location": {
+              "lat": -34.587341,
+              "lng": -58.4283365
+            }
           },
           {
-            "id": "sample-stop-5",
-            "cleanName": "Cabrera y Uriarte",
+            "id": "transit-2608",
+            "name": "Costa Rica y Thames",
+            "cleanName": "Costa Rica y Thames",
             "category": "bus",
             "type": "Colectivo",
-            "lines": "Líneas 15, 39, 55, 57, 106, 109, 110, 140, 151, 168",
-            "hasExplicitLines": false,
-            "street": "Cabrera y Uriarte",
-            "distanceMeters": 295,
-            "distanceText": "295 m"
+            "lines": null,
+            "lineCount": 0,
+            "distanceMeters": 243,
+            "distanceText": "243 m",
+            "location": {
+              "lat": -34.5866527,
+              "lng": -58.4293619
+            }
           },
           {
-            "id": "sample-stop-6",
+            "id": "transit-2611",
+            "name": "Cabrera al 5100",
+            "cleanName": "Cabrera al 5100",
+            "category": "bus",
+            "type": "Colectivo",
+            "lines": "Línea 55",
+            "lineCount": 1,
+            "distanceMeters": 297,
+            "distanceText": "297 m",
+            "location": {
+              "lat": -34.5889723,
+              "lng": -58.4335233
+            }
+          },
+          {
+            "id": "transit-2612",
+            "name": "Uriarte y Costa Rica",
             "cleanName": "Uriarte y Costa Rica",
             "category": "bus",
             "type": "Colectivo",
-            "lines": "Líneas 15, 34, 39, 55, 93, 108, 111, 140, 151, 166, 168",
-            "hasExplicitLines": false,
-            "street": "Uriarte y Costa Rica",
+            "lines": "Línea 55",
+            "lineCount": 1,
             "distanceMeters": 301,
-            "distanceText": "301 m"
+            "distanceText": "301 m",
+            "location": {
+              "lat": -34.5859969,
+              "lng": -58.4299962
+            }
           },
           {
-            "id": "sample-stop-7",
+            "id": "transit-1090",
+            "name": "Godoy Cruz y Honduras",
             "cleanName": "Godoy Cruz y Honduras",
             "category": "bus",
             "type": "Colectivo",
-            "lines": "Líneas 39, 55, 93, 108, 111, 140, 151, 168",
-            "hasExplicitLines": false,
-            "street": "Godoy Cruz y Honduras",
-            "distanceMeters": 316,
-            "distanceText": "316 m"
+            "lines": "Líneas 39 y 55",
+            "lineCount": 2,
+            "distanceMeters": 314,
+            "distanceText": "314 m",
+            "location": {
+              "lat": -34.5869769,
+              "lng": -58.4330136
+            }
           },
           {
-            "id": "sample-stop-8",
+            "id": "transit-2697",
+            "name": "Uriarte y Cabrera",
+            "cleanName": "Uriarte y Cabrera",
+            "category": "bus",
+            "type": "Colectivo",
+            "lines": "Línea 55",
+            "lineCount": 1,
+            "distanceMeters": 321,
+            "distanceText": "321 m",
+            "location": {
+              "lat": -34.5885208,
+              "lng": -58.4337889
+            }
+          },
+          {
+            "id": "transit-2609",
+            "name": "Godoy Cruz y Costa Rica",
             "cleanName": "Godoy Cruz y Costa Rica",
             "category": "bus",
             "type": "Colectivo",
-            "lines": "Líneas 15, 34, 39, 55, 93, 108, 111, 140, 151, 166, 168",
-            "hasExplicitLines": false,
-            "street": "Godoy Cruz y Costa Rica",
-            "distanceMeters": 350,
-            "distanceText": "350 m"
+            "lines": "Líneas 39 y 55",
+            "lineCount": 2,
+            "distanceMeters": 349,
+            "distanceText": "349 m",
+            "location": {
+              "lat": -34.5856645,
+              "lng": -58.4313145
+            }
           },
           {
-            "id": "sample-stop-9",
-            "cleanName": "Godoy Cruz y Gorriti",
+            "id": "transit-2792",
+            "name": "Plaza Armenia",
+            "cleanName": "Plaza Armenia",
             "category": "bus",
             "type": "Colectivo",
-            "lines": "Líneas 15, 39, 55, 57, 106, 109, 110, 140, 151, 168",
-            "hasExplicitLines": false,
-            "street": "Godoy Cruz y Gorriti",
-            "distanceMeters": 385,
-            "distanceText": "385 m"
+            "lines": "Línea 39",
+            "lineCount": 1,
+            "distanceMeters": 352,
+            "distanceText": "352 m",
+            "location": {
+              "lat": -34.5885959,
+              "lng": -58.4264624
+            }
           },
           {
-            "id": "sample-stop-10",
+            "id": "transit-1289",
+            "name": "Borges y Nicaragua",
+            "cleanName": "Borges y Nicaragua",
+            "category": "bus",
+            "type": "Colectivo",
+            "lines": null,
+            "lineCount": 0,
+            "distanceMeters": 354,
+            "distanceText": "354 m",
+            "location": {
+              "lat": -34.5868161,
+              "lng": -58.4271835
+            }
+          },
+          {
+            "id": "transit-312",
+            "name": "Niceto Vega y Serrano",
             "cleanName": "Niceto Vega y Serrano",
             "category": "bus",
             "type": "Colectivo",
-            "lines": "Líneas 19, 39, 90, 93, 108, 111, 140, 151, 168",
-            "hasExplicitLines": false,
-            "street": "Niceto Vega y Serrano",
-            "distanceMeters": 387,
-            "distanceText": "387 m"
+            "lines": "Líneas 140, 151 y 168",
+            "lineCount": 3,
+            "distanceMeters": 383,
+            "distanceText": "383 m",
+            "location": {
+              "lat": -34.590785,
+              "lng": -58.4336242
+            }
           },
           {
-            "id": "sample-stop-11",
+            "id": "transit-306",
+            "name": "Niceto Vega y Armenia",
             "cleanName": "Niceto Vega y Armenia",
             "category": "bus",
             "type": "Colectivo",
-            "lines": "Líneas 19, 39, 90, 93, 108, 111, 140, 151, 168",
-            "hasExplicitLines": false,
-            "street": "Niceto Vega y Armenia",
-            "distanceMeters": 399,
-            "distanceText": "399 m"
+            "lines": "Líneas 140, 151 y 168",
+            "lineCount": 3,
+            "distanceMeters": 393,
+            "distanceText": "393 m",
+            "location": {
+              "lat": -34.5920475,
+              "lng": -58.431717
+            }
           },
           {
-            "id": "sample-stop-12",
-            "cleanName": "Cnel. Niceto Vega 4814",
+            "id": "transit-2794",
+            "name": "El Salvador y Malabia",
+            "cleanName": "El Salvador y Malabia",
             "category": "bus",
             "type": "Colectivo",
-            "lines": "Líneas 19, 39, 90, 93, 108, 111, 140, 151, 168",
-            "hasExplicitLines": false,
-            "street": "Cnel. Niceto Vega 4814",
-            "distanceMeters": 405,
-            "distanceText": "405 m"
+            "lines": "Línea 39",
+            "lineCount": 1,
+            "distanceMeters": 445,
+            "distanceText": "445 m",
+            "location": {
+              "lat": -34.5902056,
+              "lng": -58.4258093
+            }
           },
           {
-            "id": "sample-stop-13",
-            "cleanName": "Av. Córdoba 4863",
+            "id": "transit-1065",
+            "name": "Córdoba y Gurruchaga",
+            "cleanName": "Córdoba y Gurruchaga",
             "category": "bus",
             "type": "Colectivo",
-            "lines": "Líneas 19, 39, 90, 93, 106, 109, 111, 140, 151, 168",
-            "hasExplicitLines": false,
-            "street": "Av. Córdoba 4863",
-            "distanceMeters": 466,
-            "distanceText": "466 m"
+            "lines": "Líneas 151 y 168",
+            "lineCount": 2,
+            "distanceMeters": 468,
+            "distanceText": "468 m",
+            "location": {
+              "lat": -34.5923454,
+              "lng": -58.4328608
+            }
           },
           {
-            "id": "sample-stop-14",
-            "cleanName": "Av. Córdoba y Serrano",
+            "id": "transit-1073",
+            "name": "Córdoba y Serrano",
+            "cleanName": "Córdoba y Serrano",
             "category": "bus",
             "type": "Colectivo",
-            "lines": "Líneas 19, 39, 90, 93, 106, 109, 111, 140, 151, 168",
-            "hasExplicitLines": false,
-            "street": "Av. Córdoba y Serrano",
-            "distanceMeters": 467,
-            "distanceText": "467 m"
-          },
-          {
-            "id": "sample-stop-15",
-            "cleanName": "Av. Córdoba y Gurruchaga",
-            "category": "bus",
-            "type": "Colectivo",
-            "lines": "Líneas 151, 168",
-            "hasExplicitLines": true,
-            "street": "Av. Córdoba y Gurruchaga",
+            "lines": "Líneas 140, 151 y 168",
+            "lineCount": 3,
             "distanceMeters": 470,
-            "distanceText": "470 m"
+            "distanceText": "470 m",
+            "location": {
+              "lat": -34.5915553,
+              "lng": -58.4340825
+            }
           },
           {
-            "id": "sample-stop-16",
-            "cleanName": "Thames y Av. Córdoba",
+            "id": "transit-1066",
+            "name": "Córdoba y Armenia",
+            "cleanName": "Córdoba y Armenia",
             "category": "bus",
             "type": "Colectivo",
-            "lines": "Líneas 19, 39, 90, 93, 106, 109, 111, 140, 151, 168",
-            "hasExplicitLines": false,
-            "street": "Thames y Av. Córdoba",
-            "distanceMeters": 491,
-            "distanceText": "491 m"
+            "lines": "Línea 140",
+            "lineCount": 1,
+            "distanceMeters": 473,
+            "distanceText": "473 m",
+            "location": {
+              "lat": -34.5925058,
+              "lng": -58.4326314
+            }
+          },
+          {
+            "id": "transit-516",
+            "name": "Avenida Córdoba",
+            "cleanName": "Avenida Córdoba",
+            "category": "bus",
+            "type": "Colectivo",
+            "lines": "Línea 55",
+            "lineCount": 1,
+            "distanceMeters": 494,
+            "distanceText": "494 m",
+            "location": {
+              "lat": -34.5906527,
+              "lng": -58.4351403
+            }
           }
         ]
       }
@@ -720,7 +835,7 @@
     "Afluencia: perfil horario típico del rubro (estimado).",
     "Demografía: censo nacional (INDEC) por radio censal y estructura por edad y sexo del Geoportal INDEC (Censo 2022), ponderados por área.",
     "Alquiler: avisos de locales comerciales en alquiler publicados en ZonaProp.",
-    "Accesibilidad: Google Places, consultado el 26/10/2026.",
+    "Accesibilidad: paradas y estaciones de OpenStreetMap, con sus líneas, datos al 26/10/2026.",
     "Lugares según tu público: todavía sin fuente de datos."
   ],
   "notices": [
