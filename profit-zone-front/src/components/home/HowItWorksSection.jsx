@@ -63,18 +63,16 @@ function HowItWorksSection() {
                   <button
                     type="button"
                     onClick={() => setActive(i)}
-                    aria-expanded={isActive}
+                    aria-current={isActive ? 'step' : undefined}
                     className={cn(
                       'flex flex-1 items-baseline gap-3 text-left font-heading text-lg font-bold transition-colors',
-                      isActive
-                        ? 'text-foreground'
-                        : 'text-muted-foreground/70 hover:text-foreground',
+                      isActive ? 'text-foreground' : 'text-muted-foreground hover:text-foreground',
                     )}
                   >
                     <span
                       className={cn(
                         'text-sm transition-colors',
-                        isActive ? 'text-brand-text' : 'text-muted-foreground/50',
+                        isActive ? 'text-brand-text' : 'text-muted-foreground',
                       )}
                     >
                       {number}
@@ -94,20 +92,12 @@ function HowItWorksSection() {
                   )}
                 </div>
 
-                <div
-                  className={cn(
-                    'grid transition-[grid-template-rows] duration-300 ease-out',
-                    isActive ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]',
-                  )}
-                >
-                  <div className="overflow-hidden">
-                    <p className="max-w-md pb-5 pl-8 pt-3 text-sm leading-relaxed text-muted-foreground sm:text-base">
-                      {description}
-                    </p>
-                  </div>
-                </div>
+                {/* Los tres pasos se leen siempre; el activo se marca con el título y la barra */}
+                <p className="max-w-md pb-5 pl-8 pt-3 text-sm leading-relaxed text-muted-foreground sm:text-base">
+                  {description}
+                </p>
 
-                <div className={cn('relative h-0.5 overflow-hidden bg-border', !isActive && 'mt-5')}>
+                <div className="relative h-0.5 overflow-hidden bg-border">
                   {isActive && (
                     <div
                       onAnimationEnd={goNext}

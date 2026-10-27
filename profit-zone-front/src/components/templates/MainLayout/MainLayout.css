@@ -41,4 +41,6 @@
 .app-content--full {
   flex: 1;
   width: 100%;
+  /* La home tiene brillos decorativos que se salen unos píxeles: sin scroll horizontal */
+  overflow-x: clip;
 }

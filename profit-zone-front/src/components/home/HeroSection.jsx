@@ -3,10 +3,12 @@ import { Button } from '../ui/button.jsx'
 import { NEW_ANALYSIS_LINK } from '../../utils/flowSteps.js'
 import FlipWords from './FlipWords.jsx'
 import demoVideo from '../../assets/media/ProfitZoneDemo.mp4'
+import demoPoster from '../../assets/media/demo-poster.jpeg'
 
 const FLIP_WORDS = ['la ubicación', 'la competencia', 'el alquiler', 'la afluencia', 'la demografía']
 
-// Con "reducir movimiento" activado, el video no arranca solo: se reproduce con sus controles
+// Con "reducir movimiento" activado, el video no arranca solo: se reproduce con sus controles.
+// El póster es una captura del reporte (el producto), lo que se ve mientras carga o sin autoplay
 const prefersReducedMotion = () => window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false
 
 // Hero de la home: video demo del flujo a la izquierda y el mensaje a la derecha.
@@ -21,6 +23,7 @@ function HeroSection() {
           <video
             className="aspect-video w-full rounded-2xl border border-border bg-card object-cover shadow-xl shadow-navy/10"
             src={demoVideo}
+            poster={demoPoster}
             autoPlay={autoPlay}
             muted
             loop
