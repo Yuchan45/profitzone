@@ -1,6 +1,7 @@
 import { sequelize } from '../db/sequelize.js'
 import { getSubcategorySurvey } from './questions.service.js'
 import { httpError } from '../utils/httpErrors.js'
+import { isDirectOsmPlace } from '../utils/cuisineMatch.js'
 
 // Tipos de negocio de osm_data.places que son competencia de cada subcategoría
 export const KINDS_BY_SUBCATEGORY = {
@@ -40,7 +41,8 @@ export async function directCriteria(categoryCode, subcategoryCode, match) {
  * Negocios del rubro dentro del círculo, para la vista previa del paso 3. Los datos
  * vienen de OpenStreetMap (osm_data.places, `npm run db:seed:osm-places`): es gratis
  * y no consume la API paga de Google Places, que queda para el reporte.
- * Cada punto trae `direct`: si coincide con la cocina elegida (competencia directa).
+ * Cada punto trae `direct`: si coincide con la cocina elegida (competencia directa), por su
+ * etiqueta de cocina o, si no la tiene, por su nombre (utils/cuisineMatch.js).
  */
 export async function findNearbyPlaces({ lat, lng, radius, categoryCode, subcategoryCode, match }) {
   const kinds = KINDS_BY_SUBCATEGORY[`${categoryCode}/${subcategoryCode}`]
@@ -56,8 +58,6 @@ export async function findNearbyPlaces({ lat, lng, radius, categoryCode, subcate
     { replacements: { lat, lng, radius, kinds } },
   )
 
-  const isDirect = (cuisine) =>
-    Boolean(criteria && cuisine && cuisine.split(';').some((value) => criteria.cuisines.has(value.trim())))
   const places = rows.map((row) => ({
     id: row.id,
     name: row.name,
@@ -65,7 +65,7 @@ export async function findNearbyPlaces({ lat, lng, radius, categoryCode, subcate
     cuisine: row.cuisine,
     lat: row.lat,
     lng: row.lng,
-    direct: isDirect(row.cuisine),
+    direct: isDirectOsmPlace(criteria, row),
   }))
   const updatedAt = rows.reduce((latest, row) => (row.lastSeenAt > latest ? row.lastSeenAt : latest), null)
 

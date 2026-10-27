@@ -888,9 +888,9 @@
       "referenceCount": 295
     },
     "direct": {
-      "value": 6,
-      "median": 2,
-      "percentile": 93,
+      "value": 8,
+      "median": 3,
+      "percentile": 94,
       "referenceCount": 295
     },
     "transit": {
