@@ -1,7 +1,8 @@
 // Lugares que atraen a cada público de "¿A qué público apuntás?" (pregunta
-// target_age del catálogo) (PZ-50). Es el único mapeo: lo usan el seed de OSM
-// (qué tipos de lugar se cargan), el servicio (qué se cuenta en el radio) y el
-// criterio "Según tu público" del reporte.
+// target_age del catálogo) (PZ-50). Acá está qué tipos de lugar atraen a cada
+// público: lo usan el servicio (qué se cuenta en el radio) y el criterio "Según tu
+// público" del reporte. Qué etiquetas de OSM son cada tipo lo decide el seed
+// (classifyAudiencePlace en db/seeders/osmAudiencePlaces.js).
 
 // Tipos de lugar de osm_data.audience_places (columna `kind`), en el orden en que se muestran
 export const AUDIENCE_PLACE_KINDS = {

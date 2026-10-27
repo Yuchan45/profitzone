@@ -511,7 +511,7 @@ geometry|	MultiPolygon|	Coordenadas vectoriales exactas de los límites de las m
 
 `npm run db:seed:osm-audience` baja de Overpass, con el mismo cliente y la misma zona que el seed anterior, los lugares que suelen reunir a cada público de "¿A qué público apuntás?" y los guarda en `osm_data.audience_places` (migración `0015`, índice espacial `IX_audience_places_geom`). Lo usa el criterio "Según tu público" del reporte. Es idempotente, no borra (los que dejan de aparecer quedan con `is_active = 0`) y requiere el censo cargado. En Palermo + 2 km trae unos 2.700 lugares.
 
-El mapeo público → tipos de lugar está en un solo lugar, `src/utils/audiencePlaces.js`:
+Qué tipos de lugar atraen a cada público está en `src/utils/audiencePlaces.js`, y qué etiquetas de OSM son cada tipo, en `classifyAudiencePlace` (`src/db/seeders/osmAudiencePlaces.js`):
 
 | Público (`target_age`) | Tipos de lugar (`kind`) | Etiquetas de OSM |
 | ---------------------- | ----------------------- | ---------------- |

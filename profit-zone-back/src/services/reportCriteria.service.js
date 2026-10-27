@@ -1,5 +1,5 @@
 import { calculateMedian } from '../utils/stats.js'
-import { AUDIENCE_PLACE_KINDS, describeKindCount, kindsForAudiences } from '../utils/audiencePlaces.js'
+import { describeKindCount } from '../utils/audiencePlaces.js'
 
 // Reglas del cuadro "Fortalezas y debilidades" del reporte (PZ-20).
 // Cada criterio cruza una respuesta del paso 2 con un indicador de la zona y
@@ -391,7 +391,7 @@ export function placesForAudienceCriterion({ answerCodes, answerLabel, audienceP
   const found = byKind.filter((item) => item.count > 0).map((item) => describeKindCount(item.kind, item.count))
   const zone =
     total === 0
-      ? `Sin ${joinPhrases(kindsForAudiences(audiences).map((kind) => AUDIENCE_PLACE_KINDS[kind].plural))} en el radio`
+      ? `Sin ${joinPhrases(byKind.map((item) => item.label))} en el radio`
       : `${formatInt(total)} ${total === 1 ? 'lugar que atrae' : 'lugares que atraen'} a tu público: ${joinPhrases(found)}`
 
   const areaKm2 = Math.PI * (radiusInMeters / 1000) ** 2

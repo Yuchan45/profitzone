@@ -453,8 +453,9 @@ function AudiencePlacesCard({ report }) {
               </tr>
             </thead>
             <tbody>
-              {data.nearest.map((place) => (
-                <tr key={`${place.kind}-${place.name}-${place.distanceMeters}`}>
+              {/* La lista no se reordena ni se edita: el índice alcanza para la key */}
+              {data.nearest.map((place, index) => (
+                <tr key={`${index}-${place.name}`}>
                   <th scope="row">{place.name}</th>
                   <td>{capitalize(place.label)}</td>
                   <td>{place.distanceText}</td>

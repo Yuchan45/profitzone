@@ -1,14 +1,31 @@
 import { QueryTypes } from 'sequelize'
 import { sequelize } from '../db/sequelize.js'
 import { httpError } from '../utils/httpErrors.js'
+import { calculateDistanceMeters, formatDistance } from '../utils/geo.js'
 import { AUDIENCE_PLACE_KINDS, kindsForAudiences } from '../utils/audiencePlaces.js'
 
 // Lugares más cercanos que se listan en el reporte
 const NEAREST_PLACES = 5
+// OSM a veces tiene el mismo lugar dos veces (el punto y el edificio, por ejemplo una
+// escuela): mismo tipo y nombre a menos de esta distancia cuentan una sola vez
+const DUPLICATE_METERS = 150
 
-// Mismo formato que la distancia de la competencia y la accesibilidad
-function formatDistance(meters) {
-  return meters < 1000 ? `${meters} m` : `${(meters / 1000).toFixed(1)} km`
+/** Saca los duplicados de OSM. `rows` viene ordenado por distancia: queda el más cercano. */
+function withoutDuplicates(rows) {
+  const kept = []
+  for (const row of rows) {
+    const name = row.name?.trim().toLocaleLowerCase('es-AR')
+    const duplicate =
+      name &&
+      kept.some(
+        (other) =>
+          other.kind === row.kind &&
+          other.name?.trim().toLocaleLowerCase('es-AR') === name &&
+          calculateDistanceMeters(other.lat, other.lng, row.lat, row.lng) <= DUPLICATE_METERS,
+      )
+    if (!duplicate) kept.push(row)
+  }
+  return kept
 }
 
 // Se recuerda solo cuando la tabla ya tiene datos: si está vacía se vuelve a mirar
@@ -36,18 +53,20 @@ export async function getAudiencePlacesInRadius({ lat, lng, radiusInMeters, audi
   const base = { radiusInMeters, source: 'OpenStreetMap' }
   if (kinds.length === 0) return { ...base, total: 0, byKind: [], nearest: [], updatedAt: null }
 
-  const rows = await sequelize.query(
+  const found = await sequelize.query(
     `DECLARE @point geography = geography::Point(:lat, :lng, 4326);
-     SELECT kind, name, ROUND(geom.STDistance(@point), 0) AS distanceMeters, last_seen_at AS lastSeenAt
+     SELECT kind, name, geom.Lat AS lat, geom.Long AS lng,
+       ROUND(geom.STDistance(@point), 0) AS distanceMeters, last_seen_at AS lastSeenAt
      FROM osm_data.audience_places
      WHERE is_active = 1 AND kind IN (:kinds) AND geom.STDistance(@point) <= :radiusInMeters
      ORDER BY distanceMeters ASC`,
     { replacements: { lat, lng, radiusInMeters, kinds }, type: QueryTypes.SELECT },
   )
-  if (rows.length === 0 && !(await audiencePlacesLoaded())) {
+  if (found.length === 0 && !(await audiencePlacesLoaded())) {
     throw httpError(503, 'Todavía no hay lugares de OpenStreetMap cargados para consultar.')
   }
 
+  const rows = withoutDuplicates(found)
   const counts = Object.fromEntries(kinds.map((kind) => [kind, 0]))
   for (const row of rows) counts[row.kind]++
   const lastSeen = rows.map((row) => new Date(row.lastSeenAt).getTime()).filter(Number.isFinite)
