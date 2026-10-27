@@ -10,6 +10,7 @@ import InfoTip from '../../molecules/InfoTip/InfoTip.jsx'
 import IndicatorCard from '../../molecules/IndicatorCard/IndicatorCard.jsx'
 import DisclaimerCard from '../../molecules/DisclaimerCard/DisclaimerCard.jsx'
 import Badge from '../../atoms/Badge/Badge.jsx'
+import Chip from '../../atoms/Chip/Chip.jsx'
 import HourlyBars from '../../atoms/HourlyBars/HourlyBars.jsx'
 import ScoreMeter from '../../atoms/ScoreMeter/ScoreMeter.jsx'
 import Button from '../../atoms/Button/Button.jsx'
@@ -129,20 +130,46 @@ function accessibilityTile(indicator) {
   return { value, caption }
 }
 
-// Orden de la tabla de competencia. "Relevancia": primero las directas, después por cercanía
+// Orden de la tabla de competencia. "Más fuertes" (el de la API): directas primero, después
+// por rating ajustado por reseñas (`strength`); sin datos de Google, al final y por cercanía
 const COMPETITION_SORTS = {
-  relevance: (a, b) =>
-    (a.type === 'Directa') === (b.type === 'Directa')
-      ? a.distanceMeters - b.distanceMeters
-      : a.type === 'Directa'
-        ? -1
-        : 1,
+  strength: (a, b) => {
+    if ((a.type === 'Directa') !== (b.type === 'Directa')) return a.type === 'Directa' ? -1 : 1
+    const strengthA = a.strength ?? null
+    const strengthB = b.strength ?? null
+    if (strengthA !== strengthB) {
+      if (strengthA === null) return 1
+      if (strengthB === null) return -1
+      return strengthB - strengthA
+    }
+    return a.distanceMeters - b.distanceMeters
+  },
   rating: (a, b) => (b.rating ?? 0) - (a.rating ?? 0),
   reviews: (a, b) => (b.userRatingCount ?? 0) - (a.userRatingCount ?? 0),
   distance: (a, b) => a.distanceMeters - b.distanceMeters,
 }
 
-// Encabezado que ordena la tabla al tocarlo (otra vez: vuelve al orden por relevancia)
+// Filtros de la tabla de competencia por tipo
+const COMPETITION_FILTERS = [
+  { key: 'all', label: 'Todos', test: () => true },
+  { key: 'direct', label: 'Directos', test: (place) => place.type === 'Directa' },
+  { key: 'indirect', label: 'Indirectos', test: (place) => place.type !== 'Directa' },
+]
+
+// Qué trae la tabla: con cocina elegida, sus locales en Google más los que solo están en OSM
+function competitionListNote(data, places) {
+  const fromOsm = places.filter((place) => place.source === 'osm').length
+  const fromGoogle = places.length - fromOsm
+  const google = `los ${fromGoogle} más populares según Google (devuelve hasta ${COMPETITION_MAX_RESULTS} por consulta)`
+  const intro =
+    data.listMode === 'cuisine' && data.cuisineLabel
+      ? `Competidores de cocina ${data.cuisineLabel.toLowerCase()}: ${google}`
+      : `Locales del rubro en el radio: ${google}`
+  const osm = fromOsm > 0 ? ` y ${fromOsm} más que figuran en OpenStreetMap, sin rating de Google` : ''
+  return `${intro}${osm}. Primero los más fuertes: rating ajustado por cantidad de reseñas.`
+}
+
+// Encabezado que ordena la tabla al tocarlo (otra vez: vuelve al orden "más fuertes")
 function SortableHeader({ sortKey, activeSort, onSort, children }) {
   const active = activeSort === sortKey
   // Rating y reseñas ordenan de mayor a menor; la distancia, de menor a mayor
@@ -152,7 +179,7 @@ function SortableHeader({ sortKey, activeSort, onSort, children }) {
       <button
         type="button"
         className={`zone-analysis-sort${active ? ' zone-analysis-sort--active' : ''}`}
-        onClick={() => onSort(active ? 'relevance' : sortKey)}
+        onClick={() => onSort(active ? 'strength' : sortKey)}
       >
         {children}
         <Icon name={active && direction === 'ascending' ? 'chevron-up' : 'chevron-down'} size={12} />
@@ -163,13 +190,21 @@ function SortableHeader({ sortKey, activeSort, onSort, children }) {
 
 function CompetitionCard({ report, live }) {
   const [isExpanded, setIsExpanded] = useState(false)
-  const [sort, setSort] = useState('relevance')
+  const [sort, setSort] = useState('strength')
+  const [filter, setFilter] = useState('all')
   const indicator = report.data?.indicators.competition
   const state = cardState(report, indicator)
   const data = indicator?.data
 
   const places = data?.places
-  const sortedPlaces = useMemo(() => (places ? [...places].sort(COMPETITION_SORTS[sort]) : []), [places, sort])
+  const filterCounts = useMemo(
+    () => Object.fromEntries(COMPETITION_FILTERS.map(({ key, test }) => [key, (places ?? []).filter(test).length])),
+    [places],
+  )
+  const sortedPlaces = useMemo(() => {
+    const { test } = COMPETITION_FILTERS.find(({ key }) => key === filter)
+    return (places ?? []).filter(test).sort(COMPETITION_SORTS[sort])
+  }, [places, sort, filter])
 
   const card = { icon: 'shield-check', title: 'Competencia', ...state }
   if (state.status !== 'ok') return <IndicatorCard {...card} />
@@ -194,11 +229,8 @@ function CompetitionCard({ report, live }) {
     : data.total >= COMPETITION_MAX_RESULTS
       ? `${data.total}+`
       : formatNumber(data.total)
-  // La lista trae como máximo 20 locales (límite de Google Places); el total es de todo el radio
-  const listNote =
-    sortedPlaces.length < data.total
-      ? `Se muestran ${visiblePlaces.length} de los ${sortedPlaces.length} locales más cercanos (Google Places devuelve hasta ${COMPETITION_MAX_RESULTS} por consulta).`
-      : `Se muestran ${visiblePlaces.length} de ${sortedPlaces.length} locales.`
+  // Filtrar solo tiene sentido si la lista mezcla directos e indirectos
+  const showFilters = filterCounts.direct > 0 && filterCounts.indirect > 0
 
   return (
     <IndicatorCard
@@ -213,10 +245,19 @@ function CompetitionCard({ report, live }) {
       callout={data.callout}
       source={`${data.source}${live ? ' · en vivo' : ''} · ${formatDate(data.queryDate)}`}
     >
-      <p className="zone-analysis-table-note">{listNote}</p>
+      <p className="zone-analysis-table-note">{competitionListNote(data, places)}</p>
+      {showFilters && (
+        <div className="zone-analysis-filters" role="group" aria-label="Filtrar competidores por tipo">
+          {COMPETITION_FILTERS.map(({ key, label }) => (
+            <Chip key={key} size="s" selected={filter === key} onClick={() => setFilter(key)}>
+              {label} <span className="zone-analysis-filter-count">{filterCounts[key]}</span>
+            </Chip>
+          ))}
+        </div>
+      )}
       <div className={`zone-analysis-table-wrap ${isExpanded ? 'zone-analysis-table-wrap--expanded' : ''}`}>
         <table className="zone-analysis-table">
-          <caption className="zone-analysis-sr-only">Locales del rubro más cercanos al punto</caption>
+          <caption className="zone-analysis-sr-only">Competidores del rubro en el radio, los más fuertes primero</caption>
           <thead>
             <tr>
               <th scope="col">Local</th>
@@ -236,14 +277,15 @@ function CompetitionCard({ report, live }) {
             {visiblePlaces.map((place) => (
               <tr key={place.id}>
                 {/* Nombres largos se cortan: el completo aparece al pasar el mouse.
-                    Los locales reales llevan a su ficha de Google Maps (los del ejemplo son ficticios) */}
+                    Los locales reales llevan a su ficha de Google Maps (los del ejemplo son ficticios);
+                    los que solo están en OSM, a una búsqueda por nombre */}
                 <th scope="row" title={place.name}>
                   {place.id.startsWith('sample-') ? (
                     place.name
                   ) : (
                     <a
                       className="zone-analysis-place-link"
-                      href={googlePlaceUrl(place.name, place.id)}
+                      href={googlePlaceUrl(place.name, place.source === 'osm' ? null : place.id)}
                       target="_blank"
                       rel="noopener noreferrer"
                       aria-label={`${place.name}, ver en Google Maps (se abre en otra pestaña)`}
@@ -253,7 +295,15 @@ function CompetitionCard({ report, live }) {
                     </a>
                   )}
                 </th>
-                <td>{place.rating ? formatNumber(place.rating) : '—'}</td>
+                <td>
+                  {place.rating ? (
+                    formatNumber(place.rating)
+                  ) : (
+                    <span title={place.source === 'osm' ? 'Figura en OpenStreetMap, sin datos de Google' : 'Sin calificaciones'}>
+                      —
+                    </span>
+                  )}
+                </td>
                 <td>{place.userRatingCount ? formatNumber(place.userRatingCount) : '—'}</td>
                 <td>{place.distanceText}</td>
                 <td>

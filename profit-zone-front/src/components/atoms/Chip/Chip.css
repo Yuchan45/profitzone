@@ -20,6 +20,12 @@
   border-color: var(--color-border-strong);
 }
 
+.chip--s {
+  height: 32px;
+  padding: 0 var(--space-12);
+  font-size: var(--text-13);
+}
+
 .chip--selected,
 .chip--selected:hover {
   border-color: var(--color-primary);

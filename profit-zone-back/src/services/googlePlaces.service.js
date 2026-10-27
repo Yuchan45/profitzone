@@ -7,6 +7,8 @@ const FIELD_MASK =
 /**
  * Consulta lugares cercanos utilizando la nueva Google Places API (searchNearby).
  * Si no hay GOOGLE_PLACES_API_KEY configurada, devuelve datos simulados realistas.
+ * Con clave, un error de Google (cuota agotada, tipo inválido, red) se propaga: el reporte
+ * muestra que el dato no cargó, en vez de mostrar locales inventados como si fueran reales.
  */
 export async function searchNearbyPlaces({
   lat,
@@ -31,44 +33,39 @@ export async function searchNearbyPlaces({
     },
   }
 
-  try {
-    const response = await fetch(PLACES_NEARBY_URL, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-Goog-Api-Key': env.googlePlacesApiKey,
-        'X-Goog-FieldMask': FIELD_MASK,
-      },
-      body: JSON.stringify(payload),
-    })
+  const response = await fetch(PLACES_NEARBY_URL, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-Goog-Api-Key': env.googlePlacesApiKey,
+      'X-Goog-FieldMask': FIELD_MASK,
+    },
+    body: JSON.stringify(payload),
+  })
 
-    if (!response.ok) {
-      const errorBody = await response.text()
-      console.error(`[ProfitZone] Error de Google Places API (${response.status}):`, errorBody)
-      throw new Error(`Google Places API respondió con estado ${response.status}`)
-    }
-
-    const data = await response.json()
-    const rawPlaces = data.places || []
-
-    return rawPlaces.map((p) => ({
-      id: p.id,
-      name: p.displayName?.text || 'Sin nombre',
-      rating: typeof p.rating === 'number' ? Number(p.rating.toFixed(1)) : 4.0,
-      userRatingCount: p.userRatingCount || 0,
-      location: {
-        lat: p.location?.latitude,
-        lng: p.location?.longitude,
-      },
-      primaryType: p.primaryType || p.types?.[0] || includedTypes[0],
-      types: p.types || [],
-      address: p.shortFormattedAddress || p.formattedAddress || null,
-    }))
-  } catch (error) {
-    console.error('[ProfitZone] Falló la llamada a Google Places API:', error.message)
-    // En caso de corte de red o error de API, recurrir a fallback de desarrollo para no voltear la experiencia
-    return getMockPlaces(lat, lng, includedTypes[0])
+  if (!response.ok) {
+    const errorBody = await response.text()
+    console.error(`[ProfitZone] Error de Google Places API (${response.status}):`, errorBody)
+    throw new Error(`Google Places API respondió con estado ${response.status}`)
   }
+
+  const data = await response.json()
+  const rawPlaces = data.places || []
+
+  return rawPlaces.map((p) => ({
+    id: p.id,
+    name: p.displayName?.text || 'Sin nombre',
+    // Sin calificaciones en Google: null (no se inventa un rating que sesgue el promedio)
+    rating: typeof p.rating === 'number' ? Number(p.rating.toFixed(1)) : null,
+    userRatingCount: p.userRatingCount || 0,
+    location: {
+      lat: p.location?.latitude,
+      lng: p.location?.longitude,
+    },
+    primaryType: p.primaryType || p.types?.[0] || includedTypes[0],
+    types: p.types || [],
+    address: p.shortFormattedAddress || p.formattedAddress || null,
+  }))
 }
 
 /** Mock realista para entornos de prueba offline o sin clave de Google */

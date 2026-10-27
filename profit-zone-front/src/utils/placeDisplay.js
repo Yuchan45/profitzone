@@ -122,7 +122,9 @@ export function googleMapsUrl(place) {
  */
 export function googlePlaceUrl(name, placeId) {
   const query = encodeURIComponent(`${name}, Palermo, Buenos Aires`)
-  return `https://www.google.com/maps/search/?api=1&query=${query}&query_place_id=${encodeURIComponent(placeId)}`
+  const url = `https://www.google.com/maps/search/?api=1&query=${query}`
+  // Sin id de Google (locales que solo están en OpenStreetMap): búsqueda por nombre
+  return placeId ? `${url}&query_place_id=${encodeURIComponent(placeId)}` : url
 }
 
 /** Servicios que el local tiene marcados como "yes" en OSM. */

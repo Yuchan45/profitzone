@@ -228,7 +228,7 @@ export function competitionCriterion({ answerLabel, subcategoryName, competition
   }
 
   const { total, directCount, averageRating, places = [] } = competition.data
-  // Sin locales con rating el servicio devuelve un promedio por defecto: no se usa
+  // Sin locales con rating el promedio es null: no se menciona
   const hasRatings = places.some((place) => place.rating)
   // Si se llegó al máximo de resultados puede haber más locales que no vinieron
   const atLeast = total >= COMPETITION.maxResults && !competition.data.isExact ? 'Al menos ' : ''

@@ -149,24 +149,45 @@ export const questions = [
     assignments: [sub('gastronomia', 'restaurante', 'details', 1)],
     // osmCuisine: valores de la etiqueta cuisine de OpenStreetMap que cuentan como
     // competencia directa en la vista previa del mapa (paso 3). "Otra" no destaca ninguno.
+    // googleTypes: tipos de Google Places (lista oficial "Table A") que busca el reporte
+    // para la tabla de competencia: con cocina elegida, la consulta trae los de esa cocina.
+    // Solo tipos válidos: uno desconocido hace fallar toda la consulta.
     options: [
-      { code: 'italian', label: 'Italiana / pizzería', metadata: { osmCuisine: ['italian', 'pizza', 'pasta'] } },
+      { code: 'italian', label: 'Italiana / pizzería', metadata: { osmCuisine: ['italian', 'pizza', 'pasta'], googleTypes: ['italian_restaurant', 'pizza_restaurant'] } },
       {
         code: 'grill',
         label: 'Parrilla',
-        metadata: { osmCuisine: ['steak_house', 'barbecue', 'grill', 'parrilla'] },
+        metadata: {
+          osmCuisine: ['steak_house', 'barbecue', 'grill', 'parrilla'],
+          googleTypes: ['steak_house', 'barbecue_restaurant', 'bar_and_grill'],
+        },
       },
       {
         code: 'asian',
         label: 'Asiática',
         metadata: {
           osmCuisine: ['asian', 'sushi', 'japanese', 'chinese', 'korean', 'thai', 'vietnamese', 'indian', 'ramen', 'poke', 'wok', 'noodle'],
+          googleTypes: [
+            'asian_restaurant',
+            'chinese_restaurant',
+            'japanese_restaurant',
+            'sushi_restaurant',
+            'ramen_restaurant',
+            'korean_restaurant',
+            'thai_restaurant',
+            'vietnamese_restaurant',
+            'indian_restaurant',
+            'indonesian_restaurant',
+          ],
         },
       },
       {
         code: 'international',
         label: 'Internacional / de autor',
-        metadata: { osmCuisine: ['international', 'fusion', 'fine_dining', 'french', 'mediterranean', 'spanish'] },
+        metadata: {
+          osmCuisine: ['international', 'fusion', 'fine_dining', 'french', 'mediterranean', 'spanish'],
+          googleTypes: ['fine_dining_restaurant', 'french_restaurant', 'mediterranean_restaurant', 'spanish_restaurant'],
+        },
       },
       { code: 'other', label: 'Otra' },
     ],

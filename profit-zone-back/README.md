@@ -180,7 +180,13 @@ El cálculo se ejecuta en el motor espacial nativo de SQL Server 2022 (`geograph
 
 ### `GET /api/competition`
 
-Obtiene el análisis de competidores directos e indirectos en un radio alrededor de unas coordenadas usando la API de Google Places (New).
+Obtiene el análisis de competidores directos e indirectos en un radio alrededor de unas coordenadas usando la API de Google Places (New), con una sola consulta.
+
+- Con `match` de una cocina (ej. `cuisine_type:asian`) la consulta pide los tipos de Google de esa cocina (`metadata.googleTypes` de la opción en el catálogo) y `listMode` es `cuisine`; sin cocina, pide los tipos generales del rubro (`general`). Google devuelve hasta 20 locales, los más populares.
+- Los competidores directos que están en OpenStreetMap y Google no trajo se suman a `places` sin rating (`source: "osm"`).
+- `places` viene ordenado por fuerza: directos primero, después por `strength` (rating ajustado por cantidad de reseñas); sin datos de Google, al final.
+- `total` y `directCount` son los locales de OpenStreetMap en el radio más los que solo trajo Google. `averageRating` es `null` si ningún local tiene calificaciones.
+- Si Google falla (por ejemplo, cuota diaria agotada) el endpoint responde con error: no se muestran datos inventados. Solo sin `GOOGLE_PLACES_API_KEY` se usan datos de desarrollo.
 
 #### Parámetros de consulta (Query Params)
 
@@ -189,7 +195,9 @@ Obtiene el análisis de competidores directos e indirectos en un radio alrededor
 | `lat`         | `number` | Sí        | —             | Latitud en grados decimales (`-90` a `90`). Ej: `-34.5880`. |
 | `lng`         | `number` | Sí        | —             | Longitud en grados decimales (`-180` a `180`). Ej: `-58.4300`. |
 | `radius`      | `number` | No        | `1000`        | Radio en metros (`10` a `20000`). Ej: `1000`. |
+| `category`    | `string` | No        | según rubro   | Código de la categoría (`gastronomia`, `fitness`). |
 | `subcategory` | `string` | No        | `restaurante` | Código del rubro (`restaurante`, `cafeteria`, `gimnasio`, `pilates`). |
+| `match`       | `string` | No        | —             | Respuesta que define la competencia directa, como `pregunta:opción`. Ej: `cuisine_type:asian`. |
 
 #### Ejemplo de solicitud y respuesta
 
@@ -206,6 +214,8 @@ Host: localhost:8080
   "averageRating": 4.5,
   "subcategory": "cafeteria",
   "subcategoryName": "cafeterías",
+  "listMode": "general",
+  "cuisineLabel": null,
   "callout": "Hay bastante competencia directa y bien valorada cerca del punto.",
   "source": "Google Places",
   "places": [
@@ -220,7 +230,9 @@ Host: localhost:8080
       "location": {
         "lat": -34.58899,
         "lng": -58.43153
-      }
+      },
+      "source": "google",
+      "strength": 4.396
     }
   ]
 }

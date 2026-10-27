@@ -184,6 +184,23 @@
   line-height: 1.45;
 }
 
+/* Filtros de la tabla de competencia (Todos / Directos / Indirectos) */
+.zone-analysis-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-8);
+}
+
+.zone-analysis-filter-count {
+  margin-left: var(--space-6);
+  color: var(--color-text-secondary);
+  font-variant-numeric: tabular-nums;
+}
+
+.chip--selected .zone-analysis-filter-count {
+  color: inherit;
+}
+
 /* Solo para lectores de pantalla */
 .zone-analysis-sr-only {
   position: absolute;
