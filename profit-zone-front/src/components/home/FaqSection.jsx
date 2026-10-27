@@ -9,7 +9,7 @@ const FAQS = [
   {
     question: '¿De dónde salen los datos?',
     answer:
-      'Competencia de Google Places en vivo; demografía del Censo 2022 (INDEC); alquiler de los avisos de locales publicados en ZonaProp (mediana dentro del radio que elegís); accesibilidad de datos abiertos del Gobierno de la Ciudad y OpenStreetMap.',
+      'Competencia de OpenStreetMap y Google Places (rating y reseñas); demografía del Censo 2022 (INDEC); alquiler de los avisos de locales publicados en ZonaProp (mediana dentro del radio que elegís); accesibilidad de paradas y estaciones de OpenStreetMap, con sus líneas.',
   },
   {
     question: '¿El reporte me dice si conviene abrir?',
