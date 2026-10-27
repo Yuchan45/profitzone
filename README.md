@@ -209,6 +209,15 @@ ProfitZone/
         └── main.jsx      punto de entrada
 ```
 
+## Plan premium (a futuro)
+
+Todavía no hay un modelo de negocio definido: hoy el servicio es gratuito y se pueden generar reportes sin límite. Cuando se defina, algunas funciones pasarían a ser solo para miembros premium (rol `premium`):
+
+- **Radio extendido (más de 600 m):** ya funciona así, solo para `premium` y `admin` (`RADIUS_FREE_MAX_M` en el back y `FREE_MAX_RADIUS` en el front).
+- **Cantidad de reportes:** más de 3 reportes serían solo para premium. **Todavía no existe**: hoy es ilimitado.
+
+Mientras tanto, la web no comunica precios ni límites (las preguntas frecuentes de la home no los mencionan). Cuando se decida, hay que actualizar la home, la página de privacidad y las preguntas frecuentes.
+
 ## Commits
 
 Se usa [Conventional Commits](https://www.conventionalcommits.org/) con scope obligatorio:

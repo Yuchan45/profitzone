@@ -18,6 +18,8 @@ import { httpError } from '../utils/httpErrors.js'
 const RADIUS_MIN_M = 100
 const RADIUS_MAX_M = 2000
 const RADIUS_FREE_MAX_M = 600
+// Plan a futuro (ver "Plan premium" en el README): también limitar la cantidad de reportes por
+// usuario free (más de 3 solo premium). Hoy no hay límite.
 const UNLIMITED_RADIUS_ROLES = ['premium', 'admin']
 
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
