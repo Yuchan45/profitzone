@@ -17,6 +17,7 @@ import RecuperarContrasena from './pages/RecuperarContrasena/RecuperarContrasena
 import RestablecerContrasena from './pages/RestablecerContrasena/RestablecerContrasena.jsx'
 import Reporte from './pages/Reporte/Reporte.jsx'
 import Terminos from './pages/Terminos/Terminos.jsx'
+import Metodologia from './pages/Metodologia/Metodologia.jsx'
 import NotFound from './pages/NotFound.jsx'
 
 // Las páginas con mapa traen Leaflet (~150 kB): se cargan recién al entrar
@@ -73,6 +74,7 @@ function App() {
       </Route>
       <Route element={<MainLayout />}>
         <Route path="/terminos" element={<Terminos />} />
+        <Route path="/metodologia" element={<Metodologia />} />
         <Route
           path="/reporte-ejemplo"
           element={

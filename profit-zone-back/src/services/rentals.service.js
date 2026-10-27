@@ -163,6 +163,11 @@ function queryRentalsFromFallback(lat, lng, radiusInMeters) {
   return matching
 }
 
+/** Tipo de cambio con el que se pasan a pesos los avisos publicados solo en dólares. */
+export function rentalExchangeRate() {
+  return getFallbackCatalog()?.exchange_rate_official || { rate: 1540.0, source: 'DolarAPI Oficial' }
+}
+
 /**
  * Obtiene el promedio y estadísticas de precios de alquiler comercial en un radio.
  */
@@ -189,8 +194,7 @@ export async function getRentalsInRadius({ lat, lng, radiusInMeters = 1000 }) {
     source = 'Dataset Local (zonaprop_locales_caba_alquiler.json)'
   }
 
-  const fallbackCatalog = getFallbackCatalog()
-  const exchangeRate = fallbackCatalog?.exchange_rate_official || { rate: 1540.0, source: 'DolarAPI Oficial' }
+  const exchangeRate = rentalExchangeRate()
 
   if (!rows || rows.length === 0) {
     return {

@@ -844,7 +844,6 @@
     "La demografía viene de los radios censales que tocan el círculo, ponderada por superficie: no refleja diferencias cuadra por cuadra.",
     "Este reporte describe la zona. No indica si conviene o no abrir."
   ],
-  "generatedAt": "2026-10-26T22:26:10.045Z",
   "business": {
     "categoryCode": "gastronomia",
     "subcategoryCode": "restaurante",
@@ -877,5 +876,40 @@
         "medium"
       ]
     }
-  }
+  },
+  "benchmarks": {
+    "neighborhood": "Palermo",
+    "radiusInMeters": 500,
+    "referencePoints": 295,
+    "competition": {
+      "value": 90,
+      "median": 43,
+      "percentile": 97,
+      "referenceCount": 295
+    },
+    "direct": {
+      "value": 6,
+      "median": 2,
+      "percentile": 93,
+      "referenceCount": 295
+    },
+    "transit": {
+      "value": 19,
+      "median": 21,
+      "percentile": 37,
+      "referenceCount": 295
+    },
+    "rent": {
+      "value": 5500000,
+      "median": 4800000,
+      "percentile": 75,
+      "referenceCount": 266
+    },
+    "population": {
+      "value": 11825,
+      "average": 14174,
+      "ratio": 0.83
+    }
+  },
+  "generatedAt": "2026-10-26T22:26:10.045Z"
 }

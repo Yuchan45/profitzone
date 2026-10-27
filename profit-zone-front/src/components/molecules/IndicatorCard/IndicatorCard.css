@@ -74,6 +74,45 @@
   margin-top: 1px;
 }
 
+/* "¿Cómo se calcula?": plegado, arriba de la fuente */
+.indicator-card-method {
+  border-top: 1px solid var(--color-border);
+  padding-top: var(--space-12);
+}
+
+.indicator-card-method-summary {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-4);
+  min-height: 24px;
+  color: var(--color-text);
+  font-size: var(--text-14);
+  font-weight: 600;
+  list-style: none;
+  cursor: pointer;
+}
+
+.indicator-card-method-summary::-webkit-details-marker {
+  display: none;
+}
+
+.indicator-card-method[open] .indicator-card-method-summary .icon {
+  transform: rotate(180deg);
+}
+
+.indicator-card-method-text {
+  margin: var(--space-8) 0;
+  color: var(--color-text-secondary);
+  font-size: var(--text-14);
+  line-height: 1.55;
+}
+
+.indicator-card-method-link {
+  color: var(--color-primary-ink);
+  font-size: var(--text-14);
+  font-weight: 500;
+}
+
 /* Error y sin datos */
 .indicator-card-message {
   display: flex;

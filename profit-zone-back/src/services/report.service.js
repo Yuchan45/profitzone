@@ -5,6 +5,7 @@ import { getTrafficAnalysis } from './traffic.service.js'
 import { getDensityInRadius } from './density.service.js'
 import { getRentalsInRadius } from './rentals.service.js'
 import { getAccessibilityAnalysis } from './accessibility.service.js'
+import { getBenchmarks } from './benchmarks.service.js'
 import { CRITERIA, buildSummary } from './reportCriteria.service.js'
 import { httpError } from '../utils/httpErrors.js'
 
@@ -194,6 +195,18 @@ export async function buildAnalysisReport(id, userId) {
     }),
   )
 
+  // Referencias de Palermo para leer cada dato; si fallan, el reporte sale igual sin ellas
+  const benchmarks = await getBenchmarks({
+    ...point,
+    categoryCode: analysis.category.code,
+    subcategoryCode: subcategory,
+    match: resolveDirectMatch(survey, analysis.answers),
+    density: density.status === 'ok' && density.data.inCoverage ? density.data.densidadHabKm2 : null,
+  }).catch((error) => {
+    console.warn(`[ProfitZone] No se pudieron calcular las referencias de Palermo: ${error.message}`)
+    return null
+  })
+
   return {
     analysis: {
       id: analysis.id,
@@ -214,6 +227,7 @@ export async function buildAnalysisReport(id, userId) {
       // Sin el listado de avisos: el reporte solo muestra el resumen del alquiler
       rent: rent.status === 'ok' ? { status: 'ok', data: summarizeRent(rent.data) } : rent,
     },
+    benchmarks,
     sources: buildSources({ competition, traffic, density, rent, accessibility }),
     notices: NOTICES,
     generatedAt: new Date().toISOString(),

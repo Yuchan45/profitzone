@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { useNeighborhoods } from '../../../hooks/useNeighborhoods.js'
 import { useNearbyPlaces } from '../../../hooks/useNearbyPlaces.js'
 import { useRentalListings } from '../../../hooks/useRentalListings.js'
@@ -8,6 +9,7 @@ import StatusMessage from '../../molecules/StatusMessage/StatusMessage.jsx'
 import StatTile from '../../molecules/StatTile/StatTile.jsx'
 import InfoTip from '../../molecules/InfoTip/InfoTip.jsx'
 import IndicatorCard from '../../molecules/IndicatorCard/IndicatorCard.jsx'
+import Benchmark from '../../molecules/Benchmark/Benchmark.jsx'
 import DisclaimerCard from '../../molecules/DisclaimerCard/DisclaimerCard.jsx'
 import Badge from '../../atoms/Badge/Badge.jsx'
 import Chip from '../../atoms/Chip/Chip.jsx'
@@ -34,6 +36,40 @@ const transitRank = (category) => {
 }
 
 const PENDING_CAPTION = 'Dato pendiente'
+
+// "¿Cómo se calcula?" de cada tarjeta; `anchor`: su sección en /metodologia
+const METHODS = {
+  competition: {
+    anchor: 'competencia',
+    text: 'Contamos los locales del rubro que OpenStreetMap ubica en el radio y les sumamos los que solo aparecen en Google. Son directos los de la cocina que elegiste. La tabla trae hasta 20 locales de Google (los más populares) y los directos que solo están en OpenStreetMap, ordenados por rating ajustado por cantidad de reseñas: un 4,9 con pocas reseñas pesa menos que un 4,5 con miles.',
+  },
+  traffic: {
+    anchor: 'afluencia',
+    text: 'No se mide en el punto: es el perfil horario típico de los locales del rubro en CABA, de 0 a 100 (100 es la hora pico del día). El puntaje es el promedio del perfil en las horas de tu franja. Como es igual en todo Palermo, no se compara con el barrio.',
+  },
+  population: {
+    anchor: 'poblacion',
+    text: 'Sumamos la población de los radios censales del Censo 2022 que tocan el círculo, cada uno en proporción a la parte de su superficie que queda adentro. La densidad es esa población dividida por la superficie del círculo.',
+  },
+  rent: {
+    anchor: 'alquiler',
+    text: 'Es la mediana del precio mensual de los avisos de locales comerciales en alquiler de ZonaProp dentro del radio: la mitad pide menos y la mitad más. Los avisos publicados en dólares se pasan a pesos con el dólar oficial.',
+  },
+  accessibility: {
+    anchor: 'accesibilidad',
+    text: 'Contamos las paradas de colectivo y las estaciones de subte y tren de OpenStreetMap en el radio, con las líneas de los recorridos que paran en cada una. Cada parada cuenta una vez aunque haya una por vereda.',
+  },
+}
+
+// Lectura de un percentil frente a Palermo: desde 75 es "más que", hasta 25 "menos que"
+function benchmarkSummary(percentile, { subject, more, less }) {
+  if (percentile >= 75) return `${more} que el ${percentile}% de Palermo`
+  if (percentile <= 25) return `${less} que el ${100 - percentile}% de Palermo`
+  return `${subject} en la media de Palermo`
+}
+
+// "en 500 m": las referencias se miden con el mismo radio que el análisis
+const radiusText = (benchmarks) => `en ${formatNumber(benchmarks.radiusInMeters)} m`
 
 // El censo trae los barrios en mayúsculas ("PALERMO")
 const titleCase = (text) =>
@@ -186,6 +222,25 @@ function SortableHeader({ sortKey, activeSort, onSort, children }) {
   )
 }
 
+// Con cocina elegida se compara la competencia directa; si no, todos los locales del rubro.
+// Las dos cuentas son de OpenStreetMap, igual que en los puntos de referencia
+function competitionBenchmark(benchmarks) {
+  const rubro = benchmarks?.competition
+  if (!rubro) return null
+  const direct = benchmarks.direct
+  const main = direct ?? rubro
+  const summary = benchmarkSummary(
+    main.percentile,
+    direct
+      ? { subject: 'Competencia directa', more: 'Más competencia directa', less: 'Menos competencia directa' }
+      : { subject: 'Cantidad de locales del rubro', more: 'Más locales del rubro', less: 'Menos locales del rubro' },
+  )
+  const detail = direct
+    ? `Mediana de Palermo ${radiusText(benchmarks)}: ${formatNumber(direct.median)} directos y ${formatNumber(rubro.median)} locales del rubro; acá, ${formatNumber(direct.value)} y ${formatNumber(rubro.value)} (según OpenStreetMap).`
+    : `Mediana de Palermo ${radiusText(benchmarks)}: ${formatNumber(rubro.median)} locales del rubro; acá, ${formatNumber(rubro.value)} (según OpenStreetMap).`
+  return <Benchmark summary={summary} percentile={main.percentile} detail={detail} />
+}
+
 function CompetitionCard({ report, live }) {
   const [isExpanded, setIsExpanded] = useState(false)
   const [sort, setSort] = useState('strength')
@@ -241,6 +296,8 @@ function CompetitionCard({ report, live }) {
         .filter(Boolean)
         .join(' ')}
       callout={data.callout}
+      benchmark={competitionBenchmark(report.data.benchmarks)}
+      method={METHODS.competition}
       source={`${data.source}${live ? ' · en vivo' : ''} · ${formatDate(data.queryDate)}`}
     >
       <p className="zone-analysis-table-note">{competitionListNote(data, places)}</p>
@@ -359,6 +416,7 @@ function TrafficCard({ report }) {
       value={`${data.score}/${data.scoreMax}`}
       caption={`de actividad típica del rubro en tu franja (${data.timeSlot}).`}
       callout={data.callout}
+      method={METHODS.traffic}
       source={data.source}
     >
       <ScoreMeter value={data.score} max={data.scoreMax} label={`Actividad en tu franja: ${data.score} de ${data.scoreMax}`} />
@@ -367,6 +425,25 @@ function TrafficCard({ report }) {
         summary={`Actividad estimada por hora. Tu franja (${data.timeSlot}) promedia ${data.score} de ${data.scoreMax}.`}
       />
     </IndicatorCard>
+  )
+}
+
+// La densidad se compara con el promedio del barrio (sin percentil)
+function populationBenchmark(benchmarks) {
+  const population = benchmarks?.population
+  if (!population) return null
+  const times = formatNumber(population.ratio)
+  const summary =
+    population.ratio >= 1.15
+      ? `Más densa que el promedio de Palermo (${times} veces)`
+      : population.ratio <= 0.85
+        ? `Menos densa que el promedio de Palermo (${Math.round((1 - population.ratio) * 100)}% menos)`
+        : 'Densidad parecida al promedio de Palermo'
+  return (
+    <Benchmark
+      summary={summary}
+      detail={`Promedio de Palermo: ${formatNumber(population.average)} hab/km²; acá, ${formatNumber(population.value)} hab/km².`}
+    />
   )
 }
 
@@ -393,6 +470,8 @@ function PopulationCard({ report }) {
       badge="Estimado"
       value={formatNumber(data.poblacionEstimada)}
       caption="habitantes estimados en el radio."
+      benchmark={populationBenchmark(report.data.benchmarks)}
+      method={METHODS.population}
       source="Censo nacional · INDEC · por radio censal, ponderado por área"
     >
       <DetailRows
@@ -460,6 +539,24 @@ function RentListings({ listings, selectedId, onShowOnMap }) {
   )
 }
 
+// Mediana del radio contra la mediana de los puntos de referencia con al menos 3 avisos
+function rentBenchmark(benchmarks) {
+  const rent = benchmarks?.rent
+  if (!rent) return null
+  const money = (value) => formatCurrency(value, 'ARS', { decimals: 0 })
+  return (
+    <Benchmark
+      summary={benchmarkSummary(rent.percentile, {
+        subject: 'Alquiler',
+        more: 'Alquiler más alto',
+        less: 'Alquiler más bajo',
+      })}
+      percentile={rent.percentile}
+      detail={`Mediana de Palermo ${radiusText(benchmarks)}: ${money(rent.median)} por mes.`}
+    />
+  )
+}
+
 function RentCard({ report, listings, selectedId, onShowOnMap }) {
   const indicator = report.data?.indicators.rent
   const state = cardState(report, indicator)
@@ -488,6 +585,8 @@ function RentCard({ report, listings, selectedId, onShowOnMap }) {
       {...card}
       value={money(data.medianRentArs)}
       caption={`por mes, mediana de ${pricedText} en el radio.`}
+      benchmark={rentBenchmark(report.data.benchmarks)}
+      method={METHODS.rent}
       source="ZonaProp · avisos de locales comerciales en alquiler"
     >
       <DetailRows
@@ -504,6 +603,22 @@ function RentCard({ report, listings, selectedId, onShowOnMap }) {
         <RentListings listings={listings} selectedId={selectedId} onShowOnMap={onShowOnMap} />
       )}
     </IndicatorCard>
+  )
+}
+
+function transitBenchmark(benchmarks) {
+  const transit = benchmarks?.transit
+  if (!transit) return null
+  return (
+    <Benchmark
+      summary={benchmarkSummary(transit.percentile, {
+        subject: 'Transporte',
+        more: 'Más paradas y estaciones',
+        less: 'Menos paradas y estaciones',
+      })}
+      percentile={transit.percentile}
+      detail={`Mediana de Palermo ${radiusText(benchmarks)}: ${formatNumber(transit.median)} paradas y estaciones.`}
+    />
   )
 }
 
@@ -570,6 +685,8 @@ function AccessibilityCard({ report, onShowOnMap }) {
       value={total}
       caption={caption}
       callout={data.callout}
+      benchmark={transitBenchmark(report.data.benchmarks)}
+      method={METHODS.accessibility}
       source={`Paradas y estaciones de ${data.source}${updated}`}
     >
       <p className="zone-analysis-table-note">
@@ -989,6 +1106,10 @@ function ZoneAnalysis({
                     <li key={note}>{note}</li>
                   ))}
                 </ul>
+                <Link className="zone-analysis-method-link" to="/metodologia">
+                  Cómo calculamos cada dato
+                  <Icon name="arrow-right" size={14} />
+                </Link>
               </details>
             )}
 

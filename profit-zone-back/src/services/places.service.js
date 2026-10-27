@@ -3,7 +3,7 @@ import { getSubcategorySurvey } from './questions.service.js'
 import { httpError } from '../utils/httpErrors.js'
 
 // Tipos de negocio de osm_data.places que son competencia de cada subcategoría
-const KINDS_BY_SUBCATEGORY = {
+export const KINDS_BY_SUBCATEGORY = {
   'gastronomia/restaurante': ['restaurant', 'fast_food'],
   'gastronomia/cafeteria': ['cafe'],
   'fitness/gimnasio': ['fitness'],

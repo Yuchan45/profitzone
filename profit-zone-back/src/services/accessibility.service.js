@@ -40,7 +40,7 @@ function linesText(category, lines) {
  * Junta los elementos de OSM de una misma parada o estación (vienen ordenados por
  * distancia, así cada grupo queda con el punto más cercano y suma las líneas de todos).
  */
-function groupStops(rows) {
+export function groupStops(rows) {
   const groups = []
   for (const row of rows) {
     const key = normalizeName(row.name)

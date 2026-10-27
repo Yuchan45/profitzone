@@ -378,6 +378,16 @@
   transform: rotate(180deg);
 }
 
+.zone-analysis-method-link {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-6);
+  margin: 0 var(--space-24) var(--space-20);
+  color: var(--color-primary-ink);
+  font-size: var(--text-14);
+  font-weight: 500;
+}
+
 .zone-analysis-notes {
   display: flex;
   flex-direction: column;

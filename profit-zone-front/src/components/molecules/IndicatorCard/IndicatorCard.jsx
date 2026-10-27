@@ -1,4 +1,5 @@
 import { useId, useState } from 'react'
+import { Link } from 'react-router-dom'
 import IconTile from '../../atoms/IconTile/IconTile.jsx'
 import Badge from '../../atoms/Badge/Badge.jsx'
 import Button from '../../atoms/Button/Button.jsx'
@@ -12,6 +13,9 @@ import './IndicatorCard.css'
  * En mobile el detalle y la fuente arrancan plegados ("Ver detalle"): la tarjeta muestra
  * primero la lectura y el número, y la página no se hace interminable.
  * `titleAside` (opcional): algo junto al título, como un ⓘ con la explicación del dato.
+ * `benchmark` (opcional): la comparación con el barrio, debajo del dato (siempre visible).
+ * `method` (opcional): { text, anchor } para el desplegable "¿Cómo se calcula?", con link a
+ * la sección `anchor` de la página de metodología.
  * status: 'loading' | 'error' | 'empty' | 'ok'.
  * - error: muestra `error` y, con `onRetry`, el botón para reintentar.
  * - empty: el dato existe pero no hay nada que mostrar (`empty`: { title, text }).
@@ -25,6 +29,8 @@ function IndicatorCard({
   value,
   caption,
   callout,
+  benchmark,
+  method,
   source,
   error,
   empty,
@@ -33,7 +39,7 @@ function IndicatorCard({
 }) {
   const detailId = useId()
   const [detailOpen, setDetailOpen] = useState(false)
-  const hasDetail = Boolean(children || source)
+  const hasDetail = Boolean(children || source || method)
 
   return (
     <section className="indicator-card" aria-busy={status === 'loading' || undefined}>
@@ -83,6 +89,7 @@ function IndicatorCard({
             <span className="indicator-card-value">{value}</span>
             {caption && <span className="indicator-card-caption">{caption}</span>}
           </p>
+          {benchmark}
           {hasDetail && (
             <>
               {/* Solo se ve en mobile (en escritorio el detalle siempre está abierto) */}
@@ -101,6 +108,18 @@ function IndicatorCard({
                 className={`indicator-card-detail${detailOpen ? ' indicator-card-detail--open' : ''}`}
               >
                 {children}
+                {method && (
+                  <details className="indicator-card-method">
+                    <summary className="indicator-card-method-summary">
+                      ¿Cómo se calcula?
+                      <Icon name="chevron-down" size={14} />
+                    </summary>
+                    <p className="indicator-card-method-text">{method.text}</p>
+                    <Link className="indicator-card-method-link" to={`/metodologia#${method.anchor}`}>
+                      Ver la metodología completa
+                    </Link>
+                  </details>
+                )}
                 {source && (
                   <p className="indicator-card-source">
                     <Icon name="info" size={12} />
