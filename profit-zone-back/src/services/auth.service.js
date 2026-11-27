@@ -6,6 +6,7 @@ import { getDummyPasswordHash, hashPassword, verifyPassword } from '../utils/pas
 import { generateOpaqueToken, hashToken, signAccessToken } from '../utils/tokens.js'
 import { runInBackground } from '../utils/background.js'
 import { sendMail } from './mail.service.js'
+import { recordSignupGrant, signupGrantFields } from './credits.service.js'
 
 const REFRESH = 'refresh'
 const RESET_PASSWORD = 'reset_password'
@@ -33,6 +34,12 @@ function toUserDto(user) {
     firstName: user.firstName,
     lastName: user.lastName,
     role: user.role?.name ?? null,
+    // Saldo de créditos: gratis (análisis básicos) y pagos (análisis completos)
+    credits: {
+      free: user.freeCredits ?? 0,
+      paid: user.paidCredits ?? 0,
+      total: (user.freeCredits ?? 0) + (user.paidCredits ?? 0),
+    },
     createdAt: user.createdAt,
   }
 }
@@ -91,9 +98,19 @@ export async function register({ firstName, lastName, email, password }, meta) {
   try {
     return await sequelize.transaction(async (transaction) => {
       const user = await User.create(
-        { firstName, lastName, email, passwordHash, roleId: defaultRole.id, lastLoginAt: new Date() },
+        {
+          firstName,
+          lastName,
+          email,
+          passwordHash,
+          roleId: defaultRole.id,
+          lastLoginAt: new Date(),
+          // Regalo de bienvenida: créditos gratis, por única vez, en la misma transacción
+          ...signupGrantFields(),
+        },
         { transaction },
       )
+      await recordSignupGrant(user.id, transaction)
       user.role = defaultRole
       return issueSession(user, meta, transaction)
     })

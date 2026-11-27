@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useNeighborhoods } from '../../../hooks/useNeighborhoods.js'
 import { useNearbyPlaces } from '../../../hooks/useNearbyPlaces.js'
-import { useRentalListings } from '../../../hooks/useRentalListings.js'
+import TierBanner from '../TierBanner/TierBanner.jsx'
 import ZoneMapPanel from '../ZoneMapPanel/ZoneMapPanel.jsx'
 import CriteriaTable from '../CriteriaTable/CriteriaTable.jsx'
 import PermitsGuide from '../PermitsGuide/PermitsGuide.jsx'
@@ -23,6 +23,9 @@ import { READING_ICONS } from '../../../utils/reportReadings.js'
 import { googlePlaceUrl } from '../../../utils/placeDisplay.js'
 import './ZoneAnalysis.css'
 
+// Solo los avisos con dirección real se pueden ubicar en el mapa: la mayoría del scraping
+// quedó en el centro de su barrio y apilaría decenas de puntos en un lugar falso
+const PLACEABLE_PRECISIONS = ['exact', 'intersection']
 // Google Places devuelve como máximo 20 locales por consulta
 const COMPETITION_MAX_RESULTS = 20
 // Locales que se listan en la tarjeta de competencia (los más cercanos)
@@ -886,12 +889,12 @@ function ZoneAnalysis({
     match,
   })
   // Avisos de alquiler con dirección exacta (nuestra base): capa "Alquileres" y su lista
-  const rentals = useRentalListings({
-    lat: location?.lat ?? null,
-    lng: location?.lng ?? null,
-    radius: location?.radius,
-  })
-  const listings = rentals.data ?? []
+  // Vienen en el reporte (solo en el análisis completo); en el básico no hay lista
+  const rentPlaces = report.data?.indicators?.rent?.data?.places
+  const listings = useMemo(
+    () => (rentPlaces ?? []).filter((place) => PLACEABLE_PRECISIONS.includes(place.locationPrecision)),
+    [rentPlaces],
+  )
 
   const indicators = reportData?.indicators
   const noPublic = indicators?.competition?.status === 'not_applicable'
@@ -1030,6 +1033,7 @@ function ZoneAnalysis({
         {/* 1. La conclusión: resumen, datos clave y fortalezas y debilidades */}
         {reportReady && reportData && (
           <>
+            <TierBanner report={report} />
             <Verdict summary={reportData.summary} criteria={reportData.criteria} />
 
             <section className="zone-analysis-kpis" aria-label="Datos clave de la zona">

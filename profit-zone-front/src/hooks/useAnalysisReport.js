@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { fetchAnalysisReport } from '../services/analyses.service.js'
 import { useAuth } from './useAuth.js'
 
-const LOADING = { status: 'loading', data: null, error: null }
+const LOADING = { status: 'loading', data: null, error: null, code: null }
 
 // Último reporte traído de cada análisis (en memoria, por pestaña). Al volver al paso 4 se
 // reusa: armar el reporte consulta fuentes pagas (Google Places) y no hace falta repetirlo.
@@ -17,7 +17,7 @@ const reportCache = new Map()
  */
 export function useAnalysisReport(analysisId, { reuse = false } = {}) {
   const [attempt, setAttempt] = useState(0)
-  const { user } = useAuth()
+  const { user, setCredits } = useAuth()
   const cacheKey = `${user?.id}:${analysisId}`
   // `forKey` evita mostrar el resultado anterior mientras carga el de otro análisis
   // (React Router reutiliza la página al cambiar el :id), el de otro usuario o mientras se reintenta
@@ -35,7 +35,9 @@ export function useAnalysisReport(analysisId, { reuse = false } = {}) {
         if (cancelled) return
         // Una respuesta descartada (llegó tarde) no pisa en la caché a una más nueva
         reportCache.set(cacheKey, data)
-        setState({ status: 'ok', data, error: null, forKey })
+        // El reporte trae el saldo actual: se refleja en la barra sin otra consulta
+        if (data.credits) setCredits(data.credits)
+        setState({ status: 'ok', data, error: null, code: null, forKey })
       })
       .catch((error) => {
         if (!cancelled) {
@@ -43,6 +45,8 @@ export function useAnalysisReport(analysisId, { reuse = false } = {}) {
             status: 'error',
             data: null,
             error: error.response?.data?.message ?? error.message,
+            // Código de la API (ej. REPORT_LOCKED) para que la pantalla muestre el caso
+            code: error.response?.data?.code ?? null,
             forKey,
           })
         }
@@ -51,12 +55,12 @@ export function useAnalysisReport(analysisId, { reuse = false } = {}) {
     return () => {
       cancelled = true
     }
-  }, [analysisId, attempt, useCached, cacheKey])
+  }, [analysisId, attempt, useCached, cacheKey, setCredits])
 
   const retry = useCallback(() => setAttempt((n) => n + 1), [])
 
-  if (useCached) return { status: 'ok', data: reportCache.get(cacheKey), error: null, retry }
+  if (useCached) return { status: 'ok', data: reportCache.get(cacheKey), error: null, code: null, retry }
   if (state.forKey !== key) return { ...LOADING, retry }
-  const { status, data, error } = state
-  return { status, data, error, retry }
+  const { status, data, error, code } = state
+  return { status, data, error, code, retry }
 }

@@ -19,7 +19,12 @@ const FAQS = [
   {
     question: '¿Necesito crear una cuenta?',
     answer:
-      'No para analizar ni para exportar el PDF. Solo si querés guardar el reporte y volver a verlo en Mis reportes.',
+      'Sí: al registrarte te regalamos 3 créditos para análisis básicos y tus reportes quedan guardados en Mis reportes.',
+  },
+  {
+    question: '¿Cuánto cuesta?',
+    answer:
+      'El análisis básico (radio de hasta 600 m) usa 1 crédito gratis. El completo (hasta 2 km, ratings de Google, avisos de alquiler y PDF) usa 1 crédito pago: los packs salen USD 3 (1), USD 12 (5) y USD 30 (15), cobrados en pesos. Los créditos no vencen y, si el reporte falla, te devolvemos el crédito.',
   },
   {
     question: '¿Qué zonas y rubros cubre?',

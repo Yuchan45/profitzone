@@ -12,15 +12,20 @@ import { getSubcategorySurvey } from './questions.service.js'
 import { availableNeighborhoodNames, findAvailableNeighborhood } from './neighborhoods.service.js'
 import { reverseGeocode } from './geocode.service.js'
 import { httpError } from '../utils/httpErrors.js'
+import {
+  DEFAULT_TIER,
+  RADIUS_MAX_M,
+  RADIUS_MIN_M,
+  TIERS,
+  TIER_CODES,
+  entitlementsOf,
+} from '../config/plans.js'
+import { addCredits, spendCredit } from './credits.service.js'
 
-// Rango del radio de análisis en metros. Hasta RADIUS_FREE_MAX_M es para todos; más allá,
-// solo los roles con radio ilimitado (mismo rango que el slider del paso 3 en el front)
-const RADIUS_MIN_M = 100
-const RADIUS_MAX_M = 2000
-const RADIUS_FREE_MAX_M = 600
-// Plan a futuro (ver "Plan premium" en el README): también limitar la cantidad de reportes por
-// usuario free (más de 3 solo premium). Hoy no hay límite.
-const UNLIMITED_RADIUS_ROLES = ['premium', 'admin']
+// El radio de análisis va de RADIUS_MIN_M a RADIUS_MAX_M (mismo rango que el slider del paso 3 en
+// el front). Cada nivel tiene su tope: 600 m en el básico y 2 km en el completo (config/plans.js).
+// Las cuentas admin no gastan créditos.
+const ADMIN_ROLE = 'admin'
 
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
@@ -58,6 +63,14 @@ function toAnalysisSummaryDto(analysis) {
             lng: Number(analysis.centerLng),
             radius: analysis.radiusM,
           },
+    // Nivel ('basic' | 'complete'): null mientras es borrador, hasta que se analiza la zona
+    tier: analysis.tier,
+    entitlements: entitlementsOf(analysis.tier),
+    // Qué crédito se gastó ('free' | 'paid'); null si no se cobró
+    chargedCredit: analysis.chargedCredit,
+    // El reporte de un análisis básico que ya no es el último queda bloqueado (se desbloquea
+    // mejorándolo a completo). Solo lo calcula el listado.
+    locked: false,
     createdAt: analysis.createdAt,
     updatedAt: analysis.updatedAt,
   }
@@ -185,7 +198,7 @@ async function buildAnswerRows(categoryCode, subcategoryCode, rawAnswers) {
  * `status`: 'saved' (reportes guardados: se analizó la zona) o 'draft'
  * (borradores: completaron "Tu negocio" pero no la ubicación; se retoman desde el flujo).
  */
-export async function listUserAnalyses(userId, status) {
+export async function listUserAnalyses(userId, status, role) {
   if (!ANALYSIS_STATUSES.includes(status)) {
     throw badRequest(`El estado debe ser uno de: ${ANALYSIS_STATUSES.join(', ')}.`)
   }
@@ -200,7 +213,37 @@ export async function listUserAnalyses(userId, status) {
     ],
     order: [['updatedAt', 'DESC']],
   })
-  return analyses.map(toAnalysisSummaryDto)
+
+  // Historial: el análisis básico conserva solo el último reporte; los anteriores quedan
+  // bloqueados hasta mejorarlos a completo. El completo (y las cuentas admin) ven todo.
+  const latestBasicId = role === ADMIN_ROLE ? null : latestBasicOf(analyses)
+  return analyses.map((analysis) => ({
+    ...toAnalysisSummaryDto(analysis),
+    locked: role !== ADMIN_ROLE && analysis.tier === 'basic' && !sameId(analysis.id, latestBasicId),
+  }))
+}
+
+/** Id del último análisis básico (el que se analizó más recientemente) de una lista. */
+function latestBasicOf(analyses) {
+  const analyzedAt = (analysis) => new Date(analysis.chargedAt ?? analysis.createdAt).getTime()
+  const basics = analyses.filter((analysis) => analysis.tier === 'basic')
+  basics.sort((a, b) => analyzedAt(b) - analyzedAt(a))
+  return basics[0]?.id ?? null
+}
+
+/** Si el reporte de este análisis está bloqueado (es básico y hay uno más nuevo). */
+export async function isReportLocked(analysis, role) {
+  if (role === ADMIN_ROLE || analysis.tier !== 'basic') return false
+  const basics = await Analysis.findAll({
+    where: { userId: analysis.userId, status: 'saved', tier: 'basic' },
+    attributes: ['id', 'chargedAt', 'createdAt', 'tier'],
+  })
+  return !sameId(analysis.id, latestBasicOf(basics))
+}
+
+/** El análisis tal como está en la base (con su nivel y su cobro), para quien necesita decidir. */
+export async function loadAnalysis(id, userId) {
+  return findAnalysis(id, userId)
 }
 
 /** Devuelve un análisis con su rubro, ubicación y respuestas. Lanza 404 si no existe. */
@@ -259,30 +302,133 @@ export async function replaceAnalysisAnswers(id, answers, userId) {
 }
 
 /**
- * Guarda el punto y el radio elegidos en el paso 3 ("Analizar zona"). Con la ubicación
- * el análisis está completo: pasa a reporte guardado y aparece en "Mis reportes".
- * Volver a analizar (otro punto u otro radio) actualiza el mismo reporte.
+ * Guarda el punto y el radio elegidos en el paso 3 ("Analizar zona") y cobra el análisis: con
+ * la ubicación el análisis pasa a reporte guardado y aparece en "Mis reportes".
+ * - `tier` 'basic' gasta 1 crédito gratis (radio hasta 600 m); 'complete', 1 crédito pago (hasta 2 km).
+ * - Volver a analizar el mismo punto y radio no cobra de nuevo (si pide completo sobre un básico,
+ *   es una mejora). Con otro punto u otro radio es un análisis nuevo y se cobra otra vez.
+ * - Si no alcanzan los créditos responde 402 (INSUFFICIENT_CREDITS) y no se guarda nada.
  */
-export async function updateAnalysisLocation(id, { lat, lng, radius }, { id: userId, role }) {
+export async function updateAnalysisLocation(id, { lat, lng, radius, tier = DEFAULT_TIER }, { id: userId, role }) {
+  if (!TIER_CODES.includes(tier)) {
+    throw badRequest(`El tipo de análisis debe ser uno de: ${TIER_CODES.join(', ')}.`)
+  }
   if (!Number.isInteger(radius) || radius < RADIUS_MIN_M || radius > RADIUS_MAX_M) {
     throw badRequest(`El radio debe ser un número entero entre ${RADIUS_MIN_M} y ${RADIUS_MAX_M} metros.`)
   }
   // Primero el dueño: un análisis ajeno o inexistente responde 404, no el límite del plan
   const analysis = await findAnalysis(id, userId)
-  if (radius > RADIUS_FREE_MAX_M && !UNLIMITED_RADIUS_ROLES.includes(role)) {
-    throw httpError(403, `Los radios de más de ${RADIUS_FREE_MAX_M} m son para planes pagos.`)
+  if (radius > TIERS[tier].radiusMaxM) {
+    throw httpError(
+      403,
+      `Los radios de más de ${TIERS.basic.radiusMaxM} m son del análisis completo.`,
+      'RADIUS_REQUIRES_COMPLETE',
+    )
   }
   if (!(await findAvailableNeighborhood(lat, lng))) {
     throw httpError(422, `Elegí un punto dentro de ${availableNeighborhoodNames()}.`)
   }
-  await analysis.update({
-    centerLat: lat,
-    centerLng: lng,
-    radiusM: radius,
-    address: await findAddress(analysis, { lat, lng }),
-    status: 'saved',
+  const address = await findAddress(analysis, { lat, lng })
+  const isAdmin = role === ADMIN_ROLE
+
+  const sameLocation =
+    analysis.tier !== null &&
+    Number(analysis.centerLat) === lat &&
+    Number(analysis.centerLng) === lng &&
+    analysis.radiusM === radius
+
+  await sequelize.transaction(async (transaction) => {
+    if (sameLocation) {
+      if (tier === 'complete' && analysis.tier === 'basic') {
+        await applyUpgrade(analysis, { isAdmin, transaction })
+      }
+      return
+    }
+    const creditKind = isAdmin ? null : TIERS[tier].creditKind
+    if (creditKind) {
+      await spendCredit(userId, creditKind, { reason: 'analysis', analysisId: analysis.id, transaction })
+    }
+    await analysis.update(
+      {
+        centerLat: lat,
+        centerLng: lng,
+        radiusM: radius,
+        address,
+        status: 'saved',
+        tier,
+        chargedCredit: creditKind,
+        chargedAt: new Date(),
+        upgradedAt: null,
+        // Hasta que el reporte se genere bien, el cobro se puede devolver
+        reportGeneratedAt: null,
+      },
+      { transaction },
+    )
   })
   return getAnalysis(id, userId)
+}
+
+/** Pasa un análisis básico a completo gastando 1 crédito pago. Dentro de una transacción. */
+async function applyUpgrade(analysis, { isAdmin, transaction }) {
+  if (!isAdmin) {
+    await spendCredit(analysis.userId, 'paid', { reason: 'upgrade', analysisId: analysis.id, transaction })
+  }
+  await analysis.update({ tier: 'complete', upgradedAt: new Date(), reportGeneratedAt: null }, { transaction })
+}
+
+/**
+ * Mejora un análisis básico a completo con un crédito pago, sin repetir la encuesta ni volver a
+ * marcar el punto. Si ya es completo no cobra (responde igual, sin error).
+ */
+export async function upgradeAnalysis(id, { id: userId, role }) {
+  const analysis = await findAnalysis(id, userId)
+  if (analysis.tier === null || analysis.radiusM === null) {
+    throw httpError(409, 'Primero analizá la zona para poder mejorar el análisis.', 'NOT_ANALYZED')
+  }
+  if (analysis.tier === 'complete') return getAnalysis(id, userId)
+
+  await sequelize.transaction((transaction) =>
+    applyUpgrade(analysis, { isAdmin: role === ADMIN_ROLE, transaction }),
+  )
+  return getAnalysis(id, userId)
+}
+
+/** Marca que el reporte del nivel actual se generó bien: desde acá el cobro ya no se devuelve. */
+export async function markReportGenerated(id) {
+  await Analysis.update({ reportGeneratedAt: new Date() }, { where: { id, reportGeneratedAt: null } })
+}
+
+/**
+ * Si el reporte no se pudo generar, devuelve el crédito: el análisis vuelve a borrador (o, si era
+ * una mejora, a básico). Solo si el reporte nunca se generó bien: devuelve false si no hay nada
+ * para devolver.
+ */
+export async function refundAnalysisCharge(id, { id: userId, role }) {
+  const analysis = await findAnalysis(id, userId)
+  if (analysis.tier === null || analysis.reportGeneratedAt !== null) return false
+
+  const isAdmin = role === ADMIN_ROLE
+  await sequelize.transaction(async (transaction) => {
+    if (analysis.upgradedAt) {
+      if (!isAdmin) {
+        await addCredits(userId, 'paid', 1, { reason: 'refund', analysisId: analysis.id, transaction })
+      }
+      await analysis.update({ tier: 'basic', upgradedAt: null, reportGeneratedAt: new Date() }, { transaction })
+      return
+    }
+    if (analysis.chargedCredit) {
+      await addCredits(userId, analysis.chargedCredit, 1, {
+        reason: 'refund',
+        analysisId: analysis.id,
+        transaction,
+      })
+    }
+    await analysis.update(
+      { tier: null, chargedCredit: null, chargedAt: null, status: 'draft' },
+      { transaction },
+    )
+  })
+  return true
 }
 
 /**

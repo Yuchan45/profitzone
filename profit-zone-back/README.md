@@ -72,6 +72,10 @@ un formato inválido, el proceso falla con un mensaje explicando qué corregir.
 | `SMTP_USER`             | No | —             | Usuario SMTP |
 | `SMTP_PASSWORD`         | No | —             | Contraseña SMTP |
 | `SMTP_FROM`             | No | `ProfitZone <no-reply@profitzone.local>` | Remitente de los correos |
+| `FREE_CREDITS_ON_SIGNUP` | No | `3` | Créditos gratis (análisis básico) al registrarse |
+| `PAYMENT_PROVIDER` | No | `mock` | `mock` (checkout de demostración que acredita sin cobrar) o `mercadopago` |
+| `MP_ACCESS_TOKEN` | No | — | Access token de Mercado Pago (solo con `PAYMENT_PROVIDER=mercadopago`) |
+| `FX_API_URL` / `USD_ARS_FALLBACK` | No | dolarapi.com / `1200` | Cotización USD→ARS de los packs y valor de respaldo |
 
 ## CORS
 

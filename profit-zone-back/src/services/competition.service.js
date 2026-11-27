@@ -216,6 +216,8 @@ export async function getCompetitionAnalysis({
   categoryCode,
   subcategory = 'restaurante',
   match,
+  // false: solo OpenStreetMap, sin consultar Google (análisis básico: no cuesta una consulta paga)
+  useGoogle = true,
 }) {
   const normalizedSubcategory = subcategory.toLowerCase().trim()
   const resolvedCategory =
@@ -229,13 +231,15 @@ export async function getCompetitionAnalysis({
 
   // Consulta en paralelo los locales de Google Places y los datos de OpenStreetMap
   const [rawPlaces, osmResult] = await Promise.all([
-    searchNearbyPlaces({
-      lat,
-      lng,
-      radiusInMeters,
-      includedTypes,
-      maxResultCount: 20,
-    }),
+    useGoogle
+      ? searchNearbyPlaces({
+          lat,
+          lng,
+          radiusInMeters,
+          includedTypes,
+          maxResultCount: 20,
+        })
+      : Promise.resolve([]),
     findNearbyPlaces({
       lat,
       lng,

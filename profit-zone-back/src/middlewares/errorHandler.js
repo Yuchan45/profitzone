@@ -11,5 +11,6 @@ export function errorHandler(err, req, res, next) {
   res.status(status).json({
     status: 'error',
     message: status >= 500 && env.isProduction ? 'Error interno del servidor' : err.message,
+    ...(err.appCode ? { code: err.appCode } : {}),
   })
 }

@@ -137,6 +137,37 @@ const schema = {
     required: false,
     default: 'ProfitZone <no-reply@profitzone.local>',
   },
+  // Créditos y pagos (modelo de negocio: ver docs/modelo-de-negocio.md)
+  FREE_CREDITS_ON_SIGNUP: {
+    required: false,
+    default: '3',
+    parse: Number,
+    validate: (value) => Number.isInteger(value) && value >= 0 && value <= 50,
+    message: 'debe ser un entero entre 0 y 50',
+  },
+  // 'mock': compra simulada, acredita sin cobrar (demo y desarrollo). 'mercadopago': cobro real
+  PAYMENT_PROVIDER: {
+    required: false,
+    default: 'mock',
+    validate: (value) => ['mock', 'mercadopago'].includes(value),
+    message: 'debe ser "mock" o "mercadopago"',
+  },
+  MP_ACCESS_TOKEN: {
+    required: false,
+    default: '',
+  },
+  // Cotización del dólar: se consulta a FX_API_URL y, si falla, se usa este valor
+  FX_API_URL: {
+    required: false,
+    default: 'https://dolarapi.com/v1/dolares/oficial',
+  },
+  USD_ARS_FALLBACK: {
+    required: false,
+    default: '1200',
+    parse: Number,
+    validate: (value) => Number.isFinite(value) && value > 0,
+    message: 'debe ser un número mayor a 0',
+  },
 }
 
 function loadEnv() {
@@ -183,6 +214,13 @@ function loadEnv() {
       user: config.SMTP_USER ?? '',
       password: config.SMTP_PASSWORD ?? '',
       from: config.SMTP_FROM,
+    }),
+    billing: Object.freeze({
+      freeCreditsOnSignup: config.FREE_CREDITS_ON_SIGNUP,
+      provider: config.PAYMENT_PROVIDER,
+      mercadoPagoAccessToken: config.MP_ACCESS_TOKEN ?? '',
+      fxApiUrl: config.FX_API_URL,
+      usdArsFallback: config.USD_ARS_FALLBACK,
     }),
     auth: Object.freeze({
       jwtAccessSecret: config.JWT_ACCESS_SECRET,

@@ -9,6 +9,9 @@ import Home from './pages/Home.jsx'
 import Dashboard from './pages/Dashboard.jsx'
 import Perfil from './pages/Perfil/Perfil.jsx'
 import MisReportes from './pages/MisReportes/MisReportes.jsx'
+import Creditos from './pages/Creditos/Creditos.jsx'
+import CreditosSimulado from './pages/CreditosSimulado/CreditosSimulado.jsx'
+import CreditosResultado from './pages/CreditosResultado/CreditosResultado.jsx'
 import Rubro from './pages/Rubro/Rubro.jsx'
 import Negocio from './pages/Negocio/Negocio.jsx'
 import Registro from './pages/Registro/Registro.jsx'
@@ -88,6 +91,9 @@ function App() {
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/perfil" element={<Perfil />} />
           <Route path="/mis-reportes" element={<MisReportes />} />
+          <Route path="/creditos" element={<Creditos />} />
+          <Route path="/creditos/simulado/:id" element={<CreditosSimulado />} />
+          <Route path="/creditos/resultado" element={<CreditosResultado />} />
         </Route>
         <Route path="*" element={<NotFound />} />
       </Route>

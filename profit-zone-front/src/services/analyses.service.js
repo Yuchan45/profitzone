@@ -35,10 +35,17 @@ export async function fetchAnalysisReport(analysisId) {
 
 /**
  * Guarda el punto y el radio del análisis ("Analizar zona"; requiere sesión: el análisis
- * queda a su nombre). Con la ubicación pasa a reporte guardado y aparece en Mis reportes.
+ * queda a su nombre) y cobra el análisis: `tier` 'basic' gasta 1 crédito gratis y 'complete',
+ * 1 crédito pago. Con la ubicación pasa a reporte guardado y aparece en Mis reportes.
  */
-export async function saveAnalysisLocation(analysisId, { lat, lng, radius }) {
-  const { data } = await api.patch(`/analyses/${analysisId}/location`, { lat, lng, radius })
+export async function saveAnalysisLocation(analysisId, { lat, lng, radius }, tier = 'basic') {
+  const { data } = await api.patch(`/analyses/${analysisId}/location`, { lat, lng, radius, tier })
+  return data
+}
+
+/** Mejora un análisis básico a completo con 1 crédito pago (sin repetir la encuesta ni el punto). */
+export async function upgradeAnalysis(analysisId) {
+  const { data } = await api.post(`/analyses/${analysisId}/upgrade`)
   return data
 }
 

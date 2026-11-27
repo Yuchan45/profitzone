@@ -112,6 +112,10 @@ de su carpeta.
 | `SMTP_USER`             | No | —             | Usuario SMTP |
 | `SMTP_PASSWORD`         | No | —             | Contraseña SMTP |
 | `SMTP_FROM`             | No | `ProfitZone <no-reply@profitzone.local>` | Remitente de los correos |
+| `FREE_CREDITS_ON_SIGNUP` | No | `3` | Créditos gratis (análisis básico) al registrarse |
+| `PAYMENT_PROVIDER` | No | `mock` | `mock` (checkout de demostración que acredita sin cobrar) o `mercadopago` |
+| `MP_ACCESS_TOKEN` | No | — | Access token de Mercado Pago (solo con `PAYMENT_PROVIDER=mercadopago`) |
+| `FX_API_URL` / `USD_ARS_FALLBACK` | No | dolarapi.com / `1200` | Cotización USD→ARS de los packs y valor de respaldo |
 
 `docker-compose.yml` lee `DB_PASSWORD` y `DB_PORT` de `profit-zone-back/.env`
 (los scripts `npm run db:*` le pasan ese archivo), así hay una sola fuente.
@@ -175,7 +179,8 @@ acepta únicamente los orígenes de `CORS_ORIGINS`; cualquier otro recibe **403*
 | `GET`  | `/api/analyses/:id` | Un análisis con su rubro, ubicación y respuestas (404 si no existe) |
 | `GET`  | `/api/analyses/:id/report` | Reporte de zona: indicadores del punto y radio, cuadro de fortalezas y debilidades cruzado con las respuestas, resumen y `benchmarks`: cada dato comparado con Palermo (mediana y percentil del punto entre los 295 centros de radios censales del barrio, medidos con el mismo radio; densidad contra el promedio del barrio; `null` si no se pudieron calcular). Ver la página `/metodologia` del front (409 si el análisis no tiene ubicación) |
 | `PUT`  | `/api/analyses/:id/answers` | Reemplaza todas las respuestas (`{ answers }`), con las mismas validaciones que el alta |
-| `PATCH` | `/api/analyses/:id/location` | Guarda el punto y el radio (`{ lat, lng, radius }`, radio entero entre 100 y 2000 m, dentro de Palermo; 422 si cae afuera; más de 600 m solo para los roles `premium` y `admin`, si no 403). Se llama al tocar "Analizar zona": el análisis pasa a `saved` y aparece en Mis reportes (volver a analizar actualiza el mismo reporte). Busca y guarda la dirección del punto (`address`); si la búsqueda falla, se guarda igual sin dirección |
+| `PATCH` | `/api/analyses/:id/location` | Guarda el punto y el radio (`{ lat, lng, radius }`, radio entero entre 100 y 2000 m, dentro de Palermo; 422 si cae afuera; más de 600 m solo con `tier: "complete"`, si no 403 `RADIUS_REQUIRES_COMPLETE`). Se llama al tocar "Analizar zona" (`tier` `basic` por defecto o `complete`): cobra 1 crédito (402 `INSUFFICIENT_CREDITS` si no alcanza; no cobra al repetir el mismo punto y radio), el análisis pasa a `saved` y aparece en Mis reportes. Busca y guarda la dirección del punto (`address`); si la búsqueda falla, se guarda igual sin dirección |
+| `POST` | `/api/analyses/:id/upgrade` | Mejora un análisis básico a completo con 1 crédito pago. Ver [`docs/modelo-de-negocio.md`](docs/modelo-de-negocio.md); los endpoints `/api/billing/*` (packs, saldo, compras, checkout, webhook) están ahí |
 | `PATCH` | `/api/analyses/:id` | Renombra el análisis (`{ name }`, texto de hasta 80 caracteres; vacío o `null` vuelve a mostrar el rubro). 400 si es más largo |
 | `DELETE` | `/api/analyses/:id` | Elimina un análisis, borrador o reporte guardado (y sus respuestas). 204 |
 | `GET`  | `/api/neighborhoods` | Barrios donde se puede analizar (MVP: Palermo) con su contorno `[lat, lng]`, sus límites (`bounds`) y un centro ponderado por población, calculados desde el censo |
@@ -221,14 +226,9 @@ ProfitZone/
         └── main.jsx      punto de entrada
 ```
 
-## Plan premium (a futuro)
+## Modelo de negocio: créditos
 
-Todavía no hay un modelo de negocio definido: hoy el servicio es gratuito y se pueden generar reportes sin límite. Cuando se defina, algunas funciones pasarían a ser solo para miembros premium (rol `premium`):
-
-- **Radio extendido (más de 600 m):** ya funciona así, solo para `premium` y `admin` (`RADIUS_FREE_MAX_M` en el back y `FREE_MAX_RADIUS` en el front).
-- **Cantidad de reportes:** más de 3 reportes serían solo para premium. **Todavía no existe**: hoy es ilimitado.
-
-Mientras tanto, la web no comunica precios ni límites (las preguntas frecuentes de la home no los mencionan). Cuando se decida, hay que actualizar la home, la página de privacidad y las preguntas frecuentes.
+El servicio funciona con créditos: **3 gratis al registrarse** (análisis básico: radio hasta 600 m, sin ratings de Google, avisos de alquiler ni PDF) y **créditos pagos** (análisis completo: hasta 2 km, Google, avisos, PDF, historial completo) que se compran en packs de 1, 5 y 15 (USD 3, 12 y 30, cobrados en pesos al dólar del día). No vencen y se devuelven si el reporte falla. Las reglas completas, la pasarela de pago (`mock` o Mercado Pago) y los endpoints están en [`docs/modelo-de-negocio.md`](docs/modelo-de-negocio.md).
 
 ## Commits
 

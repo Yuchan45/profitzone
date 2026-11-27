@@ -9,6 +9,7 @@ import { getBenchmarks } from './benchmarks.service.js'
 import { CRITERIA, buildSummary } from './reportCriteria.service.js'
 import { httpError } from '../utils/httpErrors.js'
 import { formatArgentinaDate } from '../utils/dates.js'
+import { TIERS, entitlementsOf } from '../config/plans.js'
 
 // Franja horaria que se le pide al servicio de afluencia según las respuestas.
 // La franja pico de la subcategoría es más precisa que el horario general.
@@ -166,8 +167,9 @@ function summarizeRent({
  * cuadro de fortalezas y debilidades cruzado con las respuestas, y un resumen.
  * Si un indicador falla, sus criterios quedan "no evaluados" y el resto sigue.
  */
-export async function buildAnalysisReport(id, userId) {
+export async function buildAnalysisReport(id, userId, { tier = 'complete' } = {}) {
   const analysis = await getAnalysis(id, userId)
+  const { googleRatings, rentalListings } = TIERS[tier]
   if (!analysis.location) {
     throw httpError(409, 'Elegí la ubicación en el mapa antes de generar el reporte.')
   }
@@ -192,6 +194,8 @@ export async function buildAnalysisReport(id, userId) {
             categoryCode: analysis.category.code,
             subcategory,
             match: resolveDirectMatch(survey, analysis.answers),
+            // El básico usa solo OpenStreetMap: la consulta a Google (con ratings) es del completo
+            useGoogle: googleRatings,
           }),
         ),
     noPublic
@@ -250,9 +254,19 @@ export async function buildAnalysisReport(id, userId) {
       traffic,
       density,
       accessibility,
-      // Sin el listado de avisos: el reporte solo muestra el resumen del alquiler
-      rent: rent.status === 'ok' ? { status: 'ok', data: summarizeRent(rent.data) } : rent,
+      // El básico muestra solo el resumen del alquiler; el completo suma el listado de avisos
+      rent:
+        rent.status === 'ok'
+          ? {
+              status: 'ok',
+              data: rentalListings
+                ? { ...summarizeRent(rent.data), places: rent.data.places ?? [] }
+                : summarizeRent(rent.data),
+            }
+          : rent,
     },
+    tier,
+    entitlements: entitlementsOf(tier),
     benchmarks,
     sources: buildSources({ competition, traffic, density, rent, accessibility }),
     notices: NOTICES,

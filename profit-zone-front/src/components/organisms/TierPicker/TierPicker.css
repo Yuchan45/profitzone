@@ -1,0 +1,120 @@
+.tier-picker {
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.tier-picker-legend {
+  padding: 0;
+  margin-bottom: var(--space-10);
+  color: var(--color-text);
+  font-size: var(--text-14);
+  font-weight: 600;
+}
+
+.tier-picker-options {
+  display: grid;
+  gap: var(--space-8);
+}
+
+.tier-option {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+  padding: var(--space-14) var(--space-16);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background-color: var(--color-surface);
+  cursor: pointer;
+  transition:
+    border-color 0.15s ease,
+    background-color 0.15s ease,
+    box-shadow 0.25s var(--ease-out);
+}
+
+.tier-option:hover {
+  border-color: var(--color-border-strong);
+}
+
+.tier-option--selected,
+.tier-option--selected:hover {
+  border-color: var(--color-primary);
+  background-color: var(--color-primary-10);
+  box-shadow: var(--shadow-primary);
+}
+
+/* El radio queda oculto: toda la tarjeta es el control, y sigue siendo accesible con teclado */
+.tier-option-input {
+  position: absolute;
+  opacity: 0;
+  inset: 0;
+  margin: 0;
+  cursor: pointer;
+}
+
+.tier-option:has(.tier-option-input:focus-visible) {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+.tier-option-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4) var(--space-8);
+}
+
+.tier-option-name {
+  font-family: var(--font-heading);
+  font-size: var(--text-16);
+  font-weight: 700;
+}
+
+.tier-option-cost {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-4);
+  padding: var(--space-4) var(--space-8);
+  border-radius: var(--radius-full);
+  background-color: var(--color-surface);
+  color: var(--color-primary-ink);
+  font-size: var(--text-12);
+  font-weight: 700;
+}
+
+.tier-option-summary {
+  color: var(--color-text-secondary);
+  font-size: var(--text-13);
+  line-height: 1.45;
+}
+
+.tier-option-balance {
+  color: var(--color-text);
+  font-size: var(--text-12);
+  font-weight: 600;
+}
+
+.tier-picker-missing {
+  margin: var(--space-10) 0 0;
+  padding: var(--space-10) var(--space-12);
+  border-radius: var(--radius-md);
+  background-color: var(--color-warning-12);
+  color: var(--color-warning-dark);
+  font-size: var(--text-13);
+  line-height: 1.45;
+}
+
+.tier-picker-link {
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tier-option {
+    transition: none;
+  }
+}

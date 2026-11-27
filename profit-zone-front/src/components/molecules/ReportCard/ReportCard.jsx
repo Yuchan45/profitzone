@@ -13,6 +13,8 @@ const STATUS_BADGES = {
 /**
  * Fila de "Mis reportes". Termina con una flecha (con tooltip `openLabel`) para seguir:
  * abrir el reporte o continuar el borrador.
+ * - `tier` ('basic' | 'complete') y `locked`: nivel del reporte guardado; un reporte básico
+ *   viejo queda bloqueado hasta mejorarlo a completo.
  * - `title`: texto o nodo (ej. el nombre editable con su lápiz).
  * - `to`: la card abre el reporte. El link es una capa sobre toda la card (nombre
  *   accesible: `linkLabel`); lo que va encima de esa capa, como la flecha, los botones de
@@ -28,6 +30,8 @@ function ReportCard({
   details,
   date,
   status,
+  tier,
+  locked = false,
   to,
   onOpen,
   openDisabled,
@@ -43,6 +47,12 @@ function ReportCard({
         <span className="report-card-heading">
           <span className="report-card-title">{title}</span>
           {badge && <Badge variant={badge.variant}>{badge.label}</Badge>}
+          {status === 'saved' && tier && (
+            <Badge variant={tier === 'complete' ? 'strength' : 'neutral'}>
+              {tier === 'complete' ? 'Completo' : 'Básico'}
+            </Badge>
+          )}
+          {locked && <Badge variant="alert">Bloqueado</Badge>}
         </span>
         <span className="report-card-details">{details}</span>
       </span>

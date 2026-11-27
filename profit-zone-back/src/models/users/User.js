@@ -13,6 +13,11 @@ export const User = sequelize.define(
     roleId: { type: DataTypes.INTEGER, allowNull: false },
     isActive: { type: DataTypes.BOOLEAN, allowNull: false, defaultValue: true },
     lastLoginAt: { type: DataTypes.DATE, allowNull: true },
+    // Créditos: los gratis (3 al registrarse) alcanzan para análisis básicos y los pagos
+    // (se compran en packs) para análisis completos. Nunca se tocan a mano: ver credits.service.js
+    freeCredits: { type: DataTypes.INTEGER, allowNull: false, defaultValue: 0 },
+    paidCredits: { type: DataTypes.INTEGER, allowNull: false, defaultValue: 0 },
+    freeCreditsGrantedAt: { type: DataTypes.DATE, allowNull: true },
   },
   {
     schema: 'users',

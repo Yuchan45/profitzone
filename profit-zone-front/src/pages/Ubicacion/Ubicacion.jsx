@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
-import { Navigate, useNavigate } from 'react-router-dom'
+import { Link, Navigate, useNavigate } from 'react-router-dom'
 import { useAnalysisFlow } from '../../hooks/useAnalysisFlow.js'
 import { useAuth } from '../../hooks/useAuth.js'
 import { useFlowSteps } from '../../hooks/useFlowSteps.js'
@@ -25,19 +25,17 @@ import RangeSlider from '../../components/atoms/RangeSlider/RangeSlider.jsx'
 import Button from '../../components/atoms/Button/Button.jsx'
 import Divider from '../../components/atoms/Divider/Divider.jsx'
 import Icon from '../../components/atoms/Icon/Icon.jsx'
+import TierPicker from '../../components/organisms/TierPicker/TierPicker.jsx'
 import { distanceMeters, formatDistance, isPointInPolygons, walkingMinutes } from '../../utils/geo.js'
 import { toAuthFormError } from '../../utils/apiErrors.js'
 import { FLOW_STEPS } from '../../utils/flowSteps.js'
 import { visibleQuestions } from '../../utils/hiddenQuestions.js'
 import { buildSummaryRows, directMatch } from '../../utils/surveySummary.js'
+import { RADIUS, SIGNUP_FREE_CREDITS, TIERS, creditsFor, defaultTier } from '../../utils/plans.js'
 import './Ubicacion.css'
 
-// Rango del radio en metros. Hasta FREE_MAX es para todos; más allá, solo planes pagos.
-// La API valida el mismo rango (PATCH /api/analyses/:id/location).
-const RADIUS = { min: 100, max: 2000, step: 50, initial: 300 }
-const FREE_MAX_RADIUS = 600
-const UNLIMITED_RADIUS_ROLES = ['premium', 'admin']
-
+// El rango del radio y el tope de cada tipo de análisis (600 m el básico, 2 km el completo) están
+// en utils/plans.js. La API valida lo mismo (PATCH /api/analyses/:id/location).
 const percentOfRadius = (meters) => ((meters - RADIUS.min) / (RADIUS.max - RADIUS.min)) * 100
 
 const AUTH_TAB_ITEMS = [
@@ -65,7 +63,9 @@ function Ubicacion() {
   const [focusKey, setFocusKey] = useState(0)
   const [authModal, setAuthModal] = useState({ open: false, tab: 'register' })
   const [suggestionsEnabled, setSuggestionsEnabled] = useState(false)
-  // Avisos: se intentó pasar el radio del plan / se tocó fuera del barrio
+  // Tipo de análisis elegido (null: el que el usuario puede pagar, ver defaultTier)
+  const [tierChoice, setTierChoice] = useState(null)
+  // Avisos: se intentó pasar el radio del tipo de análisis / se tocó fuera del barrio
   const [radiusBlocked, setRadiusBlocked] = useState(false)
   const [outsidePick, setOutsidePick] = useState(false)
   // Competidor con la ficha abierta (click en un punto del mapa)
@@ -73,10 +73,13 @@ function Ubicacion() {
   const selectedPlace = usePlace(selectedPlaceId)
   const closePlace = useCallback(() => setSelectedPlaceId(null), [])
 
-  const radiusLimit = UNLIMITED_RADIUS_ROLES.includes(user?.role) ? RADIUS.max : FREE_MAX_RADIUS
+  const tier = tierChoice ?? defaultTier(user)
+  const radiusLimit = TIERS[tier].radiusMax
+  // Con sesión y sin créditos del tipo elegido no se puede analizar: se manda a comprar
+  const outOfCredits = authStatus === 'authenticated' && creditsFor(user, tier) === 0
 
-  // Un radio guardado mayor al del plan (ej. cerró sesión un usuario premium) se recorta.
-  // Mientras se recupera la sesión no se sabe el plan: se espera para no recortar de más
+  // Un radio guardado mayor al del tipo de análisis (ej. pasó de completo a básico) se recorta.
+  // Mientras se recupera la sesión no se sabe cuál corresponde: se espera para no recortar de más
   useEffect(() => {
     if (authStatus !== 'loading' && location && location.radius > radiusLimit) {
       setLocation({ ...location, radius: radiusLimit })
@@ -160,8 +163,9 @@ function Ubicacion() {
     const questionCodes = survey.data
       ? visibleQuestions(survey.data, answers).map((q) => q.code)
       : Object.keys(answers)
-    // Con la ubicación el análisis queda guardado en Mis reportes (la API lo pasa a 'saved')
-    const savedId = await saveLocation.save(questionCodes)
+    // Con la ubicación el análisis queda guardado en Mis reportes (la API lo pasa a 'saved') y
+    // se gasta el crédito del tipo elegido
+    const savedId = await saveLocation.save(questionCodes, tier)
     if (savedId) navigate(`/analizar/analisis/${savedId}`, { state: { toast: 'Reporte guardado en Mis reportes' } })
   }
 
@@ -282,7 +286,10 @@ function Ubicacion() {
               </div>
               {radiusBlocked && (
                 <StatusMessage>
-                  Más de {formatDistance(FREE_MAX_RADIUS)} es para el plan premium.
+                  Más de {formatDistance(TIERS.basic.radiusMax)} es del análisis completo (1 crédito pago).{' '}
+                  <button type="button" className="ubicacion-link-button" onClick={() => setTierChoice('complete')}>
+                    Elegir análisis completo
+                  </button>
                 </StatusMessage>
               )}
             </div>
@@ -330,17 +337,29 @@ function Ubicacion() {
               <BusinessSummary rows={buildSummaryRows(survey.data, answers)} editTo="/analizar/negocio" />
             )}
 
+            <TierPicker value={tier} onChange={setTierChoice} user={authStatus === 'authenticated' ? user : null} />
+
             {saveLocation.status === 'error' && (
-              <StatusMessage variant="error">No pudimos guardar la zona: {saveLocation.error}</StatusMessage>
+              <StatusMessage variant="error">
+                No pudimos guardar la zona: {saveLocation.error}
+                {saveLocation.code === 'INSUFFICIENT_CREDITS' && (
+                  <>
+                    {' '}
+                    <Link to="/creditos" className="ubicacion-link-button">
+                      Comprar créditos
+                    </Link>
+                  </>
+                )}
+              </StatusMessage>
             )}
 
             <div className="ubicacion-actions">
               <Button
                 variant="primary"
-                disabled={!point || isOutside || isSaving || authStatus === 'loading'}
+                disabled={!point || isOutside || isSaving || authStatus === 'loading' || outOfCredits}
                 onClick={handleAnalyze}
               >
-                {isSaving ? 'Guardando…' : 'Analizar zona'}
+                {isSaving ? 'Analizando…' : `Analizar zona · 1 ${TIERS[tier].creditLabel}`}
               </Button>
               <Button variant="secondary" to="/analizar/negocio">
                 Anterior
@@ -357,7 +376,7 @@ function Ubicacion() {
       >
         <p className="ubicacion-auth-intro">
           Para iniciar el análisis necesitás una cuenta. Creala y el análisis queda en Mis reportes, sin
-          repetir nada.
+          repetir nada. Al crearla te regalamos {SIGNUP_FREE_CREDITS} créditos gratis para análisis básicos.
         </p>
         <SegmentedNav
           items={AUTH_TAB_ITEMS}

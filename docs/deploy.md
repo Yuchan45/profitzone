@@ -106,6 +106,21 @@ En el proyecto, **Settings → Environment Variables**, entorno **Production**:
 | `GOOGLE_PLACES_API_KEY` | la clave de Google Places (New) |
 | `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASSWORD`, `SMTP_FROM` | el correo para recuperar contraseñas (por ejemplo Gmail: `smtp.gmail.com`, `587`, la cuenta y una contraseña de aplicación) |
 
+Créditos y pagos (opcionales; los valores por defecto sirven para una demo, ver `docs/modelo-de-negocio.md`):
+
+| Variable | Valor |
+| --- | --- |
+| `PAYMENT_PROVIDER` | `mock` (por defecto: checkout de demostración que acredita sin cobrar) o `mercadopago` |
+| `MP_ACCESS_TOKEN` | access token de Mercado Pago (solo con `mercadopago`); el webhook es `https://<tu-dominio>/api/billing/webhook/mercadopago` |
+| `FREE_CREDITS_ON_SIGNUP` | créditos gratis al registrarse (3 por defecto) |
+| `FX_API_URL`, `USD_ARS_FALLBACK` | cotización del dólar y valor de respaldo si la consulta falla (1200 por defecto) |
+
+> Con `PAYMENT_PROVIDER=mock` en producción **cualquier usuario puede darse créditos pagos** desde la
+> pantalla de compra. Está bien para una demo; para cobrar de verdad hay que pasar a `mercadopago`.
+
+Las migraciones (incluida la de créditos, `0016`) se aplican con `npm run db:migrate` en `profit-zone-back`
+apuntando a la base de producción, **antes** de publicar el código que las usa.
+
 Las variables se leen al publicar: después de cambiar una, volver a correr `npx vercel --prod`.
 
 Lo que hace `vercel.json`:

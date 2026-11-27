@@ -13,6 +13,8 @@ import { ImplicitRule } from './catalog/ImplicitRule.js'
 import { Analysis } from './analysis/Analysis.js'
 import { AnalysisAnswer } from './analysis/AnalysisAnswer.js'
 import { CensusRadio } from './census/CensusRadio.js'
+import { Order } from './billing/Order.js'
+import { CreditTransaction } from './billing/CreditTransaction.js'
 
 // users
 Role.hasMany(User, { foreignKey: 'roleId', as: 'users' })
@@ -54,7 +56,15 @@ AnalysisAnswer.belongsTo(Analysis, { foreignKey: 'analysisId', as: 'analysis' })
 AnalysisAnswer.belongsTo(Question, { foreignKey: 'questionId', as: 'question' })
 AnalysisAnswer.belongsTo(QuestionOption, { foreignKey: 'optionId', as: 'option' })
 
+// billing
+User.hasMany(Order, { foreignKey: 'userId', as: 'orders', onDelete: 'CASCADE' })
+Order.belongsTo(User, { foreignKey: 'userId', as: 'user' })
+User.hasMany(CreditTransaction, { foreignKey: 'userId', as: 'creditTransactions', onDelete: 'CASCADE' })
+CreditTransaction.belongsTo(User, { foreignKey: 'userId', as: 'user' })
+
 export {
+  Order,
+  CreditTransaction,
   Role,
   User,
   AuthToken,
