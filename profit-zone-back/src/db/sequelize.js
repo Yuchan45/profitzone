@@ -1,4 +1,5 @@
 import { Sequelize } from 'sequelize'
+import tedious from 'tedious'
 import { env } from '../config/env.js'
 
 /**
@@ -9,6 +10,9 @@ import { env } from '../config/env.js'
 export function createSequelize(database = env.db.name) {
   return new Sequelize(database, env.db.user, env.db.password, {
     dialect: 'mssql',
+    // Import estático: Sequelize carga el driver con un require dinámico que el empaquetado de
+    // Vercel no detecta, y sin esto la función falla con "Please install tedious package manually".
+    dialectModule: tedious,
     host: env.db.host,
     port: env.db.port,
     timezone: '+00:00',

@@ -35,11 +35,17 @@ Con una cuenta de Azure (Azure for Students con el mail de la UADE: sin tarjeta)
 3. **Nombre de la base: `ProfitZone`**, exacto: es el `DB_NAME`. Si no coincide, las migraciones
    fallan a propósito en vez de crear otra base, que sería paga.
 4. **Servidor:** uno nuevo, por ejemplo `profitzone-sql` (queda `profitzone-sql.database.windows.net`).
-   - Región: **Brazil South** (la más cercana; Vercel corre la API en São Paulo).
+   - Región: **South Africa North**. Azure for Students solo permite 5 regiones (`brazilsouth`,
+     `northcentralus`, `southafricanorth`, `newzealandnorth`, `canadacentral`) y, para SQL, la
+     suscripción de estudiante no tiene acceso a Brazil South, Canada Central ni North Central US
+     ("Your subscription does not have access to create a server in the selected region"). Si tu
+     suscripción sí lo tiene, usá Brazil South y poné `gru1` en `vercel.json`.
    - Autenticación: **SQL**. Usuario administrador (no puede ser `sa`) y una contraseña fuerte:
      8+ caracteres, mayúsculas, minúsculas, números y símbolos, sin `$`.
 5. **Comportamiento al llegar al límite gratis:** pausar la base hasta el mes siguiente.
-6. **Redes:** acceso público. Regla de firewall de `0.0.0.0` a `255.255.255.255`.
+6. **Redes:** acceso público (Public endpoint). El formulario de creación no deja cargar un rango:
+   una vez creado, en el servidor → **Networking** → **Add a firewall rule**, con nombre
+   `allow-all`, de `0.0.0.0` a `255.255.255.255`, y **Save**.
    Vercel no tiene IPs fijas en el plan gratis: la protección es la contraseña y la conexión
    cifrada. Si se pasa a un plan con IPs fijas, hay que achicar esta regla.
 
@@ -105,7 +111,9 @@ Las variables se leen al publicar: después de cambiar una, volver a correr `npx
 Lo que hace `vercel.json`:
 - **Instala** las dos apps (`npm ci` en cada carpeta) y **compila la web** con `VITE_API_URL=/api`.
 - Manda `/api/*` a la función `api/index.js` y el resto a `index.html`, para las rutas de React Router.
-- Corre la API en **São Paulo** (`gru1`), cerca de la base.
+- Corre la API en **Ciudad del Cabo** (`cpt1`), cerca de la base en South Africa North: cada consulta
+  paga la latencia hacia la base, así que conviene que la API esté pegada a ella. Si Vercel rechaza
+  `cpt1` en el plan Hobby, sacá `regions` o usá `fra1`.
 
 `.vercelignore` evita subir los `.env` y los avisos de Zonaprop.
 

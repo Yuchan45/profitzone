@@ -4,7 +4,7 @@
   "installCommand": "npm ci --prefix profit-zone-front --include=dev && npm ci --prefix profit-zone-back --omit=dev",
   "buildCommand": "VITE_API_URL=/api npm run build --prefix profit-zone-front",
   "outputDirectory": "profit-zone-front/dist",
-  "regions": ["gru1"],
+  "regions": ["cpt1"],
   "functions": {
     "api/index.js": {
       "includeFiles": "profit-zone-back/src/data/**",
