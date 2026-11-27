@@ -1,0 +1,340 @@
+.zoni {
+  position: fixed;
+  right: max(var(--space-16), env(safe-area-inset-right));
+  bottom: max(var(--space-16), env(safe-area-inset-bottom));
+  z-index: 900;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: var(--space-12);
+  pointer-events: none;
+}
+
+.zoni > * {
+  pointer-events: auto;
+}
+
+/* Botón flotante */
+.zoni-fab {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-8);
+  min-height: 52px;
+  padding: 0 var(--space-20);
+  border: 0;
+  border-radius: var(--radius-full);
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-ink) 100%);
+  color: var(--color-surface);
+  font-family: inherit;
+  font-size: var(--text-14);
+  font-weight: 700;
+  box-shadow: var(--shadow-primary), var(--shadow-md);
+  cursor: pointer;
+  transition:
+    transform 0.2s var(--ease-out),
+    box-shadow 0.2s var(--ease-out);
+}
+
+.zoni-fab:hover {
+  transform: translateY(-2px);
+}
+
+.zoni-fab:focus-visible,
+.zoni-close:focus-visible,
+.zoni-send:focus-visible,
+.zoni-suggestions button:focus-visible {
+  outline: 3px solid var(--color-primary-ink);
+  outline-offset: 2px;
+}
+
+.zoni-fab--open {
+  min-width: 52px;
+  padding: 0;
+  justify-content: center;
+}
+
+/* Panel */
+.zoni-panel {
+  display: flex;
+  flex-direction: column;
+  width: min(380px, calc(100vw - 2 * var(--space-16)));
+  height: min(560px, calc(100dvh - 120px));
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-2xl);
+  background-color: var(--color-surface);
+  box-shadow: var(--shadow-md);
+  overflow: hidden;
+  animation: zoni-in 0.22s var(--ease-out);
+}
+
+@keyframes zoni-in {
+  from {
+    opacity: 0;
+    transform: translateY(12px) scale(0.98);
+  }
+}
+
+.zoni-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-12);
+  padding: var(--space-14) var(--space-16);
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-ink) 100%);
+  color: var(--color-surface);
+}
+
+.zoni-avatar {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-full);
+  background-color: rgb(255 255 255 / 0.2);
+}
+
+.zoni-title {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  font-family: var(--font-heading);
+  font-size: var(--text-18);
+  font-weight: 800;
+  line-height: 1.1;
+}
+
+.zoni-title small {
+  margin-top: 2px;
+  font-family: inherit;
+  font-size: var(--text-12);
+  font-weight: 500;
+  opacity: 0.9;
+}
+
+.zoni-close {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border: 0;
+  border-radius: var(--radius-full);
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+}
+
+.zoni-close:hover {
+  background-color: rgb(255 255 255 / 0.18);
+}
+
+/* Mensajes */
+.zoni-messages {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-10);
+  flex: 1;
+  padding: var(--space-16);
+  overflow-y: auto;
+  background-color: var(--color-surface-subtle);
+}
+
+.zoni-bubble {
+  max-width: 88%;
+  padding: var(--space-10) var(--space-14);
+  border-radius: var(--radius-xl);
+  font-size: var(--text-14);
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+.zoni-bubble p,
+.zoni-bubble ul {
+  margin: 0;
+  list-style: disc;
+}
+
+.zoni-bubble p + p,
+.zoni-bubble p + ul,
+.zoni-bubble ul + p {
+  margin-top: var(--space-8);
+}
+
+.zoni-bubble ul {
+  padding-left: var(--space-20);
+}
+
+.zoni-bubble--assistant {
+  align-self: flex-start;
+  border: 1px solid var(--color-border);
+  border-bottom-left-radius: var(--radius-xs);
+  background-color: var(--color-surface);
+  color: var(--color-text);
+}
+
+.zoni-bubble--user {
+  align-self: flex-end;
+  border-bottom-right-radius: var(--radius-xs);
+  background-color: var(--color-primary-ink);
+  color: var(--color-surface);
+}
+
+.zoni-typing {
+  display: inline-flex;
+  gap: 5px;
+  padding: var(--space-14);
+}
+
+.zoni-typing span {
+  width: 7px;
+  height: 7px;
+  border-radius: var(--radius-full);
+  background-color: var(--color-text-secondary);
+  animation: zoni-dot 1.1s infinite ease-in-out;
+}
+
+.zoni-typing span:nth-child(2) {
+  animation-delay: 0.15s;
+}
+
+.zoni-typing span:nth-child(3) {
+  animation-delay: 0.3s;
+}
+
+@keyframes zoni-dot {
+  0%,
+  80%,
+  100% {
+    opacity: 0.3;
+    transform: translateY(0);
+  }
+
+  40% {
+    opacity: 1;
+    transform: translateY(-4px);
+  }
+}
+
+.zoni-error {
+  align-self: stretch;
+  margin: 0;
+  padding: var(--space-10) var(--space-14);
+  border-radius: var(--radius-lg);
+  background-color: var(--color-error-12);
+  color: var(--color-error-dark);
+  font-size: var(--text-13);
+}
+
+.zoni-suggestions {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-8);
+  margin: var(--space-4) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.zoni-suggestions button {
+  padding: var(--space-8) var(--space-14);
+  border: 1px solid var(--color-primary);
+  border-radius: var(--radius-full);
+  background-color: var(--color-surface);
+  color: var(--color-primary-ink);
+  font-family: inherit;
+  font-size: var(--text-13);
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+.zoni-suggestions button:hover:not(:disabled) {
+  background-color: var(--color-primary-10);
+}
+
+/* Entrada */
+.zoni-form {
+  display: flex;
+  gap: var(--space-8);
+  padding: var(--space-12) var(--space-12) var(--space-8);
+  border-top: 1px solid var(--color-border);
+}
+
+.zoni-input {
+  flex: 1;
+  min-width: 0;
+  min-height: 44px;
+  padding: 0 var(--space-14);
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-full);
+  background-color: var(--color-surface);
+  color: var(--color-text);
+  /* 16px evita el zoom automático de iOS al enfocar */
+  font-family: inherit;
+  font-size: 16px;
+}
+
+.zoni-input:focus-visible {
+  outline: 2px solid var(--color-primary-ink);
+  outline-offset: 1px;
+}
+
+.zoni-send {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border: 0;
+  border-radius: var(--radius-full);
+  background-color: var(--color-primary-ink);
+  color: var(--color-surface);
+  cursor: pointer;
+}
+
+.zoni-send:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.zoni-disclaimer {
+  margin: 0;
+  padding: 0 var(--space-16) var(--space-10);
+  color: var(--color-text-secondary);
+  font-size: var(--text-11, 11px);
+  text-align: center;
+}
+
+/* Celular: el panel ocupa casi toda la pantalla y el botón queda solo el ícono */
+@media (max-width: 640px) {
+  .zoni-panel {
+    width: calc(100vw - 2 * var(--space-12));
+    height: calc(100dvh - 96px);
+  }
+
+  .zoni-fab:not(.zoni-fab--open) {
+    min-width: 52px;
+    padding: 0;
+    justify-content: center;
+  }
+
+  .zoni-fab-label {
+    display: none;
+  }
+}
+
+/* El PDF y la impresión no llevan el chat */
+@media print {
+  .zoni {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .zoni-panel,
+  .zoni-typing span {
+    animation: none;
+  }
+
+  .zoni-fab {
+    transition: none;
+  }
+}

@@ -26,6 +26,8 @@ import SobreNosotros from './pages/SobreNosotros/SobreNosotros.jsx'
 import Contacto from './pages/Contacto/Contacto.jsx'
 import Privacidad from './pages/Privacidad/Privacidad.jsx'
 import NotFound from './pages/NotFound.jsx'
+import ZoniChat from './components/organisms/ZoniChat/ZoniChat.jsx'
+import { ZoniProvider } from './context/ZoniContext.jsx'
 
 // Las páginas con mapa traen Leaflet (~150 kB): se cargan recién al entrar
 const Ubicacion = lazy(() => import('./pages/Ubicacion/Ubicacion.jsx'))
@@ -38,6 +40,7 @@ const reportFallback = <div className="flow-skeleton" aria-busy="true" aria-labe
 
 function App() {
   return (
+    <ZoniProvider>
     <Routes>
       <Route
         element={
@@ -119,6 +122,8 @@ function App() {
         </Route>
       </Route>
     </Routes>
+    <ZoniChat />
+    </ZoniProvider>
   )
 }
 

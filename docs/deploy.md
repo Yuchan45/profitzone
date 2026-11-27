@@ -108,6 +108,8 @@ En el proyecto, **Settings → Environment Variables**, entorno **Production**:
 
 Ingreso con Google (opcional): `GOOGLE_CLIENT_ID`. Se crea en Google Cloud Console → APIs y servicios → Credenciales → **ID de cliente de OAuth** (tipo *Aplicación web*), con el dominio de la app (por ejemplo `https://profitzone-ten.vercel.app`) en **Orígenes autorizados de JavaScript**; no hace falta URI de redireccionamiento ni el secreto. Sin la variable, el botón "Continuar con Google" queda deshabilitado. La API valida el token con Google, exige correo verificado y, si ya hay una cuenta con ese correo, la vincula.
 
+Asistente Zoni (opcional): `AZURE_OPENAI_ENDPOINT`, `AZURE_OPENAI_API_KEY`, `AZURE_OPENAI_DEPLOYMENT_NAME` y `AZURE_OPENAI_API_VERSION` (por defecto `2024-10-21`). Sin ellas el chat responde con un modo local de referencia. `POST /api/assistant/chat` está limitado a 30 consultas cada 10 minutos por IP.
+
 Créditos y pagos (opcionales; los valores por defecto sirven para una demo, ver `docs/modelo-de-negocio.md`):
 
 | Variable | Valor |

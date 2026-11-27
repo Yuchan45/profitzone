@@ -3,6 +3,8 @@ import { Link } from 'react-router-dom'
 import { useNeighborhoods } from '../../../hooks/useNeighborhoods.js'
 import { useNearbyPlaces } from '../../../hooks/useNearbyPlaces.js'
 import TierBanner from '../TierBanner/TierBanner.jsx'
+import { useZoniContext } from '../../../context/ZoniContext.jsx'
+import { buildReportContext } from '../../../utils/zoniContext.js'
 import ZoneMapPanel from '../ZoneMapPanel/ZoneMapPanel.jsx'
 import CriteriaTable from '../CriteriaTable/CriteriaTable.jsx'
 import PermitsGuide from '../PermitsGuide/PermitsGuide.jsx'
@@ -868,6 +870,9 @@ function ZoneAnalysis({
 }) {
   const neighborhoods = useNeighborhoods()
   const reportData = report.data
+  // Zoni (el chat flotante) responde sabiendo qué reporte está mirando el usuario
+  const zoniContext = useMemo(() => buildReportContext(reportData), [reportData])
+  useZoniContext(zoniContext)
   const analysis = reportData?.analysis
   const location = analysis?.location ?? point
   const neighborhood = neighborhoods.data?.[0] ?? null

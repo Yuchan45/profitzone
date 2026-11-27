@@ -75,6 +75,11 @@ const schema = {
     required: false,
     default: '',
   },
+  // Asistente de IA (Zoni): Azure OpenAI. Sin estas variables responde con un modo local de referencia
+  AZURE_OPENAI_ENDPOINT: { required: false, default: '' },
+  AZURE_OPENAI_API_KEY: { required: false, default: '' },
+  AZURE_OPENAI_DEPLOYMENT_NAME: { required: false, default: '' },
+  AZURE_OPENAI_API_VERSION: { required: false, default: '2024-10-21' },
   // Client ID de OAuth de Google ("Continuar con Google"). Sin él el botón queda deshabilitado
   GOOGLE_CLIENT_ID: {
     required: false,
@@ -211,6 +216,12 @@ function loadEnv() {
     corsOrigins: config.CORS_ORIGINS,
     isProduction: config.NODE_ENV === 'production',
     googlePlacesApiKey: config.GOOGLE_PLACES_API_KEY ?? '',
+    assistant: Object.freeze({
+      endpoint: (config.AZURE_OPENAI_ENDPOINT ?? '').trim().replace(/\/+$/, ''),
+      apiKey: config.AZURE_OPENAI_API_KEY ?? '',
+      deployment: (config.AZURE_OPENAI_DEPLOYMENT_NAME ?? '').trim(),
+      apiVersion: config.AZURE_OPENAI_API_VERSION,
+    }),
     googleClientId: (config.GOOGLE_CLIENT_ID ?? '').trim(),
     bestTimeApiKey: config.BESTTIME_API_KEY ?? '',
     frontendUrl: config.FRONTEND_URL,
