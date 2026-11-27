@@ -160,10 +160,34 @@ async function verifyGoogleIdToken(idToken) {
 }
 
 /**
+ * Primera vez que una cuenta existente entra con Google: el registro no verifica el correo, así
+ * que la contraseña y las sesiones abiertas pudieron ser de otra persona que se registró antes
+ * con ese correo. Google sí lo verificó: se cambia la contraseña por una aleatoria y se cierran
+ * todas las sesiones y los links de recuperación pendientes. Si la contraseña era de la dueña,
+ * la vuelve a poner con "¿Olvidaste tu contraseña?" (el correo le llega a ella).
+ */
+async function linkGoogleAccount(user, googleSub, meta) {
+  const passwordHash = await hashPassword(generateOpaqueToken())
+  return sequelize.transaction(async (transaction) => {
+    await lockUserRow(user.id, transaction)
+    user.googleSub = googleSub
+    user.passwordHash = passwordHash
+    user.lastLoginAt = new Date()
+    await user.save({ fields: ['googleSub', 'passwordHash', 'lastLoginAt'], transaction })
+    await revokeAllRefreshTokens(user.id, transaction)
+    await AuthToken.update(
+      { revokedAt: new Date() },
+      { where: { userId: user.id, type: RESET_PASSWORD, usedAt: null, revokedAt: null }, transaction },
+    )
+    return issueSession(user, meta, transaction)
+  })
+}
+
+/**
  * "Continuar con Google": entra con la cuenta de Google. Si ya hay una cuenta con ese correo la
- * vincula (Google verificó el correo); si no, crea una nueva con el regalo de bienvenida.
- * Las cuentas creadas así tienen una contraseña aleatoria que nadie conoce: para poner una
- * propia, usan "¿Olvidaste tu contraseña?".
+ * vincula (Google verificó el correo; ver linkGoogleAccount); si no, crea una nueva con el regalo
+ * de bienvenida. Las cuentas creadas así tienen una contraseña aleatoria que nadie conoce: para
+ * poner una propia, usan "¿Olvidaste tu contraseña?".
  */
 export async function loginWithGoogle(idToken, meta) {
   const google = await verifyGoogleIdToken(idToken)
@@ -177,9 +201,9 @@ export async function loginWithGoogle(idToken, meta) {
     if (user.googleSub && user.googleSub !== google.sub) {
       throw httpError(409, 'Ese correo ya está vinculado a otra cuenta de Google.')
     }
-    user.googleSub = google.sub
+    if (!user.googleSub) return linkGoogleAccount(user, google.sub, meta)
     user.lastLoginAt = new Date()
-    await user.save({ fields: ['googleSub', 'lastLoginAt'] })
+    await user.save({ fields: ['lastLoginAt'] })
     await cleanupExpiredTokens(user.id, REFRESH)
     return issueSession(user, meta)
   }
