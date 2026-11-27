@@ -116,6 +116,9 @@ de su carpeta.
 | `PAYMENT_PROVIDER` | No | `mock` | `mock` (checkout de demostración que acredita sin cobrar) o `mercadopago` |
 | `MP_ACCESS_TOKEN` | No | — | Access token de Mercado Pago (solo con `PAYMENT_PROVIDER=mercadopago`) |
 | `FX_API_URL` / `USD_ARS_FALLBACK` | No | dolarapi.com / `1200` | Cotización USD→ARS de los packs y valor de respaldo |
+| `GOOGLE_CLIENT_ID` | No | — | Client ID de OAuth de Google para "Continuar con Google" (aplicación web, con el dominio del front en los orígenes autorizados). Sin él, el botón queda deshabilitado |
+| `AZURE_OPENAI_ENDPOINT` / `AZURE_OPENAI_API_KEY` / `AZURE_OPENAI_DEPLOYMENT_NAME` | No | — | Azure OpenAI para Zoni, el asistente. Sin las tres, Zoni responde con un modo local de referencia |
+| `AZURE_OPENAI_API_VERSION` | No | `2024-10-21` | Versión de la API de Azure OpenAI |
 
 `docker-compose.yml` lee `DB_PASSWORD` y `DB_PORT` de `profit-zone-back/.env`
 (los scripts `npm run db:*` le pasan ese archivo), así hay una sola fuente.
@@ -180,7 +183,15 @@ acepta únicamente los orígenes de `CORS_ORIGINS`; cualquier otro recibe **403*
 | `GET`  | `/api/analyses/:id/report` | Reporte de zona: indicadores del punto y radio, cuadro de fortalezas y debilidades cruzado con las respuestas, resumen y `benchmarks`: cada dato comparado con Palermo (mediana y percentil del punto entre los 295 centros de radios censales del barrio, medidos con el mismo radio; densidad contra el promedio del barrio; `null` si no se pudieron calcular). Ver la página `/metodologia` del front (409 si el análisis no tiene ubicación) |
 | `PUT`  | `/api/analyses/:id/answers` | Reemplaza todas las respuestas (`{ answers }`), con las mismas validaciones que el alta |
 | `PATCH` | `/api/analyses/:id/location` | Guarda el punto y el radio (`{ lat, lng, radius }`, radio entero entre 100 y 2000 m, dentro de Palermo; 422 si cae afuera; más de 600 m solo con `tier: "complete"`, si no 403 `RADIUS_REQUIRES_COMPLETE`). Se llama al tocar "Analizar zona" (`tier` `basic` por defecto o `complete`): cobra 1 crédito (402 `INSUFFICIENT_CREDITS` si no alcanza; no cobra al repetir el mismo punto y radio), el análisis pasa a `saved` y aparece en Mis reportes. Busca y guarda la dirección del punto (`address`); si la búsqueda falla, se guarda igual sin dirección |
-| `POST` | `/api/analyses/:id/upgrade` | Mejora un análisis básico a completo con 1 crédito pago. Ver [`docs/modelo-de-negocio.md`](docs/modelo-de-negocio.md); los endpoints `/api/billing/*` (packs, saldo, compras, checkout, webhook) están ahí |
+| `POST` | `/api/analyses/:id/upgrade` | Mejora un análisis básico a completo con 1 crédito pago. Reglas en [`docs/modelo-de-negocio.md`](docs/modelo-de-negocio.md) |
+| `GET`  | `/api/billing/packs` | Packs de créditos con su precio en USD y en pesos al dólar del día. Público |
+| `GET`  | `/api/billing/credits` | Saldo (`{ free, paid, total }`) y últimos movimientos del usuario |
+| `GET`  | `/api/billing/orders` | Últimas compras del usuario |
+| `POST` | `/api/billing/checkout` | Crea la compra de un pack (`{ packCode }`) y devuelve `{ order, checkoutUrl }` (checkout simulado o Mercado Pago) |
+| `GET`  | `/api/billing/orders/:id` | Estado de una compra del usuario con su saldo |
+| `POST` | `/api/billing/orders/:id/sync` | Consulta a Mercado Pago cómo quedó el pago y acredita si se aprobó |
+| `POST` | `/api/billing/orders/:id/simulate-pay` | Confirma una compra simulada (solo con `PAYMENT_PROVIDER=mock`; 403 si no) |
+| `POST` | `/api/billing/webhook/mercadopago` | Webhook de Mercado Pago: re-consulta el pago a Mercado Pago y acredita una sola vez |
 | `PATCH` | `/api/analyses/:id` | Renombra el análisis (`{ name }`, texto de hasta 80 caracteres; vacío o `null` vuelve a mostrar el rubro). 400 si es más largo |
 | `DELETE` | `/api/analyses/:id` | Elimina un análisis, borrador o reporte guardado (y sus respuestas). 204 |
 | `GET`  | `/api/neighborhoods` | Barrios donde se puede analizar (MVP: Palermo) con su contorno `[lat, lng]`, sus límites (`bounds`) y un centro ponderado por población, calculados desde el censo |
@@ -193,6 +204,9 @@ acepta únicamente los orígenes de `CORS_ORIGINS`; cualquier otro recibe **403*
 | `POST` | `/api/auth/forgot-password` | Pide restablecer la contraseña (`{ email }`): manda un link de un solo uso que vence en 30 min. 202 genérico exista o no la cuenta; límite de 5 pedidos cada 15 min por IP |
 | `POST` | `/api/auth/reset-password` | Cambia la contraseña con el link (`{ token, password }`) y cierra todas las sesiones de la cuenta. 204; 400 si el link venció, ya se usó o la contraseña no cumple el largo |
 | `GET`  | `/api/auth/me` | Usuario de la sesión. Requiere `Authorization: Bearer <accessToken>` |
+| `GET`  | `/api/auth/google/config` | Client ID público de Google (`{ clientId }`, `null` si no está configurado) para mostrar el botón "Continuar con Google" |
+| `POST` | `/api/auth/google` | Entra con Google (`{ idToken }`): valida el token con Google (audiencia, emisor y correo verificado). Entra a la cuenta vinculada, vincula una existente con ese correo (la primera vez cambia la contraseña por una aleatoria y cierra sus sesiones) o crea una nueva con los créditos de bienvenida. Misma respuesta que `/login`; 401 si el token no es válido, 403 sin correo verificado, 409 si el correo está vinculado a otra cuenta de Google |
+| `POST` | `/api/assistant/chat` | Zoni, el asistente con IA (`{ messages: [{ role, content }], context? }`, hasta 12 mensajes): responde `{ reply, mode }` (`ai` o `local`). Público, limitado a 30 consultas cada 10 minutos por IP |
 
 ## Estructura
 
