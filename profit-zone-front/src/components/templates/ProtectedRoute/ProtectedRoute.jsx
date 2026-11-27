@@ -10,7 +10,9 @@ function ProtectedRoute() {
   const { status } = useAuth()
   const location = useLocation()
 
-  if (status === 'loading') return null
+  if (status === 'loading') {
+    return <div className="flow-skeleton" aria-busy="true" aria-label="Verificando sesión" />
+  }
 
   if (status === 'anonymous') {
     return <Navigate to="/login" replace state={{ from: location.pathname + location.search }} />

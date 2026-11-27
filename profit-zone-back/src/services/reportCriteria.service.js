@@ -210,10 +210,15 @@ export function audienceCriterion({ answerCodes, answerLabel, density }) {
   const zone = `${formatInt(targetCount)} hab. de tu rango (${targetShare.toLocaleString('es-AR')}% del radio${sexSummary})`
 
   const shareRatio = expectedShare > 0 ? targetShare / expectedShare : 1
+  // Escala los mínimos según la superficie del radio (referencia: ~500 m = 0,785 km²) para no castigar radios chicos
+  const areaScale = Math.min(1, Math.max(0.1, (density.data.bufferAreaKm2 || 0.785) / 0.785))
+  const minAlert = Math.round(AUDIENCE.minAlertCount * areaScale)
+  const minStrength = Math.round(AUDIENCE.minStrengthCount * areaScale)
+
   let reading = 'alert'
-  if (targetCount < AUDIENCE.minAlertCount || shareRatio < AUDIENCE.weaknessRatio) {
+  if (targetCount < minAlert || shareRatio < AUDIENCE.weaknessRatio) {
     reading = 'weakness'
-  } else if (targetCount >= AUDIENCE.minStrengthCount && shareRatio >= AUDIENCE.strengthRatio) {
+  } else if (targetCount >= minStrength && shareRatio >= AUDIENCE.strengthRatio) {
     reading = 'strength'
   }
 
@@ -289,7 +294,7 @@ export function competitionCriterion({ answerLabel, subcategoryName, competition
 
   const { total, directCount, averageRating, places = [] } = competition.data
   // Sin locales con rating el promedio es null: no se menciona
-  const hasRatings = places.some((place) => place.rating)
+  const hasRatings = typeof averageRating === 'number' && places.some((place) => place.rating)
   // Si se llegó al máximo de resultados puede haber más locales que no vinieron
   const atLeast = total >= COMPETITION.maxResults && !competition.data.isExact ? 'Al menos ' : ''
   const ratingText = hasRatings ? `, rating promedio ${averageRating.toLocaleString('es-AR')}` : ''
@@ -309,17 +314,13 @@ export function competitionCriterion({ answerLabel, subcategoryName, competition
   return criterion('competition', 'Competencia', yourBusiness, zone, reading)
 }
 
-/** Accesibilidad: estaciones de subte, tren y paradas de transporte en el radio vs. cómo llega el cliente. */
-export function accessibilityCriterion({ answerCode, answerLabel, accessibility, noPublic }) {
-  const yourBusiness = answerLabel ? answerLabel('arrival_type') : null
-  const code = answerCode ? answerCode('arrival_type') : null
+/** Accesibilidad: estaciones de subte, tren y paradas de transporte en el radio. */
+export function accessibilityCriterion({ answerLabel, accessibility, noPublic }) {
+  const yourBusiness = (answerLabel ? answerLabel('arrival_type') : null) ?? 'Con atención al público'
   const label = 'Accesibilidad'
 
   if (noPublic) {
     return notApplicableCriterion('accessibility', label, yourBusiness)
-  }
-  if (!code || code === 'unknown') {
-    return undefinedAnswerCriterion('accessibility', label, yourBusiness, 'Sin definir cómo llega tu cliente')
   }
   if (!accessibility || accessibility.status !== 'ok') {
     return criterion('accessibility', label, yourBusiness, 'No pudimos obtener la accesibilidad', 'not_evaluated')

@@ -6,6 +6,8 @@ import {
   QuestionOption,
   QuestionAssignment,
 } from '../models/index.js'
+import { ASSIGNMENT_SCOPES } from '../models/catalog/QuestionAssignment.js'
+import { httpError } from '../utils/httpErrors.js'
 
 const SECTION_ORDER = { business: 1, details: 2 }
 const SCOPE_ORDER = { global: 1, category: 2, subcategory: 3 }
@@ -54,6 +56,9 @@ function toAssignmentDto(assignment) {
  * preguntas, opciones y asignaciones por is_active.
  */
 export async function listQuestions({ scope, active } = {}) {
+  if (scope !== undefined && scope !== '' && !ASSIGNMENT_SCOPES.includes(scope)) {
+    throw httpError(400, `El parámetro "scope" debe ser uno de: ${ASSIGNMENT_SCOPES.join(', ')}.`)
+  }
   const activeWhere = active === undefined ? {} : { isActive: active }
   const assignmentWhere = { ...activeWhere, ...(scope ? { scope } : {}) }
 
@@ -167,14 +172,19 @@ export async function getSubcategorySurvey(categoryCode, subcategoryCode) {
     order: [[{ model: Question, as: 'question' }, ...OPTIONS_ORDER]],
   })
 
-  const questions = assignments
-    .sort(
-      (a, b) =>
-        SECTION_ORDER[a.section] - SECTION_ORDER[b.section] ||
-        SCOPE_ORDER[a.scope] - SCOPE_ORDER[b.scope] ||
-        a.sortOrder - b.sortOrder,
-    )
-    .map((assignment) => ({
+  const sorted = assignments.sort(
+    (a, b) =>
+      SECTION_ORDER[a.section] - SECTION_ORDER[b.section] ||
+      SCOPE_ORDER[a.scope] - SCOPE_ORDER[b.scope] ||
+      a.sortOrder - b.sortOrder,
+  )
+
+  const seenQuestionIds = new Set()
+  const questions = []
+  for (const assignment of sorted) {
+    if (seenQuestionIds.has(assignment.questionId)) continue
+    seenQuestionIds.add(assignment.questionId)
+    questions.push({
       code: assignment.question.code,
       prompt: assignment.question.prompt,
       helpText: assignment.question.helpText,
@@ -184,7 +194,8 @@ export async function getSubcategorySurvey(categoryCode, subcategoryCode) {
       sortOrder: assignment.sortOrder,
       isRequired: assignment.isRequired,
       options: assignment.question.options.map(toOptionDto),
-    }))
+    })
+  }
 
   return {
     category: { code: subcategory.category.code, name: subcategory.category.name },

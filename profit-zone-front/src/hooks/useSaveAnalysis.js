@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { createAnalysis, replaceAnalysisAnswers } from '../services/analyses.service.js'
 import { useAnalysisFlow } from './useAnalysisFlow.js'
+import { invalidateReportCache } from './useAnalysisReport.js'
 
 // Reemplaza las respuestas de un análisis ya guardado. Devuelve false si el análisis
 // ya no existe en la API (404), para que se cree uno nuevo en su lugar.
@@ -31,7 +32,9 @@ export function useSaveAnalysis() {
     )
     try {
       const replaced = analysisId && (await replaceAnswersIfExists(analysisId, currentAnswers))
-      if (!replaced) {
+      if (replaced) {
+        invalidateReportCache(analysisId)
+      } else {
         const analysis = await createAnalysis({
           categoryCode,
           subcategoryCode,

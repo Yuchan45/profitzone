@@ -19,7 +19,7 @@ const FAQS = [
   {
     question: '¿Necesito crear una cuenta?',
     answer:
-      'No para analizar ni para exportar el PDF. Solo si querés guardar el reporte y volver a verlo en Mis reportes.',
+      'Podés elegir tu rubro, responder las preguntas de tu negocio y explorar la vista previa en el mapa sin cuenta. Al generar el análisis te pedimos crear cuenta o iniciar sesión para guardar el reporte en Mis reportes.',
   },
   {
     question: '¿Qué zonas y rubros cubre?',

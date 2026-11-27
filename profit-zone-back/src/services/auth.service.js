@@ -163,6 +163,7 @@ export async function refresh(refreshToken, meta) {
   }
 
   return sequelize.transaction(async (transaction) => {
+    await cleanupExpiredTokens(record.userId, REFRESH, transaction)
     const session = await issueSession(record.user, meta, transaction)
 
     // Revocación atómica: si otra request ya lo rotó, no se emiten dos sesiones

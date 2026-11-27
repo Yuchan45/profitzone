@@ -1,32 +1,46 @@
 import { useEffect, useState } from 'react'
 import { useBlocker } from 'react-router-dom'
-import { createAnalysis, replaceAnalysisAnswers, saveAnalysisLocation } from '../services/analyses.service.js'
+import { createAnalysis, replaceAnalysisAnswers } from '../services/analyses.service.js'
+import { fetchSubcategorySurvey } from '../services/catalog.service.js'
 import { FLOW_STEPS, isReportReady } from '../utils/flowSteps.js'
+import { visibleQuestions } from '../utils/hiddenQuestions.js'
 import { useAnalysisFlow } from './useAnalysisFlow.js'
+import { invalidateReportCache } from './useAnalysisReport.js'
 import { useAuth } from './useAuth.js'
 
 const isFlowPath = (pathname) => pathname.startsWith('/analizar/')
-// Ir a iniciar sesión o crear cuenta no abandona el flujo: después se vuelve a él
-const AUTH_PATHS = ['/login', '/registro']
+// Ir a iniciar sesión, crear cuenta o recuperar contraseña no abandona el flujo
+const AUTH_PATHS = ['/login', '/registro', '/recuperar-contrasena', '/restablecer-contrasena']
 const negocioStep = FLOW_STEPS.find((step) => step.id === 'negocio')
 
-// Errores de validación de la API: los datos sin guardar no son válidos (ej. un punto
-// fuera del barrio). No frenan el guardado: el análisis queda con su última versión válida
+// Errores de validación de la API: los datos sin guardar no son válidos.
+// No frenan el guardado: el análisis queda con su última versión válida
 const isValidationError = (error) => [400, 403, 422].includes(error.response?.status)
 
 /**
- * Guarda lo que cambió desde el último "Siguiente" o "Analizar zona": las respuestas y,
- * si hay, la ubicación (con la ubicación, la API lo pasa a reporte guardado). Si el
- * análisis todavía no existe en la API (o ya no es accesible: 404), lo crea como borrador.
+ * Guarda las respuestas del borrador antes de salir del flujo.
+ * Mantiene el análisis en borrador (sin promoverlo a reporte guardado hasta que el usuario
+ * toque "Analizar zona"). Si todavía no existe en la API (o ya no es accesible: 404), lo crea.
  */
-async function persistChanges({ analysisId, categoryCode, subcategoryCode, answers, location }) {
+async function persistChanges({ analysisId, categoryCode, subcategoryCode, answers, setAnalysisId }) {
+  let allowedCodes = null
+  try {
+    const survey = await fetchSubcategorySurvey(categoryCode, subcategoryCode)
+    allowedCodes = new Set(visibleQuestions(survey, answers).map((q) => q.code))
+  } catch {
+    // Si falla la encuesta, el backend igualmente filtra preguntas ocultas al guardar
+  }
+
   const currentAnswers = Object.fromEntries(
-    Object.entries(answers).filter(([, optionCodes]) => optionCodes.length > 0),
+    Object.entries(answers).filter(
+      ([code, optionCodes]) => optionCodes.length > 0 && (!allowedCodes || allowedCodes.has(code)),
+    ),
   )
   let id = analysisId
   if (id) {
     try {
       await replaceAnalysisAnswers(id, currentAnswers)
+      invalidateReportCache(id)
     } catch (error) {
       if (error.response?.status === 404) id = null
       else if (!isValidationError(error)) throw error
@@ -34,14 +48,7 @@ async function persistChanges({ analysisId, categoryCode, subcategoryCode, answe
   }
   if (!id) {
     const analysis = await createAnalysis({ categoryCode, subcategoryCode, answers: currentAnswers })
-    id = analysis.id
-  }
-  if (location) {
-    try {
-      await saveAnalysisLocation(id, location)
-    } catch (error) {
-      if (!isValidationError(error)) throw error
-    }
+    setAnalysisId(analysis.id)
   }
 }
 

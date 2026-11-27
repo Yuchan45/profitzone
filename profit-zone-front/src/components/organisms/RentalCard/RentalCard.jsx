@@ -2,6 +2,7 @@ import { useEffect } from 'react'
 import Icon from '../../atoms/Icon/Icon.jsx'
 import Button from '../../atoms/Button/Button.jsx'
 import { formatCurrency, formatNumber } from '../../../utils/formatters.js'
+import { toExternalUrl } from '../../../utils/placeDisplay.js'
 // Misma ficha flotante que la de los negocios: se ven iguales sobre el mapa
 import '../PlaceCard/PlaceCard.css'
 
@@ -20,6 +21,7 @@ function RentalCard({ listing, onClose }) {
   }, [onClose])
 
   const money = (value) => (value ? formatCurrency(value, 'ARS', { decimals: 0 }) : null)
+  const listingUrl = toExternalUrl(listing.url)
 
   return (
     <aside className="place-card" aria-label={`Aviso en ${listing.address}`}>
@@ -55,8 +57,8 @@ function RentalCard({ listing, onClose }) {
         )}
       </ul>
 
-      {listing.url && (
-        <Button variant="secondary" size="m" href={listing.url} target="_blank" rel="noopener noreferrer">
+      {listingUrl && (
+        <Button variant="secondary" size="m" href={listingUrl} target="_blank" rel="noopener noreferrer">
           <Icon name="external-link" size={16} />
           Ver el aviso en ZonaProp
         </Button>

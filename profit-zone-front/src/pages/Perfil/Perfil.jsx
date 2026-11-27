@@ -1,15 +1,19 @@
-import { useState, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useProfile } from '../../hooks/useProfile.js'
 import { useAuth } from '../../hooks/useAuth.js'
 import Icon from '../../components/atoms/Icon/Icon.jsx'
+import GoogleLogo from '../../components/atoms/GoogleLogo/GoogleLogo.jsx'
+import Button from '../../components/atoms/Button/Button.jsx'
+import Modal from '../../components/organisms/Modal/Modal.jsx'
+import StatusMessage from '../../components/molecules/StatusMessage/StatusMessage.jsx'
+import { getApiErrorMessage } from '../../utils/apiErrors.js'
+import { formatDate } from '../../utils/formatters.js'
 import './Perfil.css'
 
 const MEMBER_SINCE_FORMAT = new Intl.DateTimeFormat('es-AR', { month: 'long', year: 'numeric' })
 
 function Perfil() {
-  // Nombre, correo y fecha de alta salen de la sesión real; el resto del perfil
-  // (foto, Google, actividad) sigue siendo mock por usuario hasta tener /api/users/me.
   const { user: authUser } = useAuth()
   const {
     status,
@@ -18,40 +22,40 @@ function Perfil() {
     isUpdating,
     savePersonalData,
     changePassword,
-    toggleGoogle,
-    setAvatar,
-    removeAvatar,
     deleteProfile,
   } = useProfile(authUser?.id)
 
-  // Modificaciones locales sobre los datos personales
   const [personalForm, setPersonalForm] = useState({})
+  const currentFirstName = personalForm.firstName ?? profile?.firstName ?? authUser?.firstName ?? ''
+  const currentLastName = personalForm.lastName ?? profile?.lastName ?? authUser?.lastName ?? ''
+  const currentEmail = personalForm.email ?? profile?.email ?? authUser?.email ?? ''
+  const createdAt = profile?.createdAt ?? authUser?.createdAt
+  const memberSince = createdAt ? MEMBER_SINCE_FORMAT.format(new Date(createdAt)) : null
 
-  const currentFirstName = personalForm.firstName ?? authUser?.firstName ?? profile?.firstName ?? ''
-  const currentLastName = personalForm.lastName ?? authUser?.lastName ?? profile?.lastName ?? ''
-  const currentEmail = personalForm.email ?? authUser?.email ?? profile?.email ?? ''
-  const memberSince = authUser?.createdAt
-    ? MEMBER_SINCE_FORMAT.format(new Date(authUser.createdAt))
-    : profile?.memberSince
-
-  // Estado del formulario de contraseña
   const [passwordData, setPasswordData] = useState({
     currentPassword: '',
     newPassword: '',
   })
   const [showCurrentPass, setShowCurrentPass] = useState(false)
   const [showNewPass, setShowNewPass] = useState(false)
+  const [deleteOpen, setDeleteOpen] = useState(false)
+  const [deleteError, setDeleteError] = useState(null)
 
-  // Feedback y mensajes toast
   const [toast, setToast] = useState(null)
+  const toastTimerRef = useRef(null)
 
-  // Referencia para selector de archivo
-  const fileInputRef = useRef(null)
+  useEffect(() => {
+    return () => {
+      if (toastTimerRef.current) clearTimeout(toastTimerRef.current)
+    }
+  }, [])
 
   const showToast = (message, type = 'success') => {
+    if (toastTimerRef.current) clearTimeout(toastTimerRef.current)
     setToast({ message, type })
-    setTimeout(() => {
+    toastTimerRef.current = setTimeout(() => {
       setToast(null)
+      toastTimerRef.current = null
     }, 3500)
   }
 
@@ -71,7 +75,7 @@ function Perfil() {
       setPersonalForm({})
       showToast('Cambios guardados con éxito')
     } catch (err) {
-      showToast(err.message || 'Error al guardar los cambios', 'error')
+      showToast(getApiErrorMessage(err), 'error')
     }
   }
 
@@ -99,52 +103,16 @@ function Perfil() {
       setPasswordData({ currentPassword: '', newPassword: '' })
       showToast('Contraseña actualizada con éxito')
     } catch (err) {
-      showToast(err.message || 'Error al actualizar la contraseña', 'error')
+      showToast(getApiErrorMessage(err), 'error')
     }
   }
 
-  const handleFileSelect = (e) => {
-    const file = e.target.files?.[0]
-    if (file) {
-      const previewUrl = URL.createObjectURL(file)
-      setAvatar(previewUrl)
-      showToast('Foto de perfil actualizada')
-    }
-  }
-
-  const handleRemovePhoto = async () => {
+  const confirmDeleteAccount = async () => {
+    setDeleteError(null)
     try {
-      await removeAvatar()
-      showToast('Foto de perfil eliminada')
+      await deleteProfile()
     } catch (err) {
-      showToast(err.message || 'Error al quitar la foto', 'error')
-    }
-  }
-
-  const handleToggleGoogle = async () => {
-    try {
-      const updated = await toggleGoogle()
-      showToast(
-        updated.googleLinked
-          ? 'Cuenta de Google vinculada con éxito'
-          : 'Cuenta de Google desvinculada',
-      )
-    } catch (err) {
-      showToast(err.message || 'Error al vincular cuenta de Google', 'error')
-    }
-  }
-
-  const handleDeleteAccount = async () => {
-    const confirmDelete = window.confirm(
-      '¿Estás seguro de que deseás eliminar tu cuenta? Esta acción no se puede deshacer.',
-    )
-    if (confirmDelete) {
-      try {
-        await deleteProfile()
-        showToast('Tu cuenta ha sido eliminada')
-      } catch (err) {
-        showToast(err.message || 'Error al eliminar la cuenta', 'error')
-      }
+      setDeleteError(getApiErrorMessage(err))
     }
   }
 
@@ -161,11 +129,7 @@ function Perfil() {
     return (
       <div className="profile-page-wrapper">
         <h1 className="profile-page-title">Perfil</h1>
-        <div className="profile-card">
-          <p style={{ color: 'var(--color-error)' }}>
-            Ocurrió un error al cargar el perfil: {error}
-          </p>
-        </div>
+        <StatusMessage variant="error">Ocurrió un error al cargar el perfil: {error}</StatusMessage>
       </div>
     )
   }
@@ -174,7 +138,6 @@ function Perfil() {
 
   return (
     <div className="profile-page-wrapper">
-      {/* Toast de feedback */}
       {toast && (
         <div
           className={`profile-toast profile-toast--${toast.type}`}
@@ -186,87 +149,33 @@ function Perfil() {
         </div>
       )}
 
-      {/* Título de la página */}
       <h1 className="profile-page-title">Perfil</h1>
 
-      {/* Tarjeta superior: Resumen de usuario y foto */}
       <section className="profile-card profile-header-card">
         <div className="profile-header-user">
           <div className="profile-avatar-container">
-            {profile?.avatarUrl ? (
-              <img
-                src={profile.avatarUrl}
-                alt={fullName}
-                className="profile-avatar-img"
-              />
-            ) : (
-              <div className="profile-avatar-fallback" role="img" aria-label="Sin foto de perfil">
-                <Icon name="user-round" size={36} strokeWidth={1.75} />
-              </div>
-            )}
-            <button
-              type="button"
-              className="profile-avatar-badge"
-              title="Cambiar foto de perfil"
-              onClick={() => fileInputRef.current?.click()}
-              aria-label="Cambiar foto"
-            >
-              <svg
-                width="12"
-                height="12"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2.5"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <path d="M12 20h9" />
-                <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
-              </svg>
-            </button>
+            <div className="profile-avatar-fallback" role="img" aria-label={fullName}>
+              <Icon name="user-round" size={36} strokeWidth={1.75} />
+            </div>
           </div>
 
           <div className="profile-header-info">
             <h2 className="profile-user-name">{fullName}</h2>
             <p className="profile-user-meta">
-              <span>{authUser?.email ?? profile?.email}</span>
-              <span className="profile-user-meta-dot">·</span>
-              <span>Miembro desde {memberSince}</span>
+              <span>{profile?.email ?? authUser?.email}</span>
+              {memberSince && (
+                <>
+                  <span className="profile-user-meta-dot">·</span>
+                  <span>Miembro desde {memberSince}</span>
+                </>
+              )}
             </p>
           </div>
         </div>
-
-        <div className="profile-header-actions">
-          <input
-            type="file"
-            ref={fileInputRef}
-            onChange={handleFileSelect}
-            accept="image/*"
-            style={{ display: 'none' }}
-          />
-          <button
-            type="button"
-            className="profile-btn-secondary"
-            onClick={() => fileInputRef.current?.click()}
-          >
-            Cambiar foto
-          </button>
-          <button
-            type="button"
-            className="profile-btn-secondary"
-            onClick={handleRemovePhoto}
-          >
-            Quitar
-          </button>
-        </div>
       </section>
 
-      {/* Grilla principal en 2 columnas */}
       <div className="profile-grid-layout">
-        {/* Columna izquierda: Datos personales y Seguridad */}
         <div className="profile-col">
-          {/* Card: Datos personales */}
           <section className="profile-card">
             <h2 className="profile-card__title">Datos personales</h2>
             <form onSubmit={handleSavePersonal}>
@@ -282,6 +191,7 @@ function Perfil() {
                     className="profile-input"
                     value={currentFirstName}
                     onChange={handlePersonalChange}
+                    maxLength={100}
                     required
                   />
                 </div>
@@ -297,6 +207,7 @@ function Perfil() {
                     className="profile-input"
                     value={currentLastName}
                     onChange={handlePersonalChange}
+                    maxLength={100}
                     required
                   />
                 </div>
@@ -313,6 +224,7 @@ function Perfil() {
                   className="profile-input"
                   value={currentEmail}
                   onChange={handlePersonalChange}
+                  maxLength={320}
                   required
                 />
               </div>
@@ -327,12 +239,10 @@ function Perfil() {
             </form>
           </section>
 
-          {/* Card: Seguridad */}
           <section className="profile-card">
             <h2 className="profile-card__title">Seguridad</h2>
             <p className="profile-card__subtitle">
-              Cambiá tu contraseña. Si ingresás con Google, la gestionás desde tu
-              cuenta de Google.
+              Cambiá tu contraseña. Al guardarla, cerramos tus sesiones activas en otros dispositivos.
             </p>
 
             <form onSubmit={handleUpdatePassword}>
@@ -350,6 +260,7 @@ function Perfil() {
                       value={passwordData.currentPassword}
                       onChange={handlePasswordChange}
                       placeholder="••••••••"
+                      autoComplete="current-password"
                     />
                     <button
                       type="button"
@@ -361,19 +272,7 @@ function Perfil() {
                           : 'Mostrar contraseña actual'
                       }
                     >
-                      <svg
-                        width="18"
-                        height="18"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      >
-                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
-                        <circle cx="12" cy="12" r="3" />
-                      </svg>
+                      <Icon name={showCurrentPass ? 'eye-off' : 'eye'} size={18} />
                     </button>
                   </div>
                 </div>
@@ -391,6 +290,7 @@ function Perfil() {
                       value={passwordData.newPassword}
                       onChange={handlePasswordChange}
                       placeholder="Mínimo 8 caracteres"
+                      autoComplete="new-password"
                     />
                     <button
                       type="button"
@@ -402,19 +302,7 @@ function Perfil() {
                           : 'Mostrar nueva contraseña'
                       }
                     >
-                      <svg
-                        width="18"
-                        height="18"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      >
-                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
-                        <circle cx="12" cy="12" r="3" />
-                      </svg>
+                      <Icon name={showNewPass ? 'eye-off' : 'eye'} size={18} />
                     </button>
                   </div>
                 </div>
@@ -432,43 +320,23 @@ function Perfil() {
             <div className="profile-google-box">
               <div className="profile-google-info">
                 <div className="profile-google-icon-wrap" aria-hidden="true">
-                  <svg width="15" height="15" viewBox="0 0 24 24">
-                    <path
-                      fill="#4285F4"
-                      d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.8-2.4 3.65v3h3.88c2.27-2.09 3.665-5.17 3.665-9.09z"
-                    />
-                    <path
-                      fill="#34A853"
-                      d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.26v3.09C3.27 21.43 7.35 24 12 24z"
-                    />
-                    <path
-                      fill="#FBBC05"
-                      d="M5.28 14.32a7.18 7.18 0 0 1 0-4.64V6.59H1.26a11.96 11.96 0 0 0 0 10.82l4.02-3.09z"
-                    />
-                    <path
-                      fill="#EA4335"
-                      d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.35 0 3.27 2.57 1.26 6.59l4.02 3.09c.95-2.83 3.6-4.93 6.72-4.93z"
-                    />
-                  </svg>
+                  <GoogleLogo size={15} />
                 </div>
                 <span className="profile-google-name">Cuenta de Google</span>
               </div>
               <button
                 type="button"
                 className="profile-google-action"
-                onClick={handleToggleGoogle}
+                disabled
+                title="El acceso con Google estará disponible próximamente"
               >
-                {profile?.googleLinked
-                  ? 'Vinculada - Desvincular'
-                  : 'No vinculada - Vincular'}
+                Próximamente
               </button>
             </div>
           </section>
         </div>
 
-        {/* Columna derecha: Tu actividad y Eliminar cuenta */}
         <div className="profile-col">
-          {/* Card: Tu actividad */}
           <section className="profile-card">
             <h2 className="profile-card__title">Tu actividad</h2>
             <div className="profile-activity-list">
@@ -481,7 +349,7 @@ function Perfil() {
               <div className="profile-activity-row">
                 <span className="profile-activity-label">Último análisis</span>
                 <strong className="profile-activity-value">
-                  {profile?.lastAnalysisDate ?? 'Sin análisis todavía'}
+                  {profile?.lastAnalysisDate ? formatDate(profile.lastAnalysisDate) : 'Sin análisis todavía'}
                 </strong>
               </div>
             </div>
@@ -494,7 +362,6 @@ function Perfil() {
             </Link>
           </section>
 
-          {/* Card: Eliminar cuenta */}
           <section className="profile-card">
             <h2 className="profile-card__title">Eliminar cuenta</h2>
             <p className="profile-card__subtitle">
@@ -504,7 +371,10 @@ function Perfil() {
             <button
               type="button"
               className="profile-btn-danger profile-btn-block"
-              onClick={handleDeleteAccount}
+              onClick={() => {
+                setDeleteError(null)
+                setDeleteOpen(true)
+              }}
               disabled={isUpdating}
             >
               Eliminar cuenta
@@ -512,6 +382,25 @@ function Perfil() {
           </section>
         </div>
       </div>
+
+      <Modal
+        open={deleteOpen}
+        onClose={() => setDeleteOpen(false)}
+        title="¿Eliminar tu cuenta?"
+      >
+        <p className="profile-modal-text">
+          Se van a borrar tu cuenta, tus borradores y todos tus reportes guardados. Esta acción no se puede deshacer.
+        </p>
+        {deleteError && <StatusMessage variant="error">{deleteError}</StatusMessage>}
+        <div className="profile-modal-actions">
+          <Button variant="text" size="m" onClick={() => setDeleteOpen(false)} disabled={isUpdating}>
+            Cancelar
+          </Button>
+          <Button variant="danger" size="m" onClick={confirmDeleteAccount} disabled={isUpdating}>
+            {isUpdating ? 'Eliminando…' : 'Eliminar cuenta'}
+          </Button>
+        </div>
+      </Modal>
     </div>
   )
 }

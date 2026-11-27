@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { deleteAnalysis, fetchAnalysis, renameAnalysis } from '../services/analyses.service.js'
 import { flowStateFromAnalysis, writeFlowState } from '../utils/analysisFlowStorage.js'
+import { invalidateReportCache } from './useAnalysisReport.js'
 
 const IDLE = { pendingId: null, error: null }
 
@@ -40,9 +41,17 @@ export function useAnalysisActions() {
       navigate('/analizar/ubicacion')
     })
 
-  const remove = (analysisId) => run(analysisId, 'remove', () => deleteAnalysis(analysisId))
+  const remove = (analysisId) =>
+    run(analysisId, 'remove', async () => {
+      await deleteAnalysis(analysisId)
+      invalidateReportCache(analysisId)
+    })
 
-  const rename = (analysisId, name) => run(analysisId, 'rename', () => renameAnalysis(analysisId, name))
+  const rename = (analysisId, name) =>
+    run(analysisId, 'rename', async () => {
+      await renameAnalysis(analysisId, name)
+      invalidateReportCache(analysisId)
+    })
 
   // Mensaje de la última acción que falló, si fue `action` sobre `analysisId`
   const errorFor = (action, analysisId) =>

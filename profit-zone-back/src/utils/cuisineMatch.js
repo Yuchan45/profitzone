@@ -18,7 +18,7 @@ export function normalizeName(name) {
   return (name || '')
     .toLowerCase()
     .normalize('NFD')
-    .replace(/[̀-ͯ]/g, '')
+    .replace(/[\u0300-\u036f]/g, '')
     .replace(/[^a-z0-9\s]/g, ' ')
     .replace(/\s+/g, ' ')
     .trim()
@@ -38,6 +38,9 @@ export function nameMatchesCuisine(name, cuisines) {
  */
 export function isDirectOsmPlace(criteria, { cuisine, name }) {
   if (!criteria) return false
-  if (cuisine) return cuisine.split(';').some((value) => criteria.cuisines.has(value.trim()))
+  const normalizedCuisine = typeof cuisine === 'string' ? cuisine.trim().toLowerCase() : ''
+  if (normalizedCuisine) {
+    return normalizedCuisine.split(';').some((value) => criteria.cuisines.has(value.trim()))
+  }
   return nameMatchesCuisine(name, criteria.cuisines)
 }

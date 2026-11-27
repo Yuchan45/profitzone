@@ -27,7 +27,7 @@ Cloná el repo y preparás cada aplicación una sola vez:
 # Backend + base de datos
 cd profit-zone-back
 npm install
-cp .env.example .env        # Windows: copy .env.example .env  → cambiá DB_PASSWORD
+cp .env.example .env        # Windows: copy .env.example .env  → cambiá DB_PASSWORD y JWT_ACCESS_SECRET
 npm run db:up               # levanta SQL Server en Docker
 npm run db:migrate          # crea la base y las tablas
 npm run db:seed:catalog     # carga el catálogo base (roles, categorías, preguntas)
@@ -161,7 +161,7 @@ acepta únicamente los orígenes de `CORS_ORIGINS`; cualquier otro recibe **403*
 | `GET`  | `/api/analyses` | Mis análisis ("Mis reportes"), del más reciente al más viejo, con estado, nombre (`null` si no lo renombró), rubro, ubicación, dirección y fechas (sin respuestas). `?status=saved` (default: reportes guardados, los que ya analizaron la zona) o `?status=draft` (borradores: sin ubicación todavía); 400 con otro valor |
 | `POST` | `/api/analyses` | Crea un análisis en borrador con el rubro y las respuestas (`{ categoryCode, subcategoryCode, answers }`). 201; 400 si faltan obligatorias o hay respuestas inválidas. Queda a nombre del usuario. **Todos los endpoints de `/api/analyses` requieren sesión** (401 sin ella) y cada análisis solo lo ve su dueño (404 para el resto) |
 | `GET`  | `/api/analyses/:id` | Un análisis con su rubro, ubicación y respuestas (404 si no existe) |
-| `GET`  | `/api/analyses/:id/report` | Reporte de zona: indicadores del punto y radio, cuadro de fortalezas y debilidades cruzado con las respuestas, resumen y `benchmarks`: cada dato comparado con Palermo (mediana y percentil del punto entre los 295 centros de radios censales del barrio, medidos con el mismo radio; densidad contra el promedio del barrio; `null` si no se pudieron calcular). Ver la página `/metodologia` del front (409 si el análisis no tiene ubicación) |
+| `GET`  | `/api/analyses/:id/report` | Reporte de zona: indicadores del punto y radio (incluidos los avisos geolocalizables de alquiler solo para el dueño autenticado), cuadro de fortalezas y debilidades cruzado con las respuestas, resumen y `benchmarks`: cada dato comparado con Palermo (mediana y percentil del punto entre los 295 centros de radios censales del barrio, medidos con el mismo radio; densidad contra el promedio del barrio; `null` si no se pudieron calcular). Ver la página `/metodologia` del front (409 si el análisis no tiene ubicación) |
 | `PUT`  | `/api/analyses/:id/answers` | Reemplaza todas las respuestas (`{ answers }`), con las mismas validaciones que el alta |
 | `PATCH` | `/api/analyses/:id/location` | Guarda el punto y el radio (`{ lat, lng, radius }`, radio entero entre 100 y 2000 m, dentro de Palermo; 422 si cae afuera; más de 600 m solo para los roles `premium` y `admin`, si no 403). Se llama al tocar "Analizar zona": el análisis pasa a `saved` y aparece en Mis reportes (volver a analizar actualiza el mismo reporte). Busca y guarda la dirección del punto (`address`); si la búsqueda falla, se guarda igual sin dirección |
 | `PATCH` | `/api/analyses/:id` | Renombra el análisis (`{ name }`, texto de hasta 80 caracteres; vacío o `null` vuelve a mostrar el rubro). 400 si es más largo |
@@ -176,6 +176,10 @@ acepta únicamente los orígenes de `CORS_ORIGINS`; cualquier otro recibe **403*
 | `POST` | `/api/auth/forgot-password` | Pide restablecer la contraseña (`{ email }`): manda un link de un solo uso que vence en 30 min. 202 genérico exista o no la cuenta; límite de 5 pedidos cada 15 min por IP |
 | `POST` | `/api/auth/reset-password` | Cambia la contraseña con el link (`{ token, password }`) y cierra todas las sesiones de la cuenta. 204; 400 si el link venció, ya se usó o la contraseña no cumple el largo |
 | `GET`  | `/api/auth/me` | Usuario de la sesión. Requiere `Authorization: Bearer <accessToken>` |
+| `GET`  | `/api/profile` | Datos del perfil y resumen de actividad del usuario autenticado (`savedReportsCount`, `lastAnalysisDate`). Requiere sesión |
+| `PUT`  | `/api/profile` | Actualiza nombre, apellido y correo del usuario autenticado (`409` si el correo existe). Requiere sesión |
+| `PUT`  | `/api/profile/password` | Cambia la contraseña validando `currentPassword` y revoca otras sesiones. Requiere sesión |
+| `DELETE` | `/api/profile` | Elimina la cuenta del usuario, sus análisis y tokens, y limpia la cookie de refresh. 204 |
 
 ## Estructura
 

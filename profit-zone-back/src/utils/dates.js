@@ -22,6 +22,7 @@ export function parseArgentinaDateTime(value) {
 
 /** Fecha (d/m/aaaa) en la zona horaria de Buenos Aires, sin importar la del servidor. Null si no es válida. */
 export function formatArgentinaDate(value) {
+  if (value === null || value === undefined || value === '' || value === false) return null
   const date = new Date(value)
   if (!Number.isFinite(date.getTime())) return null
   return date.toLocaleDateString('es-AR', { timeZone: ARGENTINA_TIME_ZONE })

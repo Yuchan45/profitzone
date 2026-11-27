@@ -11,6 +11,14 @@ export const KINDS_BY_SUBCATEGORY = {
   'fitness/pilates': ['pilates'],
 }
 
+// Tipos de OSM que cuentan como competencia directa cuando no hay filtro específico (ej. cocina)
+export const DIRECT_KINDS_BY_SUBCATEGORY = {
+  'gastronomia/restaurante': ['restaurant'],
+  'gastronomia/cafeteria': ['cafe'],
+  'fitness/gimnasio': ['fitness'],
+  'fitness/pilates': ['pilates'],
+}
+
 // Tope de puntos por respuesta: con 2 km en Palermo puede haber más de mil
 const MAX_PLACES = 1500
 
@@ -19,11 +27,11 @@ const MAX_PLACES = 1500
  * elegida en la encuesta (`metadata.osmCuisine`). `match` = "pregunta:opción".
  * Devuelve null si no hay criterio (sin `match` u opción sin mapeo, ej. "Otra").
  */
-export async function directCriteria(categoryCode, subcategoryCode, match) {
+export async function directCriteria(categoryCode, subcategoryCode, match, { survey } = {}) {
   if (!match) return null
   const [questionCode, optionCode] = match.split(':')
-  const survey = await getSubcategorySurvey(categoryCode, subcategoryCode)
-  const question = [...survey.business, ...survey.details].find((q) => q.code === questionCode)
+  const resolvedSurvey = survey ?? (await getSubcategorySurvey(categoryCode, subcategoryCode))
+  const question = [...resolvedSurvey.business, ...resolvedSurvey.details].find((q) => q.code === questionCode)
   const option = question?.options.find((o) => o.code === optionCode)
   if (!option) throw httpError(400, `La respuesta "${match}" no corresponde a este rubro.`)
   const cuisines = option.metadata?.osmCuisine
@@ -44,10 +52,10 @@ export async function directCriteria(categoryCode, subcategoryCode, match) {
  * Cada punto trae `direct`: si coincide con la cocina elegida (competencia directa), por su
  * etiqueta de cocina o, si no la tiene, por su nombre (utils/cuisineMatch.js).
  */
-export async function findNearbyPlaces({ lat, lng, radius, categoryCode, subcategoryCode, match }) {
+export async function findNearbyPlaces({ lat, lng, radius, categoryCode, subcategoryCode, match, survey }) {
   const kinds = KINDS_BY_SUBCATEGORY[`${categoryCode}/${subcategoryCode}`]
   if (!kinds) throw httpError(400, `No hay vista previa para el rubro "${categoryCode}/${subcategoryCode}".`)
-  const criteria = await directCriteria(categoryCode, subcategoryCode, match)
+  const criteria = await directCriteria(categoryCode, subcategoryCode, match, { survey })
 
   const [rows] = await sequelize.query(
     `DECLARE @point geography = geography::Point(:lat, :lng, 4326);
@@ -85,11 +93,16 @@ export async function findNearbyPlaces({ lat, lng, radius, categoryCode, subcate
  * servicios; cada local trae un subconjunto distinto). Lanza 404 si no existe.
  */
 export async function getPlace(id) {
+  const numericId = Number(id)
+  if (!Number.isInteger(numericId) || numericId <= 0) {
+    throw httpError(404, 'No encontramos ese negocio.')
+  }
+
   const [rows] = await sequelize.query(
     `SELECT id, kind, name, cuisine, details, geom.Lat AS lat, geom.Long AS lng, last_seen_at AS lastSeenAt
      FROM osm_data.places
      WHERE id = :id AND is_active = 1`,
-    { replacements: { id } },
+    { replacements: { id: numericId } },
   )
   const place = rows[0]
   if (!place) throw httpError(404, 'No encontramos ese negocio.')

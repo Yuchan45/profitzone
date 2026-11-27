@@ -4,6 +4,7 @@
  * una lista de anillos (el primero es el borde exterior, los demás son huecos).
  */
 export function wktToLatLngPolygons(wkt) {
+  if (typeof wkt !== 'string' || !wkt.includes('(')) return []
   const isMulti = /^\s*MULTIPOLYGON/i.test(wkt)
   // Profundidad de paréntesis donde están las coordenadas de cada anillo
   const ringDepth = isMulti ? 3 : 2

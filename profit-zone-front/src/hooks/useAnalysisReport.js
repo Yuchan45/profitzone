@@ -9,6 +9,21 @@ const LOADING = { status: 'loading', data: null, error: null }
 // La clave incluye al usuario: si otra cuenta entra en la misma pestaña, no ve el reporte
 // guardado de la anterior (se pide a la API, que controla el dueño).
 const reportCache = new Map()
+const MAX_REPORT_CACHE = 30
+
+export function clearReportCache() {
+  reportCache.clear()
+}
+
+export function invalidateReportCache(analysisId) {
+  if (!analysisId) return
+  const needle = `:${String(analysisId).toLowerCase()}`
+  for (const key of reportCache.keys()) {
+    if (key.toLowerCase().endsWith(needle)) {
+      reportCache.delete(key)
+    }
+  }
+}
 
 /**
  * Trae el reporte de zona de un análisis desde GET /api/analyses/:id/report.
@@ -34,6 +49,9 @@ export function useAnalysisReport(analysisId, { reuse = false } = {}) {
       .then((data) => {
         if (cancelled) return
         // Una respuesta descartada (llegó tarde) no pisa en la caché a una más nueva
+        if (reportCache.size >= MAX_REPORT_CACHE) {
+          reportCache.delete(reportCache.keys().next().value)
+        }
         reportCache.set(cacheKey, data)
         setState({ status: 'ok', data, error: null, forKey })
       })

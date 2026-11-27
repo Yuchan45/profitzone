@@ -1,5 +1,3 @@
-import { env } from '../config/env.js'
-
 /**
  * Curvas base de afluencia horaria (0 a 100) típicas por rubro comercial en CABA.
  * Representa el porcentaje de capacidad/flujo medio en locales del rubro de 7h a 23h.
@@ -26,7 +24,6 @@ const BASE_HOURLY_PROFILES = {
       22: 10,
       23: 5,
     },
-    morningMeal: 'desayuno',
   },
   restaurante: {
     name: 'restaurante',
@@ -49,7 +46,6 @@ const BASE_HOURLY_PROFILES = {
       22: 90,
       23: 55,
     },
-    morningMeal: 'almuerzo y cena',
   },
   gimnasio: {
     name: 'gimnasio',
@@ -72,7 +68,6 @@ const BASE_HOURLY_PROFILES = {
       22: 30,
       23: 10,
     },
-    morningMeal: 'entrenamiento matutino',
   },
   pilates: {
     name: 'pilates',
@@ -95,7 +90,6 @@ const BASE_HOURLY_PROFILES = {
       22: 10,
       23: 5,
     },
-    morningMeal: 'clases matutinas',
   },
 }
 
@@ -127,7 +121,7 @@ function resolveTimeWindow(schedule, startHour, endHour) {
   return SCHEDULE_PRESETS[key] || SCHEDULE_PRESETS.morning
 }
 
-function generateTrafficCallout(subcategory, timeWindow, score) {
+function generateTrafficCallout(timeWindow, score) {
   const isMorning = timeWindow.startHour >= 6 && timeWindow.endHour <= 12
   const isLunch = timeWindow.startHour >= 12 && timeWindow.endHour <= 16
   const isDinner = timeWindow.startHour >= 19 && timeWindow.endHour <= 24
@@ -191,7 +185,7 @@ export async function getTrafficAnalysis({
   }
 
   const score = countScore > 0 ? Math.round(sumScore / countScore) : 50
-  const callout = generateTrafficCallout(normSub, timeWindow, score)
+  const callout = generateTrafficCallout(timeWindow, score)
 
   return {
     score,

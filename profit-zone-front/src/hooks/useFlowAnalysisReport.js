@@ -14,8 +14,11 @@ import { useAnalysisReport } from './useAnalysisReport.js'
 export function useFlowAnalysisReport(id) {
   const { analysisId, reportReadyFor, setReportReady } = useAnalysisFlow()
   // SQL Server devuelve los UUID en mayúsculas: se comparan sin distinguir mayúsculas
-  const isCurrentAnalysis = Boolean(analysisId) && analysisId.toLowerCase() === id.toLowerCase()
-  const report = useAnalysisReport(id, { reuse: isCurrentAnalysis && reportReadyFor === analysisId })
+  const isCurrentAnalysis =
+    Boolean(analysisId && id) && analysisId.toLowerCase() === id.toLowerCase()
+  const isSameReady =
+    Boolean(reportReadyFor && analysisId) && reportReadyFor.toLowerCase() === analysisId.toLowerCase()
+  const report = useAnalysisReport(id, { reuse: isCurrentAnalysis && isSameReady })
 
   useEffect(() => {
     if (report.status === 'ok' && isCurrentAnalysis) setReportReady(analysisId)

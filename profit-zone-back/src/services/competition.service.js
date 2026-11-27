@@ -1,7 +1,8 @@
+import { env } from '../config/env.js'
 import { searchNearbyPlaces } from './googlePlaces.service.js'
 import { Subcategory, SubcategorySearchTerm } from '../models/index.js'
 import { calculateDistanceMeters, formatDistance } from '../utils/geo.js'
-import { findNearbyPlaces, directCriteria } from './places.service.js'
+import { DIRECT_KINDS_BY_SUBCATEGORY, findNearbyPlaces, directCriteria } from './places.service.js'
 import { nameMatchesCuisine, normalizeName } from '../utils/cuisineMatch.js'
 
 export { calculateDistanceMeters, formatDistance }
@@ -77,11 +78,16 @@ function findMatchingOsmPlace(googlePlace, osmPlaces) {
   return bestMatch
 }
 
+function isOsmPlaceDirect({ osmPlace, criteria, directKinds }) {
+  if (criteria) return Boolean(osmPlace.direct)
+  return Boolean(directKinds?.includes(osmPlace.kind))
+}
+
 /**
  * Determina si un local es competencia directa o indirecta respetando la
  * categorización de OpenStreetMap y el criterio elegido por el usuario (ej: tipo de cocina).
  */
-function isPlaceDirect({ place, matchedOsm, criteria, terms }) {
+function isPlaceDirect({ place, matchedOsm, criteria, terms, directKinds, normalizedSubcategory }) {
   const placeTypes = [place.primaryType, ...(place.types || [])].filter(Boolean)
 
   // 0. Si Google lo tipifica con la cocina elegida (ej. sushi_restaurant para "Asiática"),
@@ -90,9 +96,9 @@ function isPlaceDirect({ place, matchedOsm, criteria, terms }) {
     return true
   }
 
-  // 1. Si coincide con un local de OSM, la categorización de OSM es la fuente de verdad
+  // 1. Si coincide con un local de OSM, la categorización de OSM es fuente de verdad
   if (matchedOsm) {
-    return Boolean(matchedOsm.direct)
+    return isOsmPlaceDirect({ osmPlace: matchedOsm, criteria, directKinds })
   }
 
   // 2. Si no coincide con OSM pero hay un criterio de cocina/subcategoría específico (ej: Asiática, Parrilla, etc.)
@@ -111,7 +117,12 @@ function isPlaceDirect({ place, matchedOsm, criteria, terms }) {
     return Boolean(matchesType || matchesName || nameMatchesCuisine(place.name, criteria.cuisines))
   }
 
-  // 3. Fallback: sin criterio de cocina (ej. cafetería, gimnasio sin filtro, o "Otra")
+  // 3. Pilates no tiene tipo propio en Google Places: busca por gimnasios y distingue por nombre
+  if (normalizedSubcategory === 'pilates') {
+    return normalizeName(place.name).includes('pilates')
+  }
+
+  // 4. Fallback: sin criterio de cocina (ej. cafetería, gimnasio sin filtro, o "Otra")
   return (
     place.primaryType === terms.primary ||
     (Array.isArray(place.types) && place.types.includes(terms.primary))
@@ -120,6 +131,8 @@ function isPlaceDirect({ place, matchedOsm, criteria, terms }) {
 
 /**
  * Obtiene los términos de búsqueda asociados a la subcategoría desde la DB o fallback.
+ * Google Places API v1 rechaza cualquier `includedTypes` que no pertenezca a su Tabla A,
+ * por lo que se filtran únicamente `termType === 'type'`.
  */
 async function resolveSubcategoryTerms(subcategoryCode) {
   const normalized = (subcategoryCode || 'restaurante').toLowerCase().trim()
@@ -131,15 +144,21 @@ async function resolveSubcategoryTerms(subcategoryCode) {
     })
 
     if (sub && sub.searchTerms && sub.searchTerms.length > 0) {
-      const primaryTerm = sub.searchTerms.find((t) => t.isPrimary)?.termValue || 'restaurant'
-      const indirectTerms =
-        FALLBACK_CATEGORY_TERMS[normalized]?.indirect ||
-        sub.searchTerms.filter((t) => !t.isPrimary).map((t) => t.termValue)
+      const typeTerms = sub.searchTerms.filter((t) => t.termType === 'type')
+      if (typeTerms.length > 0) {
+        const primaryTerm = typeTerms.find((t) => t.isPrimary)?.termValue || typeTerms[0].termValue
+        const indirectTerms =
+          FALLBACK_CATEGORY_TERMS[normalized]?.indirect ||
+          typeTerms.filter((t) => t.termValue !== primaryTerm).map((t) => t.termValue)
 
-      return {
-        name: sub.name,
-        primary: primaryTerm,
-        indirect: indirectTerms.length > 0 ? indirectTerms : ['food'],
+        return {
+          name: sub.name,
+          primary: primaryTerm,
+          indirect: indirectTerms.length > 0 ? indirectTerms : ['food'],
+        }
+      }
+      if (FALLBACK_CATEGORY_TERMS[normalized]) {
+        return { ...FALLBACK_CATEGORY_TERMS[normalized], name: sub.name }
       }
     }
   } catch (error) {
@@ -216,14 +235,26 @@ export async function getCompetitionAnalysis({
   categoryCode,
   subcategory = 'restaurante',
   match,
+  survey,
+  criteria: precomputedCriteria,
 }) {
   const normalizedSubcategory = subcategory.toLowerCase().trim()
   const resolvedCategory =
     categoryCode || (['gimnasio', 'pilates'].includes(normalizedSubcategory) ? 'fitness' : 'gastronomia')
+  const rubroKey = `${resolvedCategory}/${normalizedSubcategory}`
+  const directKinds = DIRECT_KINDS_BY_SUBCATEGORY[rubroKey] ?? null
 
   const terms = await resolveSubcategoryTerms(normalizedSubcategory)
   // El criterio de cocina se resuelve antes: define qué tipos se le piden a Google
-  const criteria = await directCriteria(resolvedCategory, normalizedSubcategory, match).catch(() => null)
+  let criteria = precomputedCriteria ?? null
+  if (criteria === null && match) {
+    try {
+      criteria = await directCriteria(resolvedCategory, normalizedSubcategory, match, { survey })
+    } catch (error) {
+      if (error.status === 400) throw error
+      criteria = null
+    }
+  }
   const byCuisine = Boolean(criteria?.googleTypes?.length)
   const includedTypes = byCuisine ? criteria.googleTypes : [terms.primary, ...terms.indirect.slice(0, 3)]
 
@@ -243,7 +274,9 @@ export async function getCompetitionAnalysis({
       categoryCode: resolvedCategory,
       subcategoryCode: normalizedSubcategory,
       match,
+      survey,
     }).catch((error) => {
+      if (error.status === 400) throw error
       console.warn(`[ProfitZone] No se pudo leer datos de OSM para competencia: ${error.message}`)
       return null
     }),
@@ -265,8 +298,16 @@ export async function getCompetitionAnalysis({
     const matchedOsm = findMatchingOsmPlace(p, osmResult?.places)
     if (matchedOsm) matchedOsmIds.add(matchedOsm.id)
     else googleOnlyCount++
-    const isDirect = isPlaceDirect({ place: p, matchedOsm, criteria, terms })
-    if (isDirect && !matchedOsm?.direct) googleOnlyDirectCount++
+    const matchedOsmDirect = matchedOsm ? isOsmPlaceDirect({ osmPlace: matchedOsm, criteria, directKinds }) : false
+    const isDirect = isPlaceDirect({
+      place: p,
+      matchedOsm,
+      criteria,
+      terms,
+      directKinds,
+      normalizedSubcategory,
+    })
+    if (isDirect && !matchedOsmDirect) googleOnlyDirectCount++
 
     return {
       id: p.id,
@@ -308,11 +349,16 @@ export async function getCompetitionAnalysis({
   const places = [...googleRows, ...osmRows].sort(byStrength)
 
   const hasOsmData = osmResult && typeof osmResult.total === 'number' && osmResult.total > 0
+  const osmDirectTotal = hasOsmData
+    ? criteria
+      ? osmResult.directTotal
+      : osmResult.places.filter((place) => isOsmPlaceDirect({ osmPlace: place, criteria: null, directKinds })).length
+    : 0
   // Con OSM: todos sus locales del radio más los que solo trajo Google, así el conteo nunca
   // queda por debajo de lo que muestra la tabla
   const total = hasOsmData ? osmResult.total + googleOnlyCount : places.length
   const directCount = hasOsmData
-    ? osmResult.directTotal + googleOnlyDirectCount
+    ? osmDirectTotal + googleOnlyDirectCount
     : places.filter((p) => p.type === 'Directa').length
   const indirectCount = Math.max(0, total - directCount)
 
@@ -330,6 +376,7 @@ export async function getCompetitionAnalysis({
     cuisineLabel: criteria?.label ?? null,
     callout,
     source: 'Google Places',
+    isMock: !env.googlePlacesApiKey,
     queryDate: new Date().toISOString(),
     isExact: Boolean(hasOsmData),
     places,

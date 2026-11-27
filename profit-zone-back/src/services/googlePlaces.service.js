@@ -1,6 +1,7 @@
 import { env } from '../config/env.js'
 
 const PLACES_NEARBY_URL = 'https://places.googleapis.com/v1/places:searchNearby'
+const TIMEOUT_MS = 10_000
 const FIELD_MASK =
   'places.id,places.displayName,places.rating,places.userRatingCount,places.location,places.types,places.primaryType,places.shortFormattedAddress,places.formattedAddress'
 
@@ -35,6 +36,7 @@ export async function searchNearbyPlaces({
 
   const response = await fetch(PLACES_NEARBY_URL, {
     method: 'POST',
+    signal: AbortSignal.timeout(TIMEOUT_MS),
     headers: {
       'Content-Type': 'application/json',
       'X-Goog-Api-Key': env.googlePlacesApiKey,
@@ -71,7 +73,7 @@ export async function searchNearbyPlaces({
 /** Mock realista para entornos de prueba offline o sin clave de Google */
 function getMockPlaces(centerLat, centerLng, category) {
   const isCafe = category === 'cafe' || category === 'cafeteria'
-  const isGym = category === 'gym' || category === 'fitness_center'
+  const isGym = ['gym', 'fitness_center', 'sports_club', 'pilates'].includes(category)
 
   const templates = isCafe
     ? [

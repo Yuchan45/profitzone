@@ -14,6 +14,7 @@ const BOUNDARY_OPENING_M = 25
 
 // El contorno sale de unir los radios censales: no cambia mientras corre la API
 let cachedNeighborhoods = null
+let loadingPromise = null
 
 // Rectángulo que contiene todos los anillos: { south, west, north, east }
 function boundsOf(polygons) {
@@ -58,14 +59,18 @@ async function loadNeighborhood({ code, name, censusName }) {
  * Si el censo no está cargado, el barrio no aparece.
  */
 export async function listNeighborhoods() {
-  if (!cachedNeighborhoods) {
-    const loaded = await Promise.all(AVAILABLE_NEIGHBORHOODS.map(loadNeighborhood))
-    const available = loaded.filter(Boolean)
-    // Sin censo cargado no se cachea, para que aparezca apenas se cargue
-    if (available.length === 0) return []
-    cachedNeighborhoods = available
-  }
-  return cachedNeighborhoods
+  if (cachedNeighborhoods) return cachedNeighborhoods
+  loadingPromise ??= Promise.all(AVAILABLE_NEIGHBORHOODS.map(loadNeighborhood))
+    .then((loaded) => {
+      const available = loaded.filter(Boolean)
+      // Sin censo cargado no se cachea, para que aparezca apenas se cargue
+      if (available.length > 0) cachedNeighborhoods = available
+      return available
+    })
+    .finally(() => {
+      loadingPromise = null
+    })
+  return loadingPromise
 }
 
 /** Nombres de los barrios disponibles para los mensajes ("Palermo", "Palermo o Belgrano"). */

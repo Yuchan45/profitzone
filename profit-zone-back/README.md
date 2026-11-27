@@ -11,7 +11,7 @@ API del proyecto ProfitZone (Seminario UADE), hecha con Node.js + Express 5 (ESM
 
 ```bash
 npm install
-cp .env.example .env   # en Windows: copy .env.example .env  → cambiá DB_PASSWORD
+cp .env.example .env   # en Windows: copy .env.example .env  → cambiá DB_PASSWORD y JWT_ACCESS_SECRET
 npm run db:up          # levanta SQL Server (docker-compose.yml de la raíz) y espera a que esté listo
 npm run db:migrate     # crea la base ProfitZone y aplica las migraciones
 npm run db:seed:catalog  # carga el catálogo base (roles, categorías, preguntas)
@@ -86,6 +86,7 @@ headers `Content-Type` y `Authorization`, y cachea el preflight 24 h.
 | `GET`  | `/api/health` | Estado del servicio y de la DB (`database: up/down`; 503 si la DB no responde) |
 | `GET`  | `/api/density` | Densidad poblacional y demografía en un punto con radio en CABA (query: `lat`, `lng`, `radius`) |
 | `GET`  | `/api/competition` | Análisis de competidores directos e indirectos en un radio con Google Places. **Requiere sesión** (consume una API paga) |
+| `GET`  | `/api/accessibility` | Accesibilidad y transporte público en el radio (subtes, trenes y paradas de colectivo con sus líneas), desde OpenStreetMap (`osm_data.transit_stops`). **Requiere sesión** |
 | `GET`  | `/api/places/nearby?lat=&lng=&radius=&category=&subcategory=&match=` | Vista previa del paso 3: negocios del rubro dentro del círculo (radio de 100 a 2000 m), desde OpenStreetMap (`osm_data.places`, gratis, sin sesión). `match` (opcional, `pregunta:opción`, ej. `cuisine_type:asian`) marca como `direct` los que coinciden con la cocina elegida. Responde `{ source, updatedAt, total, directTotal, directLabel, places: [{ id, name, lat, lng, direct }] }`. 400 si los parámetros son inválidos |
 | `GET`  | `/api/sample-report` | Reporte de ejemplo de la home ("Ver reporte de ejemplo"): restaurante de cocina asiática en Palermo Soho. Misma forma que `GET /api/analyses/:id/report`, más `business` (`{ categoryCode, subcategoryCode, answers }`). Público y sin consultas pagas: sale de `src/data/sampleReport.json`, con los locales de Google Places anonimizados |
 | `GET`  | `/api/places/:id` | Ficha de un negocio de la vista previa (datos de OpenStreetMap, sin sesión): `{ id, kind, name, cuisines, lat, lng, details, source, updatedAt }`. `details` trae solo lo que el local tenga cargado en OSM (`street`, `houseNumber`, `openingHours`, `phone`, `website`, `instagram`, `facebook`, `outdoorSeating`, `delivery`, `takeaway`, `wheelchair`). 404 si no existe |
@@ -99,7 +100,7 @@ headers `Content-Type` y `Authorization`, y cachea el preflight 24 h.
 | `GET`  | `/api/analyses` | Mis análisis ("Mis reportes"), del más reciente al más viejo, con estado, nombre (`null` si no lo renombró), rubro, ubicación, dirección y fechas (sin respuestas). `?status=saved` (default: reportes guardados, los que ya analizaron la zona) o `?status=draft` (borradores: sin ubicación todavía); 400 con otro valor |
 | `POST` | `/api/analyses` | Crea un análisis en borrador con el rubro y las respuestas (`{ categoryCode, subcategoryCode, answers }`). 201; 400 si faltan obligatorias o hay respuestas inválidas. Queda a nombre del usuario. **Todos los endpoints de `/api/analyses` requieren sesión** (401 sin ella) y cada análisis solo lo ve su dueño (404 para el resto) |
 | `GET`  | `/api/analyses/:id` | Un análisis con su rubro, ubicación y respuestas (404 si no existe) |
-| `GET`  | `/api/analyses/:id/report` | Reporte de zona: indicadores del punto y radio, cuadro de fortalezas y debilidades cruzado con las respuestas, resumen y `benchmarks`: cada dato comparado con Palermo (mediana y percentil del punto entre los 295 centros de radios censales del barrio, medidos con el mismo radio; densidad contra el promedio del barrio; `null` si no se pudieron calcular). Ver la página `/metodologia` del front (409 si el análisis no tiene ubicación) |
+| `GET`  | `/api/analyses/:id/report` | Reporte de zona: indicadores del punto y radio (incluidos avisos geolocalizables solo bajo sesión), cuadro de fortalezas y debilidades cruzado con las respuestas, resumen y `benchmarks`: cada dato comparado con Palermo (mediana y percentil del punto entre los 295 centros de radios censales del barrio, medidos con el mismo radio; densidad contra el promedio del barrio; `null` si no se pudieron calcular). Ver la página `/metodologia` del front (409 si el análisis no tiene ubicación) |
 | `PUT`  | `/api/analyses/:id/answers` | Reemplaza todas las respuestas (`{ answers }`), con las mismas validaciones que el alta |
 | `PATCH` | `/api/analyses/:id/location` | Guarda el punto y el radio (`{ lat, lng, radius }`, radio entero entre 100 y 2000 m, dentro de Palermo; 422 si cae afuera; más de 600 m solo para los roles `premium` y `admin`, si no 403). Se llama al tocar "Analizar zona": el análisis pasa a `saved` y aparece en Mis reportes (volver a analizar actualiza el mismo reporte). Busca y guarda la dirección del punto (`address`); si la búsqueda falla, se guarda igual sin dirección |
 | `PATCH` | `/api/analyses/:id` | Renombra el análisis (`{ name }`, texto de hasta 80 caracteres; vacío o `null` vuelve a mostrar el rubro). 400 si es más largo |
@@ -114,6 +115,10 @@ headers `Content-Type` y `Authorization`, y cachea el preflight 24 h.
 | `POST` | `/api/auth/forgot-password` | Pide restablecer la contraseña (`{ email }`): manda un link de un solo uso que vence en 30 min. 202 genérico exista o no la cuenta; límite de 5 pedidos cada 15 min por IP |
 | `POST` | `/api/auth/reset-password` | Cambia la contraseña con el link (`{ token, password }`) y cierra todas las sesiones de la cuenta. 204; 400 si el link venció, ya se usó o la contraseña no cumple el largo |
 | `GET`  | `/api/auth/me` | Usuario de la sesión. Requiere `Authorization: Bearer <accessToken>` |
+| `GET`  | `/api/profile` | Datos del perfil y resumen de actividad del usuario autenticado (`savedReportsCount`, `lastAnalysisDate`). Requiere sesión |
+| `PUT`  | `/api/profile` | Actualiza nombre, apellido y correo del usuario autenticado (`409` si el correo existe). Requiere sesión |
+| `PUT`  | `/api/profile/password` | Cambia la contraseña validando `currentPassword` y revoca otras sesiones. Requiere sesión |
+| `DELETE` | `/api/profile` | Elimina la cuenta del usuario, sus análisis y tokens, y limpia la cookie de refresh. 204 |
 
 ### `GET /api/density`
 
@@ -302,7 +307,7 @@ Provee la estimación de afluencia horaria (curva de 7 h a 23 h) y el score de a
 | `lng`         | `number` | Sí        | —             | Longitud en grados decimales (`-180` a `180`). Ej: `-58.4300`. |
 | `radius`      | `number` | No        | `1000`        | Radio en metros (`10` a `20000`). Ej: `1000`. |
 | `subcategory` | `string` | No        | `restaurante` | Código del rubro (`restaurante`, `cafeteria`, `gimnasio`, `pilates`). |
-| `schedule`    | `string` | No        | `morning`     | Preset horario: `morning` (8-11h), `lunch` (12-15h), `afternoon` (16-19h), `dinner` (20-23h), `night` (21-23h), `day` (8-20h). |
+| `schedule`    | `string` | No        | `morning`     | Preset horario: `morning` (8-11h), `lunch` (12-15h), `afternoon` (16-19h), `dinner` (20-23h), `night` (21-23h, etiqueta "trasnoche, 21 a 2 h"), `day` (8-20h). |
 | `startHour`   | `number` | No        | —             | Hora de inicio personalizada (0 a 23). |
 | `endHour`     | `number` | No        | —             | Hora de fin personalizada (0 a 23). |
 
@@ -548,9 +553,9 @@ OSM tiene un punto por vereda en cada esquina y uno por andén en las estaciones
 scripts/        smoke.js, migrate.js, seed-catalog.js, verify-catalog-seed.js
 src/
   config/       env.js (validación), cors.js
-  controllers/  lógica de cada endpoint
+  controllers/  validación de entrada y respuesta HTTP (sin lógica de negocio)
   db/           sequelize.js (conexión singleton), migrations/, seeders/ (lógica + data/), runSql.js
-  middlewares/  notFound, errorHandler
+  middlewares/  notFound, errorHandler, requireAuth, requireTrustedOrigin
   models/       modelos Sequelize por schema (users/, catalog/, analysis/) + index.js (asociaciones)
   routes/       index.js + routers por recurso
   services/     acceso a datos / lógica de negocio

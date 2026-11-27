@@ -1,6 +1,6 @@
 import { sequelize } from '../db/sequelize.js'
 import { calculateDistanceMeters } from '../utils/geo.js'
-import { KINDS_BY_SUBCATEGORY, directCriteria } from './places.service.js'
+import { DIRECT_KINDS_BY_SUBCATEGORY, KINDS_BY_SUBCATEGORY, directCriteria } from './places.service.js'
 import { groupStops } from './accessibility.service.js'
 import { rentalExchangeRate } from './rentals.service.js'
 import { isDirectOsmPlace } from '../utils/cuisineMatch.js'
@@ -20,6 +20,7 @@ const REFERENCE_NEIGHBORHOOD = 'PALERMO'
 // los puntos de referencia)
 const MIN_RENT_LISTINGS = 3
 const METERS_PER_DEGREE_LAT = 111_320
+const MAX_DISTRIBUTIONS = 60
 
 let datasetPromise = null
 const distributions = new Map()
@@ -107,16 +108,23 @@ function compare(value, sorted) {
   }
 }
 
-/** Distribución de un dato en los puntos de referencia (calculada una vez por clave). */
+/** Distribución de un dato en los puntos de referencia (calculada una vez por clave, con tope LRU). */
 function distribution(key, dataset, measure) {
-  if (!distributions.has(key)) {
-    const values = dataset.references
-      .map((reference) => measure(reference.lat, reference.lng))
-      .filter((value) => value !== null)
-      .sort((a, b) => a - b)
-    distributions.set(key, values)
+  if (distributions.has(key)) {
+    const cached = distributions.get(key)
+    distributions.delete(key)
+    distributions.set(key, cached)
+    return cached
   }
-  return distributions.get(key)
+  const values = dataset.references
+    .map((reference) => measure(reference.lat, reference.lng))
+    .filter((value) => value !== null)
+    .sort((a, b) => a - b)
+  if (distributions.size >= MAX_DISTRIBUTIONS) {
+    distributions.delete(distributions.keys().next().value)
+  }
+  distributions.set(key, values)
+  return values
 }
 
 function medianRent(dataset, lat, lng, radius) {
@@ -126,24 +134,56 @@ function medianRent(dataset, lat, lng, radius) {
   return prices.length >= MIN_RENT_LISTINGS ? median(prices) : null
 }
 
+/** Agrega la comparación de densidad contra el promedio del barrio si `density` está disponible. */
+export async function attachPopulationBenchmark(benchmarks, density) {
+  if (!benchmarks || typeof density !== 'number') return benchmarks
+  const dataset = await getDataset()
+  return {
+    ...benchmarks,
+    population: {
+      value: density,
+      average: Math.round(dataset.palermoDensity),
+      ratio: Number((density / dataset.palermoDensity).toFixed(2)),
+    },
+  }
+}
+
 /**
  * Referencias de Palermo para un reporte: competencia (locales del rubro y directos según
  * OpenStreetMap), transporte (paradas y estaciones, contadas como en el indicador),
  * alquiler (mediana de los avisos del radio) y densidad de población (promedio del barrio,
  * sin percentil: el censo no permite medir cada punto de referencia con el mismo método).
  */
-export async function getBenchmarks({ lat, lng, radiusInMeters, categoryCode, subcategoryCode, match, density }) {
+export async function getBenchmarks({
+  lat,
+  lng,
+  radiusInMeters,
+  categoryCode,
+  subcategoryCode,
+  match,
+  density,
+  survey,
+  criteria: precomputedCriteria,
+}) {
   const dataset = await getDataset()
   const radius = radiusInMeters
   const result = { neighborhood: 'Palermo', radiusInMeters: radius, referencePoints: dataset.references.length }
 
-  const kinds = KINDS_BY_SUBCATEGORY[`${categoryCode}/${subcategoryCode}`]
+  const rubroKey = `${categoryCode}/${subcategoryCode}`
+  const kinds = KINDS_BY_SUBCATEGORY[rubroKey]
   if (kinds) {
-    const criteria = await directCriteria(categoryCode, subcategoryCode, match).catch(() => null)
+    const criteria =
+      precomputedCriteria !== undefined
+        ? precomputedCriteria
+        : await directCriteria(categoryCode, subcategoryCode, match, { survey }).catch(() => null)
     const ofRubro = dataset.places.filter((place) => kinds.includes(place.kind))
-    const direct = criteria ? ofRubro.filter((place) => isDirectOsmPlace(criteria, place)) : null
+    const directKinds = DIRECT_KINDS_BY_SUBCATEGORY[rubroKey]
+    const direct = criteria
+      ? ofRubro.filter((place) => isDirectOsmPlace(criteria, place))
+      : directKinds
+        ? ofRubro.filter((place) => directKinds.includes(place.kind))
+        : null
     const count = (items) => (pointLat, pointLng) => within(items, pointLat, pointLng, radius).length
-    const rubroKey = `${categoryCode}/${subcategoryCode}`
     result.competition = compare(
       count(ofRubro)(lat, lng),
       distribution(`competition|${rubroKey}|${radius}`, dataset, count(ofRubro)),
@@ -151,7 +191,7 @@ export async function getBenchmarks({ lat, lng, radiusInMeters, categoryCode, su
     if (direct) {
       result.direct = compare(
         count(direct)(lat, lng),
-        distribution(`direct|${rubroKey}|${match}|${radius}`, dataset, count(direct)),
+        distribution(`direct|${rubroKey}|${match ?? 'default'}|${radius}`, dataset, count(direct)),
       )
     }
   }

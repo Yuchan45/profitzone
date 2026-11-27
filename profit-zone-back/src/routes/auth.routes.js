@@ -14,30 +14,29 @@ import { requireTrustedOrigin } from '../middlewares/requireTrustedOrigin.js'
 
 const router = Router()
 
-// Límite de intentos por IP para frenar fuerza bruta en login y registro
-const credentialsLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  limit: 10,
-  standardHeaders: 'draft-8',
-  legacyHeaders: false,
-  message: { status: 'error', message: 'Demasiados intentos. Probá de nuevo en unos minutos.' },
-})
+function createLimiter(limit, message) {
+  return rateLimit({
+    windowMs: 15 * 60 * 1000,
+    limit,
+    standardHeaders: 'draft-8',
+    legacyHeaders: false,
+    message: { status: 'error', message },
+  })
+}
 
+const registerLimiter = createLimiter(10, 'Demasiados intentos. Probá de nuevo en unos minutos.')
+const loginLimiter = createLimiter(10, 'Demasiados intentos. Probá de nuevo en unos minutos.')
+const resetPasswordLimiter = createLimiter(10, 'Demasiados intentos. Probá de nuevo en unos minutos.')
 // Cada pedido manda un correo: límite más bajo para no usarlo como spam
-const forgotPasswordLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  limit: 5,
-  standardHeaders: 'draft-8',
-  legacyHeaders: false,
-  message: { status: 'error', message: 'Demasiados pedidos. Probá de nuevo en unos minutos.' },
-})
+const forgotPasswordLimiter = createLimiter(5, 'Demasiados pedidos. Probá de nuevo en unos minutos.')
+const refreshLimiter = createLimiter(60, 'Demasiados pedidos de renovación de sesión.')
 
-router.post('/register', credentialsLimiter, postRegister)
-router.post('/login', credentialsLimiter, postLogin)
+router.post('/register', registerLimiter, postRegister)
+router.post('/login', loginLimiter, postLogin)
 router.post('/forgot-password', forgotPasswordLimiter, postForgotPassword)
-router.post('/reset-password', credentialsLimiter, postResetPassword)
+router.post('/reset-password', resetPasswordLimiter, postResetPassword)
 // Usan la cookie httpOnly: solo desde orígenes permitidos (defensa CSRF)
-router.post('/refresh', requireTrustedOrigin, postRefresh)
+router.post('/refresh', requireTrustedOrigin, refreshLimiter, postRefresh)
 router.post('/logout', requireTrustedOrigin, postLogout)
 router.get('/me', requireAuth, getCurrentUser)
 

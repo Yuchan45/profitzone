@@ -49,9 +49,19 @@ function HowItWorksSection() {
       className="mx-auto grid max-w-7xl scroll-mt-8 items-center gap-12 px-6 py-16 lg:grid-cols-2 lg:gap-16 lg:py-24"
     >
       <div>
-        <h2 className="font-heading text-3xl font-bold text-foreground sm:text-4xl">
-          ¿Cómo funciona?
-        </h2>
+        <div className="flex items-center justify-between gap-4">
+          <h2 className="font-heading text-3xl font-bold text-foreground sm:text-4xl">
+            ¿Cómo funciona?
+          </h2>
+          <button
+            type="button"
+            onClick={() => setPaused((p) => !p)}
+            aria-label={paused ? 'Reanudar presentación' : 'Pausar presentación'}
+            className="flex size-8 shrink-0 items-center justify-center rounded-full border border-border bg-card text-muted-foreground transition-colors hover:text-foreground"
+          >
+            {paused ? <Play className="size-3.5" /> : <Pause className="size-3.5" />}
+          </button>
+        </div>
 
         <div className="mt-8">
           {STEPS.map(({ number, title, description }, i) => {
@@ -79,17 +89,6 @@ function HowItWorksSection() {
                     </span>
                     {title}
                   </button>
-
-                  {isActive && (
-                    <button
-                      type="button"
-                      onClick={() => setPaused((p) => !p)}
-                      aria-label={paused ? 'Reanudar' : 'Pausar'}
-                      className="flex size-8 shrink-0 items-center justify-center rounded-full border border-border bg-card text-muted-foreground transition-colors hover:text-foreground"
-                    >
-                      {paused ? <Play className="size-3.5" /> : <Pause className="size-3.5" />}
-                    </button>
-                  )}
                 </div>
 
                 {/* Los tres pasos se leen siempre; el activo se marca con el título y la barra */}
@@ -101,7 +100,7 @@ function HowItWorksSection() {
                   {isActive && (
                     <div
                       onAnimationEnd={goNext}
-                      className="animate-how-progress absolute inset-0 origin-left bg-primary motion-reduce:animate-none"
+                      className="animate-how-progress absolute inset-0 origin-left bg-primary motion-reduce:hidden"
                       style={{
                         animationDuration: `${STEP_MS}ms`,
                         animationPlayState: paused || !inView ? 'paused' : 'running',

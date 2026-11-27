@@ -73,7 +73,9 @@ function EditableName({
   }
 
   return (
-    <form className="editable-name editable-name-form" onSubmit={handleSubmit} noValidate>
+    <>
+      {Tag !== 'span' && <Tag className="sr-only">{value ?? placeholder}</Tag>}
+      <form className="editable-name editable-name-form" onSubmit={handleSubmit} noValidate>
       <span className="editable-name-row">
         <Input
           ref={inputRef}
@@ -101,7 +103,8 @@ function EditableName({
           {error}
         </span>
       )}
-    </form>
+      </form>
+    </>
   )
 }
 

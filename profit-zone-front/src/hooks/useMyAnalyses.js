@@ -38,9 +38,10 @@ export function useMyAnalyses(status) {
 
   const reload = useCallback(() => setAttempt((n) => n + 1), [])
 
-  // Al recargar se conserva la lista anterior hasta que llegue la nueva (no parpadea)
+  // Al recargar tras un éxito se conserva la lista anterior hasta que llegue la nueva (no parpadea),
+  // pero si venía de error o cambió de pestaña se muestra estado de carga.
   const stale = state.forKey !== key
-  if (stale && !state.forKey.startsWith(`${status}:`)) {
+  if (stale && (state.status === 'error' || !state.forKey.startsWith(`${status}:`))) {
     return { status: 'loading', data: null, error: null, reload }
   }
   return { status: state.status, data: state.data, error: state.error, reload }

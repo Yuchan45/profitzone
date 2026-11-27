@@ -12,32 +12,37 @@ const DATA_POINTS = [
     title: 'Competencia',
     text: 'Cuántos locales como el tuyo hay en el radio, cuáles son competencia directa y qué rating tienen.',
     example: ({ competition }) =>
-      `${formatNumber(competition.total)} locales, ${formatNumber(competition.directCount)} directos`,
+      competition
+        ? `${formatNumber(competition.total)} locales, ${formatNumber(competition.directCount)} directos`
+        : null,
   },
   {
     icon: Activity,
     title: 'Afluencia',
     text: 'En qué horarios suele haber más clientes en locales de tu rubro, para ver si tu franja coincide.',
-    example: ({ traffic }) => `${traffic.score} de ${traffic.scoreMax} en la franja nocturna`,
+    example: ({ traffic }) => (traffic ? `${traffic.score} de ${traffic.scoreMax} en la franja nocturna` : null),
   },
   {
     icon: Users,
     title: 'Población',
     text: 'Cuánta gente vive en el radio y qué parte es tu público, según el Censo 2022.',
-    example: ({ density }) => `${formatNumber(density.poblacionEstimada)} habitantes`,
+    example: ({ density }) => (density ? `${formatNumber(density.poblacionEstimada)} habitantes` : null),
   },
   {
     icon: Banknote,
     title: 'Alquiler',
     text: 'Cuánto piden por locales en alquiler cerca, para compararlo con tu presupuesto.',
-    example: ({ rent }) => `${formatCurrency(rent.medianRentArs, 'ARS', { decimals: 0 })} por mes de mediana`,
+    example: ({ rent }) =>
+      rent ? `${formatCurrency(rent.medianRentArs, 'ARS', { decimals: 0 })} por mes de mediana` : null,
   },
   {
     icon: Bus,
     title: 'Transporte',
     text: 'Paradas de colectivo y estaciones de subte y tren, con las líneas que paran en cada una.',
     example: ({ accessibility }) =>
-      `${formatNumber(accessibility.total)} paradas, ${formatNumber(accessibility.busLineCount)} líneas`,
+      accessibility
+        ? `${formatNumber(accessibility.total)} paradas, ${formatNumber(accessibility.busLineCount)} líneas`
+        : null,
   },
 ]
 
@@ -75,7 +80,9 @@ function DataSection() {
                 <div>
                   <h3 className="font-heading text-base font-bold text-foreground">{title}</h3>
                   <p className="mt-1 text-sm leading-relaxed text-muted-foreground">{text}</p>
-                  {figures && <p className="mt-1.5 text-sm font-semibold text-brand-text">{example(figures)}</p>}
+                  {figures && example(figures) && (
+                    <p className="mt-1.5 text-sm font-semibold text-brand-text">{example(figures)}</p>
+                  )}
                 </div>
               </li>
             ))}
@@ -112,11 +119,11 @@ function DataSection() {
 // Los datos de cada indicador del reporte, con la forma que usan los ejemplos de DATA_POINTS
 function pick({ competition, traffic, density, rent, accessibility }) {
   return {
-    competition: competition.data,
-    traffic: traffic.data,
-    density: density.data,
-    rent: rent.data,
-    accessibility: accessibility.data,
+    competition: competition?.status === 'ok' ? competition.data : null,
+    traffic: traffic?.status === 'ok' ? traffic.data : null,
+    density: density?.status === 'ok' ? density.data : null,
+    rent: rent?.status === 'ok' ? rent.data : null,
+    accessibility: accessibility?.status === 'ok' ? accessibility.data : null,
   }
 }
 

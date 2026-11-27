@@ -1,12 +1,11 @@
 import { useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { useAuth } from '../../hooks/useAuth.js'
+import { useResetPassword } from '../../hooks/useResetPassword.js'
 import StepHeading from '../../components/molecules/StepHeading/StepHeading.jsx'
 import StatusMessage from '../../components/molecules/StatusMessage/StatusMessage.jsx'
 import Button from '../../components/atoms/Button/Button.jsx'
 import ResetPasswordForm from '../../components/organisms/ResetPasswordForm/ResetPasswordForm.jsx'
-import { resetPassword } from '../../services/auth.service.js'
-import { getApiErrorMessage } from '../../utils/apiErrors.js'
 import '../../styles/auth-form.css'
 
 // Página del link que llega por correo: /restablecer-contrasena?token=…
@@ -14,14 +13,11 @@ function RestablecerContrasena() {
   const [searchParams, setSearchParams] = useSearchParams()
   const token = searchParams.get('token')
   const { status, logout } = useAuth()
+  const reset = useResetPassword()
   const [done, setDone] = useState(false)
 
   const handleSubmit = async (password) => {
-    try {
-      await resetPassword({ token, password })
-    } catch (error) {
-      throw new Error(getApiErrorMessage(error))
-    }
+    await reset({ token, password })
     // El back cerró todas las sesiones: si había una abierta en esta pestaña, también se cierra
     if (status === 'authenticated') await logout().catch(() => {})
     setDone(true)

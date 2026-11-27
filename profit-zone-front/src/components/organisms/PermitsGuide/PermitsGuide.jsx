@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import Icon from '../../atoms/Icon/Icon.jsx'
 import { getPermitsGuide, PERMITS_REVIEWED_AT } from '../../../utils/permitsGuide.js'
@@ -43,7 +44,22 @@ function PermitsGuide({
   title = 'Trámites y habilitaciones',
 }) {
   const guide = getPermitsGuide({ categoryCode, subcategoryCode, serviceMode })
+  const guideKey = `${categoryCode}:${subcategoryCode}:${serviceMode ?? ''}`
+  const [openByKey, setOpenByKey] = useState({})
+
   if (!guide) return null
+
+  const stateKey = (sectionId) => `${guideKey}:${sectionId}`
+  const isSectionOpen = (section) => {
+    const key = stateKey(section.id)
+    return key in openByKey ? openByKey[key] : section.open
+  }
+
+  const handleToggle = (sectionId, event) => {
+    const isOpen = event.currentTarget.open
+    const key = stateKey(sectionId)
+    setOpenByKey((prev) => ({ ...prev, [key]: isOpen }))
+  }
 
   return (
     <section className="permits-guide" aria-labelledby="permits-guide-title">
@@ -67,7 +83,12 @@ function PermitsGuide({
 
       <div className="permits-guide-sections">
         {guide.sections.map((section) => (
-          <details key={section.id} className="permits-guide-section" open={section.open}>
+          <details
+            key={section.id}
+            className="permits-guide-section"
+            open={isSectionOpen(section)}
+            onToggle={(event) => handleToggle(section.id, event)}
+          >
             <summary className="permits-guide-section-summary">
               <span className="permits-guide-section-title">{section.title}</span>
               <span className="permits-guide-section-count">

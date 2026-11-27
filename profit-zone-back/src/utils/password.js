@@ -27,12 +27,19 @@ export async function verifyPassword(password, stored) {
   const parts = typeof stored === 'string' ? stored.split('$') : []
   if (parts.length !== 6 || parts[0] !== 'scrypt') return false
 
-  const [, n, r, p, saltB64, hashB64] = parts
+  const [, nRaw, rRaw, pRaw, saltB64, hashB64] = parts
+  const N = Number(nRaw)
+  const r = Number(rRaw)
+  const p = Number(pRaw)
+  if (!Number.isInteger(N) || N <= 0 || !Number.isInteger(r) || r <= 0 || !Number.isInteger(p) || p <= 0) {
+    return false
+  }
   const expected = Buffer.from(hashB64, 'base64url')
+  if (expected.length === 0) return false
   const actual = await scryptAsync(password, Buffer.from(saltB64, 'base64url'), expected.length, {
-    N: Number(n),
-    r: Number(r),
-    p: Number(p),
+    N,
+    r,
+    p,
     maxmem: MAX_MEM,
   })
   return actual.length === expected.length && timingSafeEqual(actual, expected)

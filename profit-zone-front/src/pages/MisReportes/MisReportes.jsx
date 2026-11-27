@@ -103,7 +103,12 @@ function MisReportes() {
       )}
 
       {status === 'error' && (
-        <StatusMessage variant="error">No pudimos cargar tus reportes: {error}</StatusMessage>
+        <StatusMessage variant="error">
+          No pudimos cargar tus reportes: {error}{' '}
+          <Button variant="text" size="m" onClick={reload}>
+            Reintentar
+          </Button>
+        </StatusMessage>
       )}
 
       {status === 'ok' && analyses.length === 0 && <StatusMessage>{EMPTY_MESSAGES[tab]}</StatusMessage>}

@@ -1,7 +1,9 @@
 import { useEffect, useMemo, useState } from 'react'
 import { AuthContext } from './authContextValue.js'
 import * as authService from '../services/auth.service.js'
-import { onSessionEnded } from '../services/authToken.js'
+import { getAuthGeneration, onSessionEnded } from '../services/authToken.js'
+import { clearFlowState } from '../utils/analysisFlowStorage.js'
+import { clearReportCache } from '../hooks/useAnalysisReport.js'
 
 /**
  * Sesión del usuario.
@@ -13,14 +15,19 @@ export function AuthProvider({ children }) {
   // Al cargar la app: si hay cookie de refresh válida, se recupera la sesión
   useEffect(() => {
     let cancelled = false
+    const generation = getAuthGeneration()
 
     authService
       .restoreSession()
       .then(({ user }) => {
-        if (!cancelled) setState({ status: 'authenticated', user })
+        if (!cancelled && generation === getAuthGeneration()) {
+          setState({ status: 'authenticated', user })
+        }
       })
       .catch(() => {
-        if (!cancelled) setState({ status: 'anonymous', user: null })
+        if (!cancelled && generation === getAuthGeneration()) {
+          setState({ status: 'anonymous', user: null })
+        }
       })
 
     return () => {
@@ -30,7 +37,11 @@ export function AuthProvider({ children }) {
 
   // Si una renovación falla en medio de la navegación, la sesión termina
   useEffect(
-    () => onSessionEnded(() => setState({ status: 'anonymous', user: null })),
+    () =>
+      onSessionEnded(() => {
+        clearReportCache()
+        setState({ status: 'anonymous', user: null })
+      }),
     [],
   )
 
@@ -39,18 +50,30 @@ export function AuthProvider({ children }) {
       ...state,
       register: async (payload) => {
         const { user } = await authService.register(payload)
+        clearReportCache()
         setState({ status: 'authenticated', user })
         return user
       },
       login: async (credentials) => {
         const { user } = await authService.login(credentials)
-        setState({ status: 'authenticated', user })
+        clearReportCache()
+        setState((prev) => {
+          if (prev.user?.id && prev.user.id !== user.id) clearFlowState()
+          return { status: 'authenticated', user }
+        })
         return user
+      },
+      updateUser: (partialUser) => {
+        setState((prev) =>
+          prev.user ? { ...prev, user: { ...prev.user, ...partialUser } } : prev,
+        )
       },
       logout: async () => {
         try {
           await authService.logout()
         } finally {
+          clearFlowState()
+          clearReportCache()
           setState({ status: 'anonymous', user: null })
         }
       },

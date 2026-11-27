@@ -15,7 +15,7 @@ const nameWords = (name) =>
     (name ?? '')
       .toLowerCase()
       .normalize('NFD')
-      .replace(/[̀-ͯ]/g, '')
+      .replace(/[\u0300-\u036f]/g, '')
       .split(/[^a-z0-9]+/)
       .filter((word) => word.length >= 4),
   )
@@ -123,6 +123,7 @@ export function toRows(elements) {
       let nearest = null
       for (const platform of ownLine ? [] : subwayPlatforms) {
         const at = position(platform)
+        if (at.lat === undefined || at.lng === undefined) continue
         const distance = calculateDistanceMeters(lat, lng, at.lat, at.lng)
         if (distance > SUBWAY_PLATFORM_MAX_METERS) continue
         const platformLines = linesByMember.get(memberKey(platform.type, platform.id)) ?? []
@@ -160,41 +161,57 @@ export function toRows(elements) {
  * No borra: las que ya no están en OSM quedan con is_active = 0.
  */
 export async function seedOsmTransit() {
-  const [neighborhood] = await listNeighborhoods()
-  if (!neighborhood) throw new Error('No hay barrios disponibles: corré antes npm run db:seed:census.')
+  const neighborhoods = await listNeighborhoods()
+  if (neighborhoods.length === 0) throw new Error('No hay barrios disponibles: corré antes npm run db:seed:census.')
 
-  const elements = await fetchOverpass(buildQuery(expandBounds(neighborhood.bounds)))
-  const rows = toRows(elements)
-  const runStartedAt = new Date()
-
-  const stats = { received: elements.length, saved: 0, withLines: 0, deactivated: 0 }
+  const stats = { received: 0, saved: 0, withLines: 0, deactivated: 0 }
   const byKind = {}
 
-  await sequelize.transaction(async (transaction) => {
-    for (const row of rows) {
-      await sequelize.query(
-        `MERGE osm_data.transit_stops AS target
-         USING (SELECT :osmType AS osm_type, :osmId AS osm_id) AS source
-         ON target.osm_type = source.osm_type AND target.osm_id = source.osm_id
-         WHEN MATCHED THEN
-           UPDATE SET kind = :kind, name = :name, lines = :lines,
-             geom = geography::Point(:lat, :lng, 4326), is_active = 1, last_seen_at = :seenAt
-         WHEN NOT MATCHED THEN
-           INSERT (osm_type, osm_id, kind, name, lines, geom, is_active, last_seen_at)
-           VALUES (:osmType, :osmId, :kind, :name, :lines, geography::Point(:lat, :lng, 4326), 1, :seenAt);`,
-        { replacements: { ...row, seenAt: runStartedAt }, transaction },
-      )
-      stats.saved++
-      if (row.lines) stats.withLines++
-      byKind[row.kind] = (byKind[row.kind] ?? 0) + 1
-    }
+  for (const neighborhood of neighborhoods) {
+    const bounds = expandBounds(neighborhood.bounds)
+    const elements = await fetchOverpass(buildQuery(bounds))
+    const rows = toRows(elements)
+    const runStartedAt = new Date()
+    stats.received += elements.length
 
-    const [, affected] = await sequelize.query(
-      `UPDATE osm_data.transit_stops SET is_active = 0 WHERE is_active = 1 AND last_seen_at < :seenAt`,
-      { replacements: { seenAt: runStartedAt }, transaction },
-    )
-    stats.deactivated = typeof affected === 'number' ? affected : 0
-  })
+    await sequelize.transaction(async (transaction) => {
+      for (const row of rows) {
+        await sequelize.query(
+          `MERGE osm_data.transit_stops AS target
+           USING (SELECT :osmType AS osm_type, :osmId AS osm_id) AS source
+           ON target.osm_type = source.osm_type AND target.osm_id = source.osm_id
+           WHEN MATCHED THEN
+             UPDATE SET kind = :kind, name = :name, lines = :lines,
+               geom = geography::Point(:lat, :lng, 4326), is_active = 1, last_seen_at = :seenAt
+           WHEN NOT MATCHED THEN
+             INSERT (osm_type, osm_id, kind, name, lines, geom, is_active, last_seen_at)
+             VALUES (:osmType, :osmId, :kind, :name, :lines, geography::Point(:lat, :lng, 4326), 1, :seenAt);`,
+          { replacements: { ...row, seenAt: runStartedAt }, transaction },
+        )
+        stats.saved++
+        if (row.lines) stats.withLines++
+        byKind[row.kind] = (byKind[row.kind] ?? 0) + 1
+      }
+
+      const [, affected] = await sequelize.query(
+        `UPDATE osm_data.transit_stops SET is_active = 0
+         WHERE is_active = 1 AND last_seen_at < :seenAt
+           AND geom.Lat BETWEEN :south AND :north
+           AND geom.Long BETWEEN :west AND :east`,
+        {
+          replacements: {
+            seenAt: runStartedAt,
+            south: bounds.south,
+            north: bounds.north,
+            west: bounds.west,
+            east: bounds.east,
+          },
+          transaction,
+        },
+      )
+      stats.deactivated += typeof affected === 'number' ? affected : 0
+    })
+  }
 
   return { ...stats, ...byKind }
 }

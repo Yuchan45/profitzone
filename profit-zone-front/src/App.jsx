@@ -6,7 +6,6 @@ import FlowLayout from './components/templates/FlowLayout/FlowLayout.jsx'
 import AuthLayout from './components/templates/AuthLayout/AuthLayout.jsx'
 import ProtectedRoute from './components/templates/ProtectedRoute/ProtectedRoute.jsx'
 import Home from './pages/Home.jsx'
-import Dashboard from './pages/Dashboard.jsx'
 import Perfil from './pages/Perfil/Perfil.jsx'
 import MisReportes from './pages/MisReportes/MisReportes.jsx'
 import Rubro from './pages/Rubro/Rubro.jsx'
@@ -76,21 +75,6 @@ function App() {
       <Route element={<MainLayout fullWidth />}>
         <Route path="/" element={<Home />} />
       </Route>
-      <Route element={<MainLayout />}>
-        <Route path="/terminos" element={<Terminos />} />
-        <Route path="/tramites" element={<Tramites />} />
-        <Route path="/metodologia" element={<Metodologia />} />
-        <Route path="/sobre-nosotros" element={<SobreNosotros />} />
-        <Route path="/contacto" element={<Contacto />} />
-        <Route path="/privacidad" element={<Privacidad />} />
-        {/* Requieren sesión */}
-        <Route element={<ProtectedRoute />}>
-          <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/perfil" element={<Perfil />} />
-          <Route path="/mis-reportes" element={<MisReportes />} />
-        </Route>
-        <Route path="*" element={<NotFound />} />
-      </Route>
       {/* Reportes con mapa: el mismo ancho que el paso 4 del análisis */}
       <Route element={<MainLayout wide />}>
         <Route
@@ -111,6 +95,20 @@ function App() {
             }
           />
         </Route>
+      </Route>
+      <Route element={<MainLayout />}>
+        <Route path="/terminos" element={<Terminos />} />
+        <Route path="/tramites" element={<Tramites />} />
+        <Route path="/metodologia" element={<Metodologia />} />
+        <Route path="/sobre-nosotros" element={<SobreNosotros />} />
+        <Route path="/contacto" element={<Contacto />} />
+        <Route path="/privacidad" element={<Privacidad />} />
+        {/* Requieren sesión */}
+        <Route element={<ProtectedRoute />}>
+          <Route path="/perfil" element={<Perfil />} />
+          <Route path="/mis-reportes" element={<MisReportes />} />
+        </Route>
+        <Route path="*" element={<NotFound />} />
       </Route>
     </Routes>
   )

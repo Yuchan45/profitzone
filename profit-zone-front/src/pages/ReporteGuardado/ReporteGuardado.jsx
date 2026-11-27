@@ -69,7 +69,11 @@ function ReporteGuardado() {
         <StepHeading title="Reporte de zona" />
       )}
 
-      <ZoneAnalysis report={report} />
+      <ZoneAnalysis
+        report={report}
+        match={report.data?.business?.match ?? null}
+        serviceMode={report.data?.business?.serviceMode ?? null}
+      />
     </section>
   )
 }

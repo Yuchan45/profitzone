@@ -3,20 +3,16 @@ import StepHeading from '../../components/molecules/StepHeading/StepHeading.jsx'
 import StatusMessage from '../../components/molecules/StatusMessage/StatusMessage.jsx'
 import Button from '../../components/atoms/Button/Button.jsx'
 import ForgotPasswordForm from '../../components/organisms/ForgotPasswordForm/ForgotPasswordForm.jsx'
-import { requestPasswordReset } from '../../services/auth.service.js'
-import { getApiErrorMessage } from '../../utils/apiErrors.js'
+import { useRequestPasswordReset } from '../../hooks/useRequestPasswordReset.js'
 import '../../styles/auth-form.css'
 
 function RecuperarContrasena() {
   const [sentTo, setSentTo] = useState(null)
+  const requestReset = useRequestPasswordReset()
 
   const handleSubmit = async (email) => {
-    try {
-      await requestPasswordReset(email)
-      setSentTo(email)
-    } catch (error) {
-      throw new Error(getApiErrorMessage(error))
-    }
+    await requestReset(email)
+    setSentTo(email)
   }
 
   if (sentTo) {

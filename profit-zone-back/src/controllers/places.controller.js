@@ -22,14 +22,28 @@ function parseCode(value, name) {
 
 export async function getNearbyPlaces(req, res) {
   const { lat, lng, radius, category, subcategory, match } = req.query
+  const rawRadius = typeof radius === 'string' ? radius.trim() : ''
+  const parsedRadius = parseNumber(rawRadius, 'radius', RADIUS_MIN_M, RADIUS_MAX_M)
+  if (!Number.isInteger(parsedRadius)) {
+    throw httpError(400, `El parámetro "radius" debe ser un número entero entre ${RADIUS_MIN_M} y ${RADIUS_MAX_M}.`)
+  }
+
+  let parsedMatch = null
+  if (match !== undefined && match !== '') {
+    if (typeof match !== 'string' || !match.includes(':')) {
+      throw httpError(400, 'El parámetro "match" debe tener el formato "pregunta:opción".')
+    }
+    parsedMatch = match.trim()
+  }
+
   res.json(
     await findNearbyPlaces({
       lat: parseNumber(lat, 'lat', -90, 90),
       lng: parseNumber(lng, 'lng', -180, 180),
-      radius: parseNumber(radius, 'radius', RADIUS_MIN_M, RADIUS_MAX_M),
+      radius: parsedRadius,
       categoryCode: parseCode(category, 'category'),
       subcategoryCode: parseCode(subcategory, 'subcategory'),
-      match: typeof match === 'string' && match.includes(':') ? match.trim() : null,
+      match: parsedMatch,
     }),
   )
 }

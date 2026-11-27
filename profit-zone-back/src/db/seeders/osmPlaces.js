@@ -76,41 +76,56 @@ function toRow(element) {
  * OSM quedan con is_active = 0.
  */
 export async function seedOsmPlaces() {
-  const [neighborhood] = await listNeighborhoods()
-  if (!neighborhood) throw new Error('No hay barrios disponibles: corré antes npm run db:seed:census.')
+  const neighborhoods = await listNeighborhoods()
+  if (neighborhoods.length === 0) throw new Error('No hay barrios disponibles: corré antes npm run db:seed:census.')
 
-  const bounds = expandBounds(neighborhood.bounds)
-  const elements = await fetchOverpass(buildQuery(bounds))
-  const rows = elements.map(toRow).filter(Boolean)
-  const runStartedAt = new Date()
-
-  const stats = { received: elements.length, saved: 0, deactivated: 0 }
+  const stats = { received: 0, saved: 0, deactivated: 0 }
   const byKind = {}
 
-  await sequelize.transaction(async (transaction) => {
-    for (const row of rows) {
-      await sequelize.query(
-        `MERGE osm_data.places AS target
-         USING (SELECT :osmType AS osm_type, :osmId AS osm_id) AS source
-         ON target.osm_type = source.osm_type AND target.osm_id = source.osm_id
-         WHEN MATCHED THEN
-           UPDATE SET kind = :kind, name = :name, cuisine = :cuisine, details = :details,
-             geom = geography::Point(:lat, :lng, 4326), is_active = 1, last_seen_at = :seenAt
-         WHEN NOT MATCHED THEN
-           INSERT (osm_type, osm_id, kind, name, cuisine, details, geom, is_active, last_seen_at)
-           VALUES (:osmType, :osmId, :kind, :name, :cuisine, :details, geography::Point(:lat, :lng, 4326), 1, :seenAt);`,
-        { replacements: { ...row, seenAt: runStartedAt }, transaction },
-      )
-      stats.saved++
-      byKind[row.kind] = (byKind[row.kind] ?? 0) + 1
-    }
+  for (const neighborhood of neighborhoods) {
+    const bounds = expandBounds(neighborhood.bounds)
+    const elements = await fetchOverpass(buildQuery(bounds))
+    const rows = elements.map(toRow).filter(Boolean)
+    const runStartedAt = new Date()
+    stats.received += elements.length
 
-    const [, affected] = await sequelize.query(
-      `UPDATE osm_data.places SET is_active = 0 WHERE is_active = 1 AND last_seen_at < :seenAt`,
-      { replacements: { seenAt: runStartedAt }, transaction },
-    )
-    stats.deactivated = typeof affected === 'number' ? affected : 0
-  })
+    await sequelize.transaction(async (transaction) => {
+      for (const row of rows) {
+        await sequelize.query(
+          `MERGE osm_data.places AS target
+           USING (SELECT :osmType AS osm_type, :osmId AS osm_id) AS source
+           ON target.osm_type = source.osm_type AND target.osm_id = source.osm_id
+           WHEN MATCHED THEN
+             UPDATE SET kind = :kind, name = :name, cuisine = :cuisine, details = :details,
+               geom = geography::Point(:lat, :lng, 4326), is_active = 1, last_seen_at = :seenAt
+           WHEN NOT MATCHED THEN
+             INSERT (osm_type, osm_id, kind, name, cuisine, details, geom, is_active, last_seen_at)
+             VALUES (:osmType, :osmId, :kind, :name, :cuisine, :details, geography::Point(:lat, :lng, 4326), 1, :seenAt);`,
+          { replacements: { ...row, seenAt: runStartedAt }, transaction },
+        )
+        stats.saved++
+        byKind[row.kind] = (byKind[row.kind] ?? 0) + 1
+      }
+
+      const [, affected] = await sequelize.query(
+        `UPDATE osm_data.places SET is_active = 0
+         WHERE is_active = 1 AND last_seen_at < :seenAt
+           AND geom.Lat BETWEEN :south AND :north
+           AND geom.Long BETWEEN :west AND :east`,
+        {
+          replacements: {
+            seenAt: runStartedAt,
+            south: bounds.south,
+            north: bounds.north,
+            west: bounds.west,
+            east: bounds.east,
+          },
+          transaction,
+        },
+      )
+      stats.deactivated += typeof affected === 'number' ? affected : 0
+    })
+  }
 
   return { ...stats, ...byKind }
 }

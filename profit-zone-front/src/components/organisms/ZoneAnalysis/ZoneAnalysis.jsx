@@ -2,7 +2,6 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useNeighborhoods } from '../../../hooks/useNeighborhoods.js'
 import { useNearbyPlaces } from '../../../hooks/useNearbyPlaces.js'
-import { useRentalListings } from '../../../hooks/useRentalListings.js'
 import ZoneMapPanel from '../ZoneMapPanel/ZoneMapPanel.jsx'
 import CriteriaTable from '../CriteriaTable/CriteriaTable.jsx'
 import PermitsGuide from '../PermitsGuide/PermitsGuide.jsx'
@@ -885,15 +884,9 @@ function ZoneAnalysis({
     subcategory: analysis?.subcategory.code ?? subcategoryCode,
     match,
   })
-  // Avisos de alquiler con dirección exacta (nuestra base): capa "Alquileres" y su lista
-  const rentals = useRentalListings({
-    lat: location?.lat ?? null,
-    lng: location?.lng ?? null,
-    radius: location?.radius,
-  })
-  const listings = rentals.data ?? []
-
   const indicators = reportData?.indicators
+  // Avisos geolocalizables (vienen solo en reportes autenticados, nunca en endpoints públicos)
+  const listings = indicators?.rent?.data?.places ?? []
   const noPublic = indicators?.competition?.status === 'not_applicable'
   const totalRentals = indicators?.rent?.data?.totalInRadius ?? null
   const transitStops = indicators?.accessibility?.data?.places ?? []
@@ -997,8 +990,9 @@ function ZoneAnalysis({
         listing,
       })),
       legend: [{ label: 'Local en alquiler con dirección publicada', tone: 'rent' }],
-      note:
-        totalRentals === null
+      note: !live
+        ? 'En el reporte de ejemplo no se muestran avisos individuales; en tus reportes sí ves los locales con dirección publicada.'
+        : totalRentals === null
           ? 'Solo se ven los avisos con la dirección exacta.'
           : `Se ven ${formatNumber(listings.length)} de ${formatNumber(totalRentals)} avisos del radio: el resto no publica la dirección exacta.`,
     },

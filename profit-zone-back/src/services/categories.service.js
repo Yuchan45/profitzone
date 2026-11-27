@@ -1,4 +1,5 @@
 import { Category, Subcategory, SubcategorySearchTerm } from '../models/index.js'
+import { httpError } from '../utils/httpErrors.js'
 
 /**
  * Arma la consulta de categorías con sus subcategorías y términos de búsqueda.
@@ -66,9 +67,7 @@ export async function getCategoryByCode(code, { active } = {}) {
   const category = await Category.findOne(buildCategoryQuery({ where: { code }, active }))
 
   if (!category) {
-    const error = new Error(`No existe la categoría "${code}".`)
-    error.status = 404
-    throw error
+    throw httpError(404, `No existe la categoría "${code}".`)
   }
 
   return toCategoryDto(category)

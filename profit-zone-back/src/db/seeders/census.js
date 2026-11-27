@@ -42,7 +42,6 @@ export async function seedCensusData({ batchSize = 100 } = {}) {
   const stats = {
     total: features.length,
     processed: 0,
-    errors: 0,
   }
 
   console.log(`[ProfitZone] Iniciando carga de ${features.length} radios censales de CABA en census_data...`)
@@ -91,7 +90,12 @@ export async function seedCensusData({ batchSize = 100 } = {}) {
               edad_60_mas = source.edad_60_mas,
               mujeres = source.mujeres,
               varones = source.varones,
-              area_km2 = source.area_km2
+              area_km2 = source.area_km2,
+              geom = CASE
+                WHEN geography::STGeomFromText(source.wkt, 4326).MakeValid().EnvelopeAngle() > 90
+                THEN geography::STGeomFromText(source.wkt, 4326).MakeValid().ReorientObject()
+                ELSE geography::STGeomFromText(source.wkt, 4326).MakeValid()
+              END
           WHEN NOT MATCHED THEN
             INSERT (
               radio_id, barrio, comuna, poblacion, viviendas, hogares, hogares_nbi,

@@ -1,4 +1,5 @@
 import { env } from '../config/env.js'
+import { httpError } from '../utils/httpErrors.js'
 
 /**
  * Defensa CSRF para las rutas que actúan con la cookie de refresh: si el
@@ -8,9 +9,7 @@ import { env } from '../config/env.js'
 export function requireTrustedOrigin(req, res, next) {
   const origin = req.get('origin')
   if (origin && !env.corsOrigins.includes(origin)) {
-    const error = new Error('Origen no permitido.')
-    error.status = 403
-    throw error
+    throw httpError(403, 'Origen no permitido.')
   }
   next()
 }

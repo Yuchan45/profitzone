@@ -1,5 +1,5 @@
 import axios from 'axios'
-import { getAccessToken, notifySessionEnded, setAccessToken } from './authToken.js'
+import { getAccessToken, getAuthGeneration, notifySessionEnded, setAccessToken } from './authToken.js'
 
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL ?? 'http://localhost:8080/api',
@@ -21,10 +21,14 @@ let refreshPromise = null
 
 /** POST /auth/refresh deduplicado. Devuelve { user, accessToken } y guarda el token. */
 export function refreshSession() {
+  const generation = getAuthGeneration()
   refreshPromise ??= api
     .post('/auth/refresh')
     .then(({ data }) => {
-      setAccessToken(data.accessToken)
+      // Si se cerró sesión o inició otra mientras viajaba el refresh, no pisar el estado
+      if (generation === getAuthGeneration()) {
+        setAccessToken(data.accessToken)
+      }
       return data
     })
     .finally(() => {

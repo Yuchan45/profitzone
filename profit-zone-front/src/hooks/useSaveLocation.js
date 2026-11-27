@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { createAnalysis, saveAnalysisLocation } from '../services/analyses.service.js'
 import { useAnalysisFlow } from './useAnalysisFlow.js'
+import { invalidateReportCache } from './useAnalysisReport.js'
 
 // Guarda la ubicación. Crea el análisis con las respuestas si todavía no existe en la API
 // (el usuario llegó sin sesión y recién ahora tiene cuenta) o si ya no es accesible
@@ -43,6 +44,7 @@ export function useSaveLocation() {
         subcategoryCode,
         answers: currentAnswers,
       })
+      invalidateReportCache(savedId)
       if (savedId !== analysisId) setAnalysisId(savedId)
       setState({ status: 'idle', error: null })
       return savedId

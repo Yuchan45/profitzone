@@ -25,7 +25,8 @@ export function isPointInPolygons(point, polygons) {
  * Calcula la distancia geodésica en metros entre dos coordenadas (fórmula de Haversine).
  */
 export function calculateDistanceMeters(lat1, lon1, lat2, lon2) {
-  if (lat1 === undefined || lon1 === undefined || lat2 === undefined || lon2 === undefined) return 0
+  const coords = [lat1, lon1, lat2, lon2]
+  if (coords.some((value) => typeof value !== 'number' || !Number.isFinite(value))) return 0
   const R = 6371000 // Radio de la Tierra en metros
   const dLat = ((lat2 - lat1) * Math.PI) / 180
   const dLon = ((lon2 - lon1) * Math.PI) / 180
@@ -40,6 +41,6 @@ export function calculateDistanceMeters(lat1, lon1, lat2, lon2) {
 }
 
 export function formatDistance(meters) {
-  if (meters < 1000) return `${meters} m`
+  if (meters < 1000) return `${Math.round(meters)} m`
   return `${(meters / 1000).toFixed(1)} km`
 }

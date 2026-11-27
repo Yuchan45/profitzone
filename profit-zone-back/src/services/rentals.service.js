@@ -113,6 +113,7 @@ async function queryRentalsFromDb(lat, lng, radiusInMeters) {
       ROUND(geom.STDistance(@point), 0) AS distanceMeters
     FROM commercial_data.commercial_rentals
     WHERE geom.STIntersects(@buffer) = 1
+      AND operation_type = 'Alquiler'
     ORDER BY distanceMeters ASC;
   `
 
@@ -245,12 +246,18 @@ export async function getRentalsInRadius({ lat, lng, radiusInMeters = 1000 }) {
     if (r.priceUsd) return Math.round(Number(r.priceUsd) * exchangeRate.rate)
     return null
   }
+  const monthlyPricePerM2Ars = (r) => {
+    if (r.pricePerM2Ars) return Number(r.pricePerM2Ars)
+    if (r.pricePerM2Usd) return Math.round(Number(r.pricePerM2Usd) * exchangeRate.rate)
+    return null
+  }
 
   for (const r of rows) {
     const rentArs = monthlyRentArs(r)
+    const rentPerM2Ars = monthlyPricePerM2Ars(r)
     if (rentArs !== null) pricesArs.push(rentArs)
     if (r.priceUsd) pricesUsd.push(Number(r.priceUsd))
-    if (r.pricePerM2Ars) pricesM2Ars.push(Number(r.pricePerM2Ars))
+    if (rentPerM2Ars !== null) pricesM2Ars.push(rentPerM2Ars)
     if (r.pricePerM2Usd) pricesM2Usd.push(Number(r.pricePerM2Usd))
     if (r.surfaceM2) surfaces.push(Number(r.surfaceM2))
     if (r.neighborhood) neighborhoodsSet.add(r.neighborhood)
@@ -277,6 +284,7 @@ export async function getRentalsInRadius({ lat, lng, radiusInMeters = 1000 }) {
     ...p,
     surfaceM2: p.surfaceM2 ? Number(p.surfaceM2) : null,
     monthlyRentArs: monthlyRentArs(p),
+    pricePerM2Ars: monthlyPricePerM2Ars(p),
     distanceText: formatDistance(p.distanceMeters),
   }))
 

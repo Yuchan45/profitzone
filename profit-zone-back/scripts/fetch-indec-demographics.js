@@ -35,7 +35,7 @@ const QUINQUENAL_GROUPS = {
 }
 
 async function fetchJson(url) {
-  const response = await fetch(url)
+  const response = await fetch(url, { signal: AbortSignal.timeout(15_000) })
   if (!response.ok) {
     throw new Error(`HTTP ${response.status} al consultar ${url}`)
   }

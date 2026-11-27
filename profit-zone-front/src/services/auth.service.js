@@ -1,17 +1,19 @@
 import api, { refreshSession } from './api.js'
-import { clearAccessToken, setAccessToken } from './authToken.js'
+import { bumpAuthGeneration, clearAccessToken, setAccessToken } from './authToken.js'
 
 // register, login y restoreSession devuelven { user, accessToken }. El refresh token nunca
 // pasa por JS: lo maneja el navegador como cookie httpOnly.
 
 export async function register({ firstName, lastName, email, password }) {
   const { data } = await api.post('/auth/register', { firstName, lastName, email, password })
+  bumpAuthGeneration()
   setAccessToken(data.accessToken)
   return data
 }
 
 export async function login({ email, password }) {
   const { data } = await api.post('/auth/login', { email, password })
+  bumpAuthGeneration()
   setAccessToken(data.accessToken)
   return data
 }
@@ -22,16 +24,12 @@ export function restoreSession() {
 }
 
 export async function logout() {
+  bumpAuthGeneration()
   try {
     await api.post('/auth/logout')
   } finally {
     clearAccessToken()
   }
-}
-
-export async function fetchMe() {
-  const { data } = await api.get('/auth/me')
-  return data.user
 }
 
 /** Pide el link para restablecer la contraseña. Responde lo mismo exista o no la cuenta. */

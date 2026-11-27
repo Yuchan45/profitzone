@@ -13,6 +13,7 @@ import authRoutes from './auth.routes.js'
 import rentalsRoutes from './rentals.routes.js'
 import accessibilityRoutes from './accessibility.routes.js'
 import sampleReportRoutes from './sampleReport.routes.js'
+import profileRoutes from './profile.routes.js'
 
 const router = Router()
 
@@ -30,5 +31,6 @@ router.use('/auth', authRoutes)
 router.use('/rentals', rentalsRoutes)
 router.use('/accessibility', accessibilityRoutes)
 router.use('/sample-report', sampleReportRoutes)
+router.use('/profile', profileRoutes)
 
 export default router

@@ -24,7 +24,7 @@ const schema = {
     parse: (value) =>
       value
         .split(',')
-        .map((origin) => origin.trim())
+        .map((origin) => origin.trim().replace(/\/+$/, ''))
         .filter(Boolean),
     validate: (value) => value.length > 0 && value.every((origin) => /^https?:\/\/.+/.test(origin)),
     message: 'debe ser una lista separada por comas de URLs http(s), ej: http://localhost:5173',
@@ -136,7 +136,8 @@ function loadEnv() {
   const config = {}
 
   for (const [key, rule] of Object.entries(schema)) {
-    const raw = process.env[key] ?? rule.default
+    const envValue = process.env[key]
+    const raw = envValue !== undefined && envValue !== '' ? envValue : rule.default
 
     if (raw === undefined || raw === '') {
       if (rule.required) {
@@ -164,7 +165,7 @@ function loadEnv() {
   return Object.freeze({
     nodeEnv: config.NODE_ENV,
     port: config.PORT,
-    corsOrigins: config.CORS_ORIGINS,
+    corsOrigins: Object.freeze(config.CORS_ORIGINS),
     isProduction: config.NODE_ENV === 'production',
     googlePlacesApiKey: config.GOOGLE_PLACES_API_KEY ?? '',
     bestTimeApiKey: config.BESTTIME_API_KEY ?? '',

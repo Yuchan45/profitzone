@@ -37,6 +37,14 @@ export function writeFlowState(state) {
   }
 }
 
+export function clearFlowState() {
+  try {
+    sessionStorage.removeItem(STORAGE_KEY)
+  } catch {
+    // ignorar error si sessionStorage está bloqueado
+  }
+}
+
 /**
  * Estado del flujo para retomar un borrador de la API (GET /analyses/:id). Un borrador
  * siempre tiene sus respuestas obligatorias (se validaron al guardarlo): se registran

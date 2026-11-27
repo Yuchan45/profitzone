@@ -5,7 +5,8 @@ import { getTrafficAnalysis } from './traffic.service.js'
 import { getDensityInRadius } from './density.service.js'
 import { getRentalsInRadius } from './rentals.service.js'
 import { getAccessibilityAnalysis } from './accessibility.service.js'
-import { getBenchmarks } from './benchmarks.service.js'
+import { attachPopulationBenchmark, getBenchmarks } from './benchmarks.service.js'
+import { directCriteria } from './places.service.js'
 import { CRITERIA, buildSummary } from './reportCriteria.service.js'
 import { httpError } from '../utils/httpErrors.js'
 import { formatArgentinaDate } from '../utils/dates.js'
@@ -113,7 +114,10 @@ function buildSources({ competition, traffic, density, rent, accessibility }) {
   const sources = []
   if (competition.status === 'ok') {
     const date = formatArgentinaDate(competition.data.queryDate)
-    sources.push(`Competencia: ${competition.data.source}${date ? `, consultado el ${date}` : ''}.`)
+    const label = competition.data.isMock
+      ? 'datos de desarrollo simulados (sin clave de Google Places)'
+      : competition.data.source
+    sources.push(`Competencia: ${label}${date ? `, consultado el ${date}` : ''}.`)
   }
   // El servicio de afluencia usa un perfil por rubro, no consulta el punto
   if (traffic.status === 'ok') sources.push('Afluencia: perfil horario típico del rubro (estimado).')
@@ -139,6 +143,23 @@ function buildSources({ competition, traffic, density, rent, accessibility }) {
   return sources
 }
 
+const PLACEABLE_PRECISIONS = new Set(['exact', 'intersection'])
+
+function toRentPlaceDto(place) {
+  return {
+    id: place.id,
+    address: place.address,
+    priceArs: place.monthlyRentArs ?? null,
+    surfaceM2: place.surfaceM2 ?? null,
+    pricePerM2Ars: place.pricePerM2Ars ?? null,
+    lat: place.lat,
+    lng: place.lng,
+    locationPrecision: place.locationPrecision,
+    distanceText: place.distanceText,
+    url: place.url ?? null,
+  }
+}
+
 function summarizeRent({
   radiusInMeters,
   totalInRadius,
@@ -148,6 +169,7 @@ function summarizeRent({
   medianPricePerM2Ars,
   averageSurfaceM2,
   scrapedAt,
+  places = [],
 }) {
   return {
     radiusInMeters,
@@ -158,6 +180,8 @@ function summarizeRent({
     medianPricePerM2Ars,
     averageSurfaceM2,
     scrapedAt,
+    // Solo los avisos geolocalizables (exact/intersection) con DTO mínimo, entregados únicamente bajo sesión
+    places: places.filter((p) => PLACEABLE_PRECISIONS.has(p.locationPrecision)).map(toRentPlaceDto),
   }
 }
 
@@ -176,14 +200,19 @@ export async function buildAnalysisReport(id, userId) {
   const { answerCode, answerCodes, answerOption, answerLabel } = buildAnswerReaders(analysis.answers, survey)
   const trafficWindow = resolveTrafficWindow(answerCode)
   const noPublic = answerCode('service_mode') === 'no_public'
+  const directMatch = resolveDirectMatch(survey, analysis.answers)
+  const criteriaFilter = directMatch
+    ? await directCriteria(analysis.category.code, analysis.subcategory.code, directMatch, { survey }).catch(() => null)
+    : null
 
   const { lat, lng, radius } = analysis.location
   const point = { lat, lng, radiusInMeters: radius }
   const subcategory = analysis.subcategory.code
   const notApplicable = { status: 'not_applicable' }
 
-  // Sin atención al público no se muestran competencia ni afluencia (estados-y-variantes)
-  const [competition, traffic, density, rent, accessibility] = await Promise.all([
+  // Sin atención al público no se muestran competencia ni afluencia (estados-y-variantes).
+  // Las referencias de Palermo corren en paralelo para no esperar detrás de Google Places.
+  const [competition, traffic, density, rent, accessibility, rawBenchmarks] = await Promise.all([
     noPublic
       ? notApplicable
       : settleIndicator('competencia', () =>
@@ -191,7 +220,9 @@ export async function buildAnalysisReport(id, userId) {
             ...point,
             categoryCode: analysis.category.code,
             subcategory,
-            match: resolveDirectMatch(survey, analysis.answers),
+            match: directMatch,
+            survey,
+            criteria: criteriaFilter,
           }),
         ),
     noPublic
@@ -202,6 +233,17 @@ export async function buildAnalysisReport(id, userId) {
     settleIndicator('densidad', () => getDensityInRadius(point)),
     settleIndicator('alquiler', () => getRentalsInRadius(point)),
     settleIndicator('accesibilidad', () => getAccessibilityAnalysis(point)),
+    getBenchmarks({
+      ...point,
+      categoryCode: analysis.category.code,
+      subcategoryCode: subcategory,
+      match: directMatch,
+      survey,
+      criteria: criteriaFilter,
+    }).catch((error) => {
+      console.warn(`[ProfitZone] No se pudieron calcular las referencias de Palermo: ${error.message}`)
+      return null
+    }),
   ])
 
   const criteria = CRITERIA.map((buildCriterion) =>
@@ -221,17 +263,8 @@ export async function buildAnalysisReport(id, userId) {
     }),
   )
 
-  // Referencias de Palermo para leer cada dato; si fallan, el reporte sale igual sin ellas
-  const benchmarks = await getBenchmarks({
-    ...point,
-    categoryCode: analysis.category.code,
-    subcategoryCode: subcategory,
-    match: resolveDirectMatch(survey, analysis.answers),
-    density: density.status === 'ok' && density.data.inCoverage ? density.data.densidadHabKm2 : null,
-  }).catch((error) => {
-    console.warn(`[ProfitZone] No se pudieron calcular las referencias de Palermo: ${error.message}`)
-    return null
-  })
+  const densityValue = density.status === 'ok' && density.data.inCoverage ? density.data.densidadHabKm2 : null
+  const benchmarks = await attachPopulationBenchmark(rawBenchmarks, densityValue).catch(() => rawBenchmarks)
 
   return {
     analysis: {
@@ -243,6 +276,10 @@ export async function buildAnalysisReport(id, userId) {
       location: analysis.location,
       createdAt: analysis.createdAt,
     },
+    business: {
+      match: directMatch,
+      serviceMode: answerCode('service_mode'),
+    },
     summary: buildSummary(criteria),
     criteria,
     indicators: {
@@ -250,7 +287,7 @@ export async function buildAnalysisReport(id, userId) {
       traffic,
       density,
       accessibility,
-      // Sin el listado de avisos: el reporte solo muestra el resumen del alquiler
+      // Incluye únicamente el resumen y los avisos geolocalizables para el dueño de la sesión
       rent: rent.status === 'ok' ? { status: 'ok', data: summarizeRent(rent.data) } : rent,
     },
     benchmarks,

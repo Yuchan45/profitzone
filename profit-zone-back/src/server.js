@@ -48,11 +48,23 @@ server.on('close', () => {
 
 for (const signal of ['SIGINT', 'SIGTERM']) {
   process.on(signal, () => {
+    if (shuttingDown) return
     shuttingDown = true
     console.log(`\n[ProfitZone] ${signal} recibido, cerrando servidor...`)
+    const forceTimer = setTimeout(() => {
+      console.error('[ProfitZone] Cierre forzado tras timeout.')
+      process.exit(1)
+    }, 5000)
+    forceTimer.unref()
+
     server.close(async () => {
-      await closeDatabase()
-      process.exit(0)
+      try {
+        await closeDatabase()
+        process.exit(0)
+      } catch (error) {
+        console.error('[ProfitZone] Error al cerrar la base de datos:', error)
+        process.exit(1)
+      }
     })
   })
 }

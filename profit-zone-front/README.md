@@ -26,28 +26,24 @@ Copiar `.env.example` a `.env` y ajustar:
 
 ## Mapa
 
-El paso 3 (`/analizar/ubicacion`) usa [Leaflet](https://leafletjs.com) con `react-leaflet` y los tiles
-estándar de OpenStreetMap (gratis, sin clave, con atribución), mostrados en grises con CSS. La página se
-carga de forma diferida para no sumar Leaflet al bundle inicial. El buscador autocompleta direcciones
-de Palermo mientras se escribe con `GET /api/geocode`, que combina Photon (OpenStreetMap) y el
-normalizador del GCBA (USIG).
+El paso 3 (`/analizar/ubicacion`) y el panel del reporte usan [Leaflet](https://leafletjs.com) con `react-leaflet` y tiles `World_Street_Map` de Esri/ArcGIS (sin clave, con atribución a Esri y OpenStreetMap). Las páginas con mapa se cargan de forma diferida para no sumar Leaflet al bundle inicial. El buscador autocompleta direcciones de Palermo mientras se escribe con `GET /api/geocode`, que combina Photon (OpenStreetMap) y el normalizador del GCBA (USIG).
 
 ## Estructura
 
 ```
 src/
-  assets/      recursos estáticos (logo/: logo e isotipo de ProfitZone)
-  components/  componentes reutilizables con atomic design
-    atoms/       piezas mínimas (Button, Chip, Checkbox, Divider, GoogleLogo, Icon, IconTile, Input, Logo, MapBackdrop, SegmentedProgress)
-    molecules/   combinaciones de atoms (CategoryCard, FormField, PasswordInput, QuestionField, SegmentedNav, SelectionSummary, StepHeading, StatusMessage, ApiStatus)
-    organisms/   secciones de UI (Header, Navbar, Footer, Stepper, QuestionList, RegisterForm, LoginForm, AuthBrandPanel)
-    templates/   layouts de página (MainLayout, FlowLayout, AuthLayout)
+  assets/      recursos estáticos (logo/: logo e isotipo; media/: demo en video y poster)
+  components/  componentes reutilizables con atomic design + home/ + ui/ (shadcn)
+    atoms/       piezas mínimas (Badge, Button, Checkbox, Chip, Divider, GoogleLogo, HourlyBars, Icon, IconButton, IconTile, Input, Logo, MapBackdrop, RangeSlider, ScoreMeter, SegmentedProgress)
+    molecules/   combinaciones de atoms (AddressSearch, Benchmark, CategoryCard, DisclaimerCard, EditableName, FormField, IndicatorCard, InfoTip, PasswordInput, QuestionField, ReportCard, SegmentedNav, SelectionSummary, StatTile, StatusMessage, StepHeading, Toast, UserMenu)
+    organisms/   secciones de UI (AuthBrandPanel, BusinessSummary, CriteriaTable, Footer, ForgotPasswordForm, Header, InfoPage, LeaveFlowGuard, LocationMap, LoginForm, Modal, Navbar, PermitsGuide, PlaceCard, QuestionList, RegisterForm, RentalCard, ResetPasswordForm, ScrollToTop, Stepper, TransitCard, ZoneAnalysis, ZoneMapPanel)
+    templates/   layouts de página (MainLayout, FlowLayout, AuthLayout, ProtectedRoute)
   context/     contextos de React (AuthContext, AnalysisFlowContext: estado del flujo de análisis)
-  hooks/       custom hooks (useAuth)
-  pages/       vistas ruteadas (Home, Dashboard, Perfil, Rubro, Negocio, Registro, Login, NotFound)
-  styles/      tokens.css: paleta, radios, espaciados y fuentes del Figma
-  services/    cliente HTTP y llamadas a la API (api.js)
-  utils/       helpers (formatters)
+  hooks/       custom hooks (useAuth, useProfile, useAnalysisReport, useMyAnalyses, etc.)
+  pages/       vistas ruteadas (Home, Rubro, Negocio, Ubicacion, Analisis, ReporteEjemplo, MisReportes, ReporteGuardado, Perfil, Login, Registro, RecuperarContrasena, RestablecerContrasena, Metodologia, Tramites, SobreNosotros, Contacto, Terminos, Privacidad, NotFound)
+  styles/      tokens.css (paleta, radios, espaciados y fuentes), auth-form.css
+  services/    cliente HTTP (api.js) y llamadas a la API por dominio
+  utils/       helpers (formatters, geo, validators, hiddenQuestions, permitsGuide, etc.)
   App.jsx      definición de rutas
   main.jsx     punto de entrada
 ```

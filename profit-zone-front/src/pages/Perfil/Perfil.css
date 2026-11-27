@@ -387,9 +387,28 @@
   padding: 4px;
 }
 
-.profile-google-action:hover {
+.profile-google-action:hover:not(:disabled) {
   color: var(--color-primary-dark);
   text-decoration: underline;
+}
+
+.profile-google-action:disabled {
+  color: var(--color-text-tertiary);
+  cursor: not-allowed;
+}
+
+.profile-modal-text {
+  margin: 0 0 1rem;
+  font-size: 0.92rem;
+  line-height: 1.5;
+  color: var(--color-text-secondary);
+}
+
+.profile-modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 1.25rem;
 }
 
 /* Métricas de actividad */

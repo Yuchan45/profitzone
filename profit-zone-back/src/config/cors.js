@@ -1,4 +1,5 @@
 import { env } from './env.js'
+import { httpError } from '../utils/httpErrors.js'
 
 export const corsOptions = {
   origin(origin, callback) {
@@ -11,7 +12,7 @@ export const corsOptions = {
       return callback(null, true)
     }
 
-    return callback(new Error(`Origen no permitido por CORS: ${origin}`))
+    return callback(httpError(403, `Origen no permitido por CORS: ${origin}`))
   },
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],

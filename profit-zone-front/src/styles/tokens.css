@@ -88,8 +88,8 @@
   --space-80: 80px;
 
   /* Tipografía */
-  --font-heading: 'Outfit', system-ui, sans-serif;
-  --font-body: 'Geist', system-ui, sans-serif;
+  --font-heading: "Outfit Variable", 'Outfit', system-ui, sans-serif;
+  --font-body: "Plus Jakarta Sans Variable", 'Geist', system-ui, sans-serif;
 
   --text-11: 0.6875rem;
   --text-12: 0.75rem;

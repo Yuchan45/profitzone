@@ -11,12 +11,12 @@ import {
 
 export const REFRESH_COOKIE = 'pz_refresh'
 
-const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-const PASSWORD_MIN = 8
-const PASSWORD_MAX = 128
+export const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+export const PASSWORD_MIN = 8
+export const PASSWORD_MAX = 128
 
 // La cookie solo viaja a /api/auth (no a toda la API) y JS no la puede leer.
-function cookieOptions() {
+export function cookieOptions() {
   return {
     httpOnly: true,
     secure: env.auth.cookieSecure,

@@ -1,21 +1,27 @@
 import { useEffect, useState } from 'react'
 import { fetchSubcategorySurvey } from '../services/catalog.service.js'
 
+const IDLE = { status: 'idle', data: null, error: null }
+const LOADING = { status: 'loading', data: null, error: null }
+
 /**
  * Trae la encuesta de un rubro desde
  * GET /api/categories/:categoryCode/subcategories/:subcategoryCode/questions.
  */
 export function useSubcategorySurvey(categoryCode, subcategoryCode) {
-  const [state, setState] = useState({ status: 'loading', data: null, error: null })
+  const enabled = Boolean(categoryCode && subcategoryCode)
+  const key = `${categoryCode}:${subcategoryCode}`
+  const [state, setState] = useState({ ...IDLE, forKey: null })
 
   useEffect(() => {
-    if (!categoryCode || !subcategoryCode) return undefined
+    if (!enabled) return undefined
 
     let cancelled = false
+    const forKey = `${categoryCode}:${subcategoryCode}`
 
     fetchSubcategorySurvey(categoryCode, subcategoryCode)
       .then((data) => {
-        if (!cancelled) setState({ status: 'ok', data, error: null })
+        if (!cancelled) setState({ status: 'ok', data, error: null, forKey })
       })
       .catch((error) => {
         if (!cancelled) {
@@ -23,6 +29,7 @@ export function useSubcategorySurvey(categoryCode, subcategoryCode) {
             status: 'error',
             data: null,
             error: error.response?.data?.message ?? error.message,
+            forKey,
           })
         }
       })
@@ -30,7 +37,9 @@ export function useSubcategorySurvey(categoryCode, subcategoryCode) {
     return () => {
       cancelled = true
     }
-  }, [categoryCode, subcategoryCode])
+  }, [enabled, categoryCode, subcategoryCode])
 
-  return state
+  if (!enabled) return IDLE
+  if (state.forKey !== key) return LOADING
+  return { status: state.status, data: state.data, error: state.error }
 }
