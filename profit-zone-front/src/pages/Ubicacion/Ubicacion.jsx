@@ -50,7 +50,7 @@ function pluralize(count, singular, plural) {
 function Ubicacion() {
   const flow = useAnalysisFlow()
   const { categoryCode, subcategoryCode, answers, location, setLocation } = flow
-  const { status: authStatus, user, register, login } = useAuth()
+  const { status: authStatus, user, register, login, loginWithGoogle } = useAuth()
   const navigate = useNavigate()
   const steps = useFlowSteps()
   const neighborhoods = useNeighborhoods()
@@ -387,11 +387,13 @@ function Ubicacion() {
         {authModal.tab === 'register' ? (
           <RegisterForm
             onSubmit={continueAfterAuth(register)}
+            onGoogle={continueAfterAuth(loginWithGoogle)}
             onSwitchToLogin={() => setAuthModal((prev) => ({ ...prev, tab: 'login' }))}
           />
         ) : (
           <LoginForm
             onSubmit={continueAfterAuth(login)}
+            onGoogle={continueAfterAuth(loginWithGoogle)}
             onSwitchToRegister={() => setAuthModal((prev) => ({ ...prev, tab: 'register' }))}
           />
         )}

@@ -7,7 +7,7 @@ import Input from '../../atoms/Input/Input.jsx'
 import Checkbox from '../../atoms/Checkbox/Checkbox.jsx'
 import Button from '../../atoms/Button/Button.jsx'
 import Divider from '../../atoms/Divider/Divider.jsx'
-import GoogleLogo from '../../atoms/GoogleLogo/GoogleLogo.jsx'
+import GoogleButton from '../../molecules/GoogleButton/GoogleButton.jsx'
 import {
   PASSWORD_MIN_LENGTH,
   validateEmail,
@@ -41,7 +41,7 @@ function focusField(field) {
  * `{ fieldErrors }` se marcan esos campos, y con `{ message }` se muestra arriba.
  */
 // `onSwitchToLogin` opcional: dentro de un modal cambia de pestaña en vez de ir a /login.
-function RegisterForm({ onSubmit, onSwitchToLogin }) {
+function RegisterForm({ onSubmit, onGoogle, onSwitchToLogin }) {
   const [values, setValues] = useState(INITIAL_VALUES)
   const [errors, setErrors] = useState({})
   const [formError, setFormError] = useState(null)
@@ -172,11 +172,7 @@ function RegisterForm({ onSubmit, onSwitchToLogin }) {
 
       <Divider label="o" />
 
-      {/* Todavía no hay login con Google: se muestra deshabilitado */}
-      <Button variant="secondary" className="auth-form-google" disabled title="Próximamente">
-        <GoogleLogo />
-        Continuar con Google
-      </Button>
+      <GoogleButton onCredential={onGoogle} onError={setFormError} />
 
       <p className="auth-form-switch">
         ¿Ya tenés cuenta?{' '}

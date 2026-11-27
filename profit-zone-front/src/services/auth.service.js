@@ -16,6 +16,19 @@ export async function login({ email, password }) {
   return data
 }
 
+/** Client ID público de Google, o null si "Continuar con Google" no está configurado. */
+export async function fetchGoogleClientId() {
+  const { data } = await api.get('/auth/google/config')
+  return data.clientId
+}
+
+/** Entra (o crea la cuenta) con el ID token que entrega el botón de Google. */
+export async function googleLogin(idToken) {
+  const { data } = await api.post('/auth/google', { idToken })
+  setAccessToken(data.accessToken)
+  return data
+}
+
 /** Recupera la sesión con la cookie de refresh (al cargar la app o con el token vencido). */
 export function restoreSession() {
   return refreshSession()

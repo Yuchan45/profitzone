@@ -6,7 +6,7 @@ import StatusMessage from '../../molecules/StatusMessage/StatusMessage.jsx'
 import Input from '../../atoms/Input/Input.jsx'
 import Button from '../../atoms/Button/Button.jsx'
 import Divider from '../../atoms/Divider/Divider.jsx'
-import GoogleLogo from '../../atoms/GoogleLogo/GoogleLogo.jsx'
+import GoogleButton from '../../molecules/GoogleButton/GoogleButton.jsx'
 import { validateEmail, validateRequired } from '../../../utils/validators.js'
 import '../../../styles/auth-form.css'
 
@@ -26,8 +26,9 @@ function validate(values) {
  * Formulario de inicio de sesión. `onSubmit(values)` devuelve una promesa; si
  * falla, su `message` se muestra arriba del formulario.
  */
+// `onGoogle(idToken)`: entra con Google (el botón solo aparece si Google está configurado).
 // `onSwitchToRegister` opcional: dentro de un modal cambia de pestaña en vez de ir a /registro.
-function LoginForm({ onSubmit, onSwitchToRegister }) {
+function LoginForm({ onSubmit, onGoogle, onSwitchToRegister }) {
   const [values, setValues] = useState(INITIAL_VALUES)
   const [errors, setErrors] = useState({})
   const [formError, setFormError] = useState(null)
@@ -105,11 +106,7 @@ function LoginForm({ onSubmit, onSwitchToRegister }) {
 
       <Divider label="o" />
 
-      {/* Todavía no hay login con Google: se muestra deshabilitado */}
-      <Button variant="secondary" className="auth-form-google" disabled title="Próximamente">
-        <GoogleLogo />
-        Continuar con Google
-      </Button>
+      <GoogleButton onCredential={onGoogle} onError={setFormError} />
 
       <p className="auth-form-switch">
         ¿No tenés cuenta?{' '}

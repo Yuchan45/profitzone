@@ -1,0 +1,11 @@
+/* El botón oficial de Google se dibuja adentro (iframe): acá solo se centra y se le da el ancho */
+.google-button-slot {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+  min-height: 44px;
+}
+
+.google-button-slot[hidden] {
+  display: none;
+}

@@ -122,6 +122,99 @@ export async function register({ firstName, lastName, email, password }, meta) {
   }
 }
 
+const GOOGLE_TOKENINFO_URL = 'https://oauth2.googleapis.com/tokeninfo'
+const GOOGLE_ISSUERS = ['accounts.google.com', 'https://accounts.google.com']
+
+/** Valida el ID token de Google con Google (firma, vencimiento) y que sea para esta app. */
+async function verifyGoogleIdToken(idToken) {
+  if (!env.googleClientId) throw httpError(503, 'El ingreso con Google no está configurado.')
+
+  let info
+  try {
+    const response = await fetch(`${GOOGLE_TOKENINFO_URL}?id_token=${encodeURIComponent(idToken)}`, {
+      signal: AbortSignal.timeout(8000),
+    })
+    if (response.status === 400) throw httpError(401, 'No pudimos validar tu cuenta de Google. Probá de nuevo.')
+    if (!response.ok) throw new Error(`tokeninfo respondió ${response.status}`)
+    info = await response.json()
+  } catch (error) {
+    if (error.status) throw error
+    console.warn(`[ProfitZone] Google tokeninfo falló: ${error.message}`)
+    throw httpError(502, 'No pudimos conectar con Google. Probá de nuevo en un momento.')
+  }
+
+  // El token tiene que ser de ESTA app (si no, cualquier app de Google podría entrar acá)
+  if (info.aud !== env.googleClientId || !GOOGLE_ISSUERS.includes(info.iss) || !info.sub) {
+    throw httpError(401, 'No pudimos validar tu cuenta de Google. Probá de nuevo.')
+  }
+  // Sin correo verificado por Google no se puede confiar en él para reconocer una cuenta
+  if (info.email_verified !== 'true' && info.email_verified !== true) {
+    throw httpError(403, 'Tu cuenta de Google no tiene el correo verificado.')
+  }
+  return {
+    sub: String(info.sub),
+    email: String(info.email).trim().toLowerCase(),
+    firstName: String(info.given_name || info.name || 'Usuario').trim().slice(0, 100),
+    lastName: String(info.family_name || '-').trim().slice(0, 100) || '-',
+  }
+}
+
+/**
+ * "Continuar con Google": entra con la cuenta de Google. Si ya hay una cuenta con ese correo la
+ * vincula (Google verificó el correo); si no, crea una nueva con el regalo de bienvenida.
+ * Las cuentas creadas así tienen una contraseña aleatoria que nadie conoce: para poner una
+ * propia, usan "¿Olvidaste tu contraseña?".
+ */
+export async function loginWithGoogle(idToken, meta) {
+  const google = await verifyGoogleIdToken(idToken)
+
+  let user =
+    (await User.findOne({ where: { googleSub: google.sub }, include: [withRole] })) ??
+    (await User.findOne({ where: { email: google.email }, include: [withRole] }))
+
+  if (user) {
+    if (!user.isActive) throw httpError(403, 'Tu cuenta está desactivada.')
+    if (user.googleSub && user.googleSub !== google.sub) {
+      throw httpError(409, 'Ese correo ya está vinculado a otra cuenta de Google.')
+    }
+    user.googleSub = google.sub
+    user.lastLoginAt = new Date()
+    await user.save({ fields: ['googleSub', 'lastLoginAt'] })
+    await cleanupExpiredTokens(user.id, REFRESH)
+    return issueSession(user, meta)
+  }
+
+  const defaultRole = await Role.findOne({ where: { isDefault: true } })
+  if (!defaultRole) throw httpError(500, 'No hay un rol por defecto configurado para usuarios nuevos.')
+  const passwordHash = await hashPassword(generateOpaqueToken())
+
+  try {
+    return await sequelize.transaction(async (transaction) => {
+      user = await User.create(
+        {
+          firstName: google.firstName,
+          lastName: google.lastName,
+          email: google.email,
+          googleSub: google.sub,
+          passwordHash,
+          roleId: defaultRole.id,
+          lastLoginAt: new Date(),
+          ...signupGrantFields(),
+        },
+        { transaction },
+      )
+      await recordSignupGrant(user.id, transaction)
+      user.role = defaultRole
+      return issueSession(user, meta, transaction)
+    })
+  } catch (error) {
+    if (error instanceof UniqueConstraintError) {
+      throw httpError(409, 'No pudimos crear tu cuenta. Probá de nuevo.')
+    }
+    throw error
+  }
+}
+
 export async function login({ email, password }, meta) {
   const user = await User.scope('withPassword').findOne({ where: { email }, include: [withRole] })
 

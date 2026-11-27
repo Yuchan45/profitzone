@@ -2,6 +2,8 @@ import { Router } from 'express'
 import { rateLimit } from 'express-rate-limit'
 import {
   getCurrentUser,
+  getGoogleConfig,
+  postGoogleLogin,
   postForgotPassword,
   postLogin,
   postLogout,
@@ -34,6 +36,8 @@ const forgotPasswordLimiter = rateLimit({
 
 router.post('/register', credentialsLimiter, postRegister)
 router.post('/login', credentialsLimiter, postLogin)
+router.get('/google/config', getGoogleConfig)
+router.post('/google', credentialsLimiter, postGoogleLogin)
 router.post('/forgot-password', forgotPasswordLimiter, postForgotPassword)
 router.post('/reset-password', credentialsLimiter, postResetPassword)
 // Usan la cookie httpOnly: solo desde orígenes permitidos (defensa CSRF)

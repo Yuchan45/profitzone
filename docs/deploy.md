@@ -106,6 +106,8 @@ En el proyecto, **Settings → Environment Variables**, entorno **Production**:
 | `GOOGLE_PLACES_API_KEY` | la clave de Google Places (New) |
 | `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASSWORD`, `SMTP_FROM` | el correo para recuperar contraseñas (por ejemplo Gmail: `smtp.gmail.com`, `587`, la cuenta y una contraseña de aplicación) |
 
+Ingreso con Google (opcional): `GOOGLE_CLIENT_ID`. Se crea en Google Cloud Console → APIs y servicios → Credenciales → **ID de cliente de OAuth** (tipo *Aplicación web*), con el dominio de la app (por ejemplo `https://profitzone-ten.vercel.app`) en **Orígenes autorizados de JavaScript**; no hace falta URI de redireccionamiento ni el secreto. Sin la variable, el botón "Continuar con Google" queda deshabilitado. La API valida el token con Google, exige correo verificado y, si ya hay una cuenta con ese correo, la vincula.
+
 Créditos y pagos (opcionales; los valores por defecto sirven para una demo, ver `docs/modelo-de-negocio.md`):
 
 | Variable | Valor |

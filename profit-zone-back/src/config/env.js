@@ -75,6 +75,11 @@ const schema = {
     required: false,
     default: '',
   },
+  // Client ID de OAuth de Google ("Continuar con Google"). Sin él el botón queda deshabilitado
+  GOOGLE_CLIENT_ID: {
+    required: false,
+    default: '',
+  },
   BESTTIME_API_KEY: {
     required: false,
     default: '',
@@ -206,6 +211,7 @@ function loadEnv() {
     corsOrigins: config.CORS_ORIGINS,
     isProduction: config.NODE_ENV === 'production',
     googlePlacesApiKey: config.GOOGLE_PLACES_API_KEY ?? '',
+    googleClientId: (config.GOOGLE_CLIENT_ID ?? '').trim(),
     bestTimeApiKey: config.BESTTIME_API_KEY ?? '',
     frontendUrl: config.FRONTEND_URL,
     mail: Object.freeze({

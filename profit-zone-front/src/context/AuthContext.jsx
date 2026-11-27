@@ -63,6 +63,11 @@ export function AuthProvider({ children }) {
         setState({ status: 'authenticated', user })
         return user
       },
+      loginWithGoogle: async (idToken) => {
+        const { user } = await authService.googleLogin(idToken)
+        setState({ status: 'authenticated', user })
+        return user
+      },
       logout: async () => {
         try {
           await authService.logout()
