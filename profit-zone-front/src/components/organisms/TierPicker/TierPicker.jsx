@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom'
 import Icon from '../../atoms/Icon/Icon.jsx'
-import { SIGNUP_FREE_CREDITS, TIER_LIST, creditsFor, pluralCredits } from '../../../utils/plans.js'
+import { SIGNUP_FREE_CREDITS, TIER_LIST, canAfford, creditsFor, pluralCredits } from '../../../utils/plans.js'
 import './TierPicker.css'
 
 // Lo que dice cada opción sobre el saldo: con sesión, cuántos créditos de ese tipo tiene;
@@ -30,7 +30,7 @@ function balanceText(tier, user) {
  */
 function TierPicker({ value, onChange, user }) {
   const selected = TIER_LIST.find((tier) => tier.code === value)
-  const missing = user && creditsFor(user, value) === 0
+  const missing = user && !canAfford(user, value)
 
   return (
     <fieldset className="tier-picker">

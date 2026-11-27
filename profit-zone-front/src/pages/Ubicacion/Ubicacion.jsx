@@ -31,7 +31,7 @@ import { toAuthFormError } from '../../utils/apiErrors.js'
 import { FLOW_STEPS } from '../../utils/flowSteps.js'
 import { visibleQuestions } from '../../utils/hiddenQuestions.js'
 import { buildSummaryRows, directMatch } from '../../utils/surveySummary.js'
-import { RADIUS, SIGNUP_FREE_CREDITS, TIERS, creditsFor, defaultTier } from '../../utils/plans.js'
+import { RADIUS, SIGNUP_FREE_CREDITS, TIERS, canAfford, defaultTier } from '../../utils/plans.js'
 import './Ubicacion.css'
 
 // El rango del radio y el tope de cada tipo de análisis (600 m el básico, 2 km el completo) están
@@ -76,7 +76,7 @@ function Ubicacion() {
   const tier = tierChoice ?? defaultTier(user)
   const radiusLimit = TIERS[tier].radiusMax
   // Con sesión y sin créditos del tipo elegido no se puede analizar: se manda a comprar
-  const outOfCredits = authStatus === 'authenticated' && creditsFor(user, tier) === 0
+  const outOfCredits = authStatus === 'authenticated' && !canAfford(user, tier)
 
   // Un radio guardado mayor al del tipo de análisis (ej. pasó de completo a básico) se recorta.
   // Mientras se recupera la sesión no se sabe cuál corresponde: se espera para no recortar de más

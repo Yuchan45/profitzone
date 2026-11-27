@@ -48,11 +48,20 @@ export function creditsFor(user, tierCode) {
   return TIERS[tierCode].creditKind === 'free' ? credits.free : credits.paid
 }
 
+// Las cuentas admin analizan sin gastar créditos (la API no les cobra)
+const ADMIN_ROLE = 'admin'
+
+/** Si el usuario puede pagar un análisis de ese nivel: tiene el crédito o es admin. */
+export function canAfford(user, tierCode) {
+  if (!user) return false
+  return user.role === ADMIN_ROLE || creditsFor(user, tierCode) > 0
+}
+
 /** Nivel con el que arranca la elección: el que el usuario puede pagar (básico sin sesión). */
 export function defaultTier(user) {
   if (!user) return 'basic'
-  if (creditsFor(user, 'basic') > 0) return 'basic'
-  if (creditsFor(user, 'complete') > 0) return 'complete'
+  if (canAfford(user, 'basic')) return 'basic'
+  if (canAfford(user, 'complete')) return 'complete'
   return 'basic'
 }
 

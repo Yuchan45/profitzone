@@ -1,3 +1,4 @@
+import { Op, QueryTypes } from 'sequelize'
 import { sequelize } from '../db/sequelize.js'
 import { ANALYSIS_STATUSES } from '../models/analysis/Analysis.js'
 import {
@@ -223,10 +224,15 @@ export async function listUserAnalyses(userId, status, role) {
   }))
 }
 
-/** Id del último análisis básico (el que se analizó más recientemente) de una lista. */
+// Análisis que se cobraron como básicos: los que siguen siéndolo y los que después se mejoraron
+// a completo. Cuentan los dos para decidir cuál es "el último básico": si no, mejorar el último
+// desbloquearía gratis el anterior
+const startedBasic = (analysis) => analysis.tier === 'basic' || Boolean(analysis.upgradedAt)
+
+/** Id del último análisis cobrado como básico (el que se analizó más recientemente) de una lista. */
 function latestBasicOf(analyses) {
   const analyzedAt = (analysis) => new Date(analysis.chargedAt ?? analysis.createdAt).getTime()
-  const basics = analyses.filter((analysis) => analysis.tier === 'basic')
+  const basics = analyses.filter(startedBasic)
   basics.sort((a, b) => analyzedAt(b) - analyzedAt(a))
   return basics[0]?.id ?? null
 }
@@ -235,8 +241,12 @@ function latestBasicOf(analyses) {
 export async function isReportLocked(analysis, role) {
   if (role === ADMIN_ROLE || analysis.tier !== 'basic') return false
   const basics = await Analysis.findAll({
-    where: { userId: analysis.userId, status: 'saved', tier: 'basic' },
-    attributes: ['id', 'chargedAt', 'createdAt', 'tier'],
+    where: {
+      userId: analysis.userId,
+      status: 'saved',
+      [Op.or]: [{ tier: 'basic' }, { upgradedAt: { [Op.ne]: null } }],
+    },
+    attributes: ['id', 'chargedAt', 'createdAt', 'tier', 'upgradedAt'],
   })
   return !sameId(analysis.id, latestBasicOf(basics))
 }
@@ -332,10 +342,7 @@ export async function updateAnalysisLocation(id, { lat, lng, radius, tier = DEFA
   const isAdmin = role === ADMIN_ROLE
 
   const sameLocation =
-    analysis.tier !== null &&
-    Number(analysis.centerLat) === lat &&
-    Number(analysis.centerLng) === lng &&
-    analysis.radiusM === radius
+    analysis.tier !== null && isSavedPoint(analysis, { lat, lng }) && analysis.radiusM === radius
 
   await sequelize.transaction(async (transaction) => {
     if (sameLocation) {
@@ -366,6 +373,20 @@ export async function updateAnalysisLocation(id, { lat, lng, radius, tier = DEFA
     )
   })
   return getAnalysis(id, userId)
+}
+
+// center_lat/center_lng son decimal(9,6): el mapa manda más decimales y la base los redondea.
+// Se compara con la misma precisión; si no, el mismo punto nunca coincide y se cobra de nuevo
+const COORDINATE_SCALE = 1e6
+const toStoredCoordinate = (value) => Math.round(Number(value) * COORDINATE_SCALE)
+
+/** Si `point` es el punto que ya tiene guardado el análisis (con la precisión de la base). */
+function isSavedPoint(analysis, point) {
+  return (
+    analysis.centerLat !== null &&
+    toStoredCoordinate(analysis.centerLat) === toStoredCoordinate(point.lat) &&
+    toStoredCoordinate(analysis.centerLng) === toStoredCoordinate(point.lng)
+  )
 }
 
 /** Pasa un análisis básico a completo gastando 1 crédito pago. Dentro de una transacción. */
@@ -405,16 +426,25 @@ export async function markReportGenerated(id) {
  */
 export async function refundAnalysisCharge(id, { id: userId, role }) {
   const analysis = await findAnalysis(id, userId)
-  if (analysis.tier === null || analysis.reportGeneratedAt !== null) return false
-
   const isAdmin = role === ADMIN_ROLE
-  await sequelize.transaction(async (transaction) => {
+
+  return sequelize.transaction(async (transaction) => {
+    // Bloquea la fila y vuelve a leerla: si dos aperturas del reporte fallan a la vez, la
+    // segunda espera y ve que la primera ya devolvió el crédito (no lo devuelve dos veces)
+    await sequelize.query('SELECT id FROM analysis.analyses WITH (UPDLOCK, ROWLOCK) WHERE id = :id', {
+      replacements: { id: analysis.id },
+      type: QueryTypes.SELECT,
+      transaction,
+    })
+    await analysis.reload({ transaction })
+    if (analysis.tier === null || analysis.reportGeneratedAt !== null) return false
+
     if (analysis.upgradedAt) {
       if (!isAdmin) {
         await addCredits(userId, 'paid', 1, { reason: 'refund', analysisId: analysis.id, transaction })
       }
       await analysis.update({ tier: 'basic', upgradedAt: null, reportGeneratedAt: new Date() }, { transaction })
-      return
+      return true
     }
     if (analysis.chargedCredit) {
       await addCredits(userId, analysis.chargedCredit, 1, {
@@ -427,8 +457,8 @@ export async function refundAnalysisCharge(id, { id: userId, role }) {
       { tier: null, chargedCredit: null, chargedAt: null, status: 'draft' },
       { transaction },
     )
+    return true
   })
-  return true
 }
 
 /**
@@ -437,8 +467,7 @@ export async function refundAnalysisCharge(id, { id: userId, role }) {
  * reverseGeocode cachea por punto: casi siempre es la que el front ya pidió en el paso 3.
  */
 async function findAddress(analysis, point) {
-  const samePoint =
-    Number(analysis.centerLat) === point.lat && Number(analysis.centerLng) === point.lng
+  const samePoint = isSavedPoint(analysis, point)
   try {
     const { label } = await reverseGeocode(point)
     return label ?? (samePoint ? analysis.address : null)
