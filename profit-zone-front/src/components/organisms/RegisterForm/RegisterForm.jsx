@@ -8,6 +8,7 @@ import Checkbox from '../../atoms/Checkbox/Checkbox.jsx'
 import Button from '../../atoms/Button/Button.jsx'
 import Divider from '../../atoms/Divider/Divider.jsx'
 import GoogleButton from '../../molecules/GoogleButton/GoogleButton.jsx'
+import { useGoogleClientId } from '../../../hooks/useGoogleClientId.js'
 import {
   PASSWORD_MIN_LENGTH,
   validateEmail,
@@ -43,6 +44,9 @@ function focusField(field) {
 // `onSwitchToLogin` opcional: dentro de un modal cambia de pestaña en vez de ir a /login.
 function RegisterForm({ onSubmit, onGoogle, onSwitchToLogin }) {
   const [values, setValues] = useState(INITIAL_VALUES)
+  // Client ID de Google: undefined mientras carga, null si el ingreso con Google no está disponible
+  const google = useGoogleClientId()
+  const googleClientId = google.status === 'loading' ? undefined : google.data
   const [errors, setErrors] = useState({})
   const [formError, setFormError] = useState(null)
   const [submitting, setSubmitting] = useState(false)
@@ -172,7 +176,7 @@ function RegisterForm({ onSubmit, onGoogle, onSwitchToLogin }) {
 
       <Divider label="o" />
 
-      <GoogleButton onCredential={onGoogle} onError={setFormError} />
+      <GoogleButton clientId={googleClientId} onCredential={onGoogle} onError={setFormError} />
 
       <p className="auth-form-switch">
         ¿Ya tenés cuenta?{' '}

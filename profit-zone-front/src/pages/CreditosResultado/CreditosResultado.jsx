@@ -1,11 +1,11 @@
-import { useEffect, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
-import { syncOrder } from '../../services/billing.service.js'
-import { useAuth } from '../../hooks/useAuth.js'
+import { useOrderSync } from '../../hooks/useOrderSync.js'
 import StepHeading from '../../components/molecules/StepHeading/StepHeading.jsx'
 import StatusMessage from '../../components/molecules/StatusMessage/StatusMessage.jsx'
 import Button from '../../components/atoms/Button/Button.jsx'
 import { NEW_ANALYSIS_LINK } from '../../utils/flowSteps.js'
+import { pluralCredits } from '../../utils/plans.js'
+import './CreditosResultado.css'
 
 /**
  * Vuelta del pago (Mercado Pago o checkout simulado): consulta cómo quedó la compra
@@ -14,28 +14,11 @@ import { NEW_ANALYSIS_LINK } from '../../utils/flowSteps.js'
 function CreditosResultado() {
   const [params] = useSearchParams()
   const orderId = params.get('compra')
-  const { setCredits } = useAuth()
-  const [state, setState] = useState({ status: orderId ? 'loading' : 'error', order: null, credits: null })
-
-  useEffect(() => {
-    if (!orderId) return undefined
-    let active = true
-    syncOrder(orderId)
-      .then(({ order, credits }) => {
-        if (!active) return
-        if (credits) setCredits(credits)
-        setState({ status: 'ok', order, credits })
-      })
-      .catch(() => active && setState({ status: 'error', order: null, credits: null }))
-    return () => {
-      active = false
-    }
-  }, [orderId, setCredits])
-
-  const { order, credits } = state
+  const state = useOrderSync(orderId)
+  const { order, credits } = state.data ?? {}
 
   return (
-    <section className="creditos">
+    <section className="creditos-resultado">
       <StepHeading title="Resultado de tu compra" />
 
       {state.status === 'loading' && <div className="flow-skeleton" aria-busy="true" aria-label="Verificando el pago" />}
@@ -46,8 +29,8 @@ function CreditosResultado() {
 
       {state.status === 'ok' && order.status === 'paid' && (
         <StatusMessage variant="success">
-          ¡Listo! Acreditamos {order.credits} {order.credits === 1 ? 'crédito' : 'créditos'}. Ahora tenés{' '}
-          {credits.paid} {credits.paid === 1 ? 'crédito pago' : 'créditos pagos'}.
+          ¡Listo! Acreditamos {pluralCredits(order.credits)}. Ahora tenés {pluralCredits(credits.paid)}{' '}
+          {credits.paid === 1 ? 'pago' : 'pagos'}.
         </StatusMessage>
       )}
 
@@ -61,7 +44,7 @@ function CreditosResultado() {
         <StatusMessage variant="error">El pago no se completó y no se te cobró. Podés intentar de nuevo.</StatusMessage>
       )}
 
-      <div className="creditos-simulado-actions" style={{ display: 'flex', gap: 'var(--space-12)', flexWrap: 'wrap' }}>
+      <div className="creditos-resultado-actions">
         <Button variant="primary" size="l" {...NEW_ANALYSIS_LINK}>
           Analizar una zona
         </Button>

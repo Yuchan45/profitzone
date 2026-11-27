@@ -2,6 +2,7 @@ import { DataTypes } from 'sequelize'
 import { sequelize } from '../../db/sequelize.js'
 import { sequentialUuidPk } from '../shared.js'
 
+// CK_orders_status (migración 0016)
 export const ORDER_STATUSES = ['pending', 'paid', 'failed']
 
 /** Compra de un pack de créditos. Se acredita una sola vez, cuando pasa a 'paid'. */
@@ -20,7 +21,12 @@ export const Order = sequelize.define(
     // Id de la preferencia de pago en la pasarela
     providerRef: { type: DataTypes.STRING(120), allowNull: true },
     providerPaymentId: { type: DataTypes.STRING(120), allowNull: true },
-    status: { type: DataTypes.STRING(12), allowNull: false, defaultValue: 'pending' },
+    status: {
+      type: DataTypes.STRING(12),
+      allowNull: false,
+      defaultValue: 'pending',
+      validate: { isIn: [ORDER_STATUSES] },
+    },
     paidAt: { type: DataTypes.DATE, allowNull: true },
   },
   { schema: 'billing', tableName: 'orders', timestamps: true },

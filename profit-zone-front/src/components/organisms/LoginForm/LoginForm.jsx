@@ -7,6 +7,7 @@ import Input from '../../atoms/Input/Input.jsx'
 import Button from '../../atoms/Button/Button.jsx'
 import Divider from '../../atoms/Divider/Divider.jsx'
 import GoogleButton from '../../molecules/GoogleButton/GoogleButton.jsx'
+import { useGoogleClientId } from '../../../hooks/useGoogleClientId.js'
 import { validateEmail, validateRequired } from '../../../utils/validators.js'
 import '../../../styles/auth-form.css'
 
@@ -30,6 +31,9 @@ function validate(values) {
 // `onSwitchToRegister` opcional: dentro de un modal cambia de pestaña en vez de ir a /registro.
 function LoginForm({ onSubmit, onGoogle, onSwitchToRegister }) {
   const [values, setValues] = useState(INITIAL_VALUES)
+  // Client ID de Google: undefined mientras carga, null si el ingreso con Google no está disponible
+  const google = useGoogleClientId()
+  const googleClientId = google.status === 'loading' ? undefined : google.data
   const [errors, setErrors] = useState({})
   const [formError, setFormError] = useState(null)
   const [submitting, setSubmitting] = useState(false)
@@ -106,7 +110,7 @@ function LoginForm({ onSubmit, onGoogle, onSwitchToRegister }) {
 
       <Divider label="o" />
 
-      <GoogleButton onCredential={onGoogle} onError={setFormError} />
+      <GoogleButton clientId={googleClientId} onCredential={onGoogle} onError={setFormError} />
 
       <p className="auth-form-switch">
         ¿No tenés cuenta?{' '}

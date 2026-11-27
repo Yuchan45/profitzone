@@ -1,10 +1,12 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
-import { fetchOrder, simulatePayment } from '../../services/billing.service.js'
+import { simulatePayment } from '../../services/billing.service.js'
+import { useOrder } from '../../hooks/useOrder.js'
 import StepHeading from '../../components/molecules/StepHeading/StepHeading.jsx'
 import StatusMessage from '../../components/molecules/StatusMessage/StatusMessage.jsx'
 import Button from '../../components/atoms/Button/Button.jsx'
 import { formatCurrency } from '../../utils/formatters.js'
+import { pluralCredits } from '../../utils/plans.js'
 import './CreditosSimulado.css'
 
 /**
@@ -14,22 +16,9 @@ import './CreditosSimulado.css'
 function CreditosSimulado() {
   const { id } = useParams()
   const navigate = useNavigate()
-  const [state, setState] = useState({ status: 'loading', order: null, error: null })
+  const state = useOrder(id)
   const [paying, setPaying] = useState(false)
   const [payError, setPayError] = useState(null)
-
-  useEffect(() => {
-    let active = true
-    fetchOrder(id)
-      .then(({ order }) => active && setState({ status: 'ok', order, error: null }))
-      .catch((error) =>
-        active &&
-        setState({ status: 'error', order: null, error: error.response?.data?.message ?? error.message }),
-      )
-    return () => {
-      active = false
-    }
-  }, [id])
 
   const pay = async () => {
     setPaying(true)
@@ -43,7 +32,7 @@ function CreditosSimulado() {
     }
   }
 
-  const { order } = state
+  const order = state.data?.order
 
   return (
     <section className="creditos-simulado">
@@ -69,7 +58,7 @@ function CreditosSimulado() {
             <div>
               <dt>Compra</dt>
               <dd>
-                {order.credits} {order.credits === 1 ? 'crédito' : 'créditos'} de análisis completo
+                {pluralCredits(order.credits)} de análisis completo
               </dd>
             </div>
             <div>
@@ -78,7 +67,7 @@ function CreditosSimulado() {
             </div>
             <div>
               <dt>Referencia en dólares</dt>
-              <dd>USD {order.amountUsd}</dd>
+              <dd>{formatCurrency(order.amountUsd, 'USD')}</dd>
             </div>
           </dl>
 

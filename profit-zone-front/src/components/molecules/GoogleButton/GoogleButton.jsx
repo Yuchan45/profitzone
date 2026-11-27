@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import Button from '../../atoms/Button/Button.jsx'
 import GoogleLogo from '../../atoms/GoogleLogo/GoogleLogo.jsx'
-import { fetchGoogleClientId } from '../../../services/auth.service.js'
 import './GoogleButton.css'
 
 const GSI_SRC = 'https://accounts.google.com/gsi/client'
@@ -26,17 +25,15 @@ function loadGoogleSdk() {
   return sdkPromise
 }
 
-// El Client ID no cambia: se pide una vez
-let clientIdPromise = null
-
 /**
  * "Continuar con Google". Muestra el botón oficial de Google cuando el ingreso está configurado
- * en la API (GOOGLE_CLIENT_ID); si no, un botón deshabilitado. No hace falta tener un build
- * distinto: el Client ID viene de la API.
+ * en la API (GOOGLE_CLIENT_ID); si no, un botón deshabilitado.
+ * - `clientId`: el Client ID de Google (hooks/useGoogleClientId.js); `undefined` mientras se
+ *   carga y `null` si el ingreso con Google no está configurado.
  * - `onCredential(idToken)`: promesa; si falla, su `message` va a `onError`.
  * - `onError(message)`: errores de carga o de ingreso.
  */
-function GoogleButton({ onCredential, onError }) {
+function GoogleButton({ clientId, onCredential, onError }) {
   const slotRef = useRef(null)
   const handlers = useRef({ onCredential, onError })
   const [state, setState] = useState('loading') // loading | ready | unavailable
@@ -46,20 +43,16 @@ function GoogleButton({ onCredential, onError }) {
   })
 
   useEffect(() => {
+    if (clientId === undefined) return undefined
     let cancelled = false
 
-    clientIdPromise ??= fetchGoogleClientId().catch((error) => {
-      clientIdPromise = null
-      throw error
-    })
-
-    clientIdPromise
-      .then(async (clientId) => {
-        if (!clientId) throw new Error('not-configured')
+    Promise.resolve(clientId)
+      .then(async (id) => {
+        if (!id) throw new Error('not-configured')
         const google = await loadGoogleSdk()
         if (cancelled || !slotRef.current) return
         google.accounts.id.initialize({
-          client_id: clientId,
+          client_id: id,
           callback: async ({ credential }) => {
             try {
               await handlers.current.onCredential?.(credential)
@@ -90,7 +83,7 @@ function GoogleButton({ onCredential, onError }) {
     return () => {
       cancelled = true
     }
-  }, [])
+  }, [clientId])
 
   return (
     <>

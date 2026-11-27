@@ -1,10 +1,8 @@
 import Badge from '../../atoms/Badge/Badge.jsx'
 import Button from '../../atoms/Button/Button.jsx'
 import { formatCurrency } from '../../../utils/formatters.js'
+import { pluralCredits } from '../../../utils/plans.js'
 import './PackCard.css'
-
-const USD = new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'USD', minimumFractionDigits: 0 })
-const USD_CENTS = new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'USD', minimumFractionDigits: 2 })
 
 /**
  * Pack de créditos con su precio en dólares, en pesos y por crédito.
@@ -14,7 +12,7 @@ const USD_CENTS = new Intl.NumberFormat('es-AR', { style: 'currency', currency: 
  * - `buying`: la compra de este pack está en curso.
  */
 function PackCard({ pack, featured = false, onBuy, buyTo, buying = false, disabled = false }) {
-  const label = pack.credits === 1 ? '1 crédito' : `${pack.credits} créditos`
+  const label = pluralCredits(pack.credits)
 
   return (
     <article className={`pack-card${featured ? ' pack-card--featured' : ''}`}>
@@ -24,10 +22,10 @@ function PackCard({ pack, featured = false, onBuy, buyTo, buying = false, disabl
       </header>
 
       <p className="pack-card-price">
-        <span className="pack-card-usd">{USD.format(pack.priceUsd)}</span>
+        <span className="pack-card-usd">{formatCurrency(pack.priceUsd, 'USD', { decimals: 0 })}</span>
         <span className="pack-card-ars">≈ {formatCurrency(pack.priceArs, 'ARS', { decimals: 0 })}</span>
       </p>
-      <p className="pack-card-unit">{USD_CENTS.format(pack.pricePerCreditUsd)} por crédito</p>
+      <p className="pack-card-unit">{formatCurrency(pack.pricePerCreditUsd, 'USD', { decimals: 2 })} por crédito</p>
 
       <p className="pack-card-note">Cada crédito es un análisis completo. No vencen.</p>
 
