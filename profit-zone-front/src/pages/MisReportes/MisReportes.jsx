@@ -129,6 +129,8 @@ function MisReportes() {
                 details={analysisDetails(analysis)}
                 date={formatDate(analysis.updatedAt)}
                 status={analysis.status}
+                tier={analysis.tier}
+                locked={analysis.locked}
                 // La flecha sigue el análisis: abre el reporte o continúa el borrador
                 {...(analysis.status === 'saved'
                   ? { to: `/mis-reportes/${analysis.id}`, openLabel: 'Ver reporte' }

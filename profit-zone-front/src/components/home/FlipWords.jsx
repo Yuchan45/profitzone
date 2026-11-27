@@ -22,7 +22,7 @@ function FlipWords({ words, duration = 3000, className }) {
   const parts = currentWord.split(' ')
 
   return (
-  <span className="inline-grid text-left">
+  <span className="inline-grid text-center lg:text-left">
     {words.map((word) => (
       <span
         key={word}

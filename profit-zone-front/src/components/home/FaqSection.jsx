@@ -19,7 +19,12 @@ const FAQS = [
   {
     question: '¿Necesito crear una cuenta?',
     answer:
-      'No para analizar ni para exportar el PDF. Solo si querés guardar el reporte y volver a verlo en Mis reportes.',
+      'Sí: al registrarte te regalamos 3 créditos para análisis básicos y tus reportes quedan guardados en Mis reportes.',
+  },
+  {
+    question: '¿Cuánto cuesta?',
+    answer:
+      'El análisis básico (radio de hasta 600 m) usa 1 crédito gratis. El completo (hasta 2 km, ratings de Google, avisos de alquiler y PDF) usa 1 crédito pago: los packs salen USD 3 (1), USD 12 (5) y USD 30 (15), cobrados en pesos. Los créditos no vencen y, si el reporte falla, te devolvemos el crédito.',
   },
   {
     question: '¿Qué zonas y rubros cubre?',
@@ -30,26 +35,35 @@ const FAQS = [
 
 function FaqSection() {
   return (
-    <section id="preguntas-frecuentes" className="mx-auto max-w-3xl scroll-mt-8 px-6 py-16">
-      <h2 className="text-center font-heading text-3xl font-bold text-foreground">
-        Preguntas frecuentes
-      </h2>
+    <section id="preguntas-frecuentes" className="mx-auto max-w-3xl scroll-mt-8 px-5 py-16 sm:px-6 lg:py-24">
+      <div className="text-center">
+        <span className="inline-flex rounded-full bg-primary/15 px-3 py-1 text-xs font-semibold text-brand-text">
+          Dudas comunes
+        </span>
+        <h2 className="mt-4 font-heading text-3xl font-bold text-foreground sm:text-4xl">
+          Preguntas frecuentes
+        </h2>
+        <p className="mx-auto mt-3 max-w-md text-sm leading-relaxed text-muted-foreground sm:text-base">
+          Lo que más nos preguntan antes de analizar una zona.
+        </p>
+      </div>
 
       <Accordion
-        type="multiple"
-        defaultValue={FAQS.map((faq) => faq.question)}
-        className="mt-10 space-y-3"
+        type="single"
+        collapsible
+        defaultValue={FAQS[0].question}
+        className="mt-8 space-y-3 sm:mt-10"
       >
         {FAQS.map((faq) => (
           <AccordionItem
             key={faq.question}
             value={faq.question}
-            className="rounded-xl border bg-card px-5 last:border-b"
+            className="reveal-on-scroll rounded-2xl border border-border bg-card px-5 shadow-sm transition duration-300 last:border-b hover:border-primary/40 data-[state=open]:border-primary/50 data-[state=open]:shadow-lg data-[state=open]:shadow-navy/5 motion-reduce:transition-none sm:px-6"
           >
-            <AccordionTrigger className="font-heading text-sm font-bold text-foreground hover:no-underline">
+            <AccordionTrigger className="min-h-14 items-center gap-4 py-4 text-left font-heading text-base font-bold leading-snug text-foreground hover:no-underline sm:text-lg">
               {faq.question}
             </AccordionTrigger>
-            <AccordionContent className="text-xs leading-relaxed text-muted-foreground">
+            <AccordionContent className="pr-2 text-sm leading-relaxed text-muted-foreground sm:text-base">
               {faq.answer}
             </AccordionContent>
           </AccordionItem>

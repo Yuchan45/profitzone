@@ -106,6 +106,40 @@
   }
 }
 
+/* Aparición suave de las secciones de la home al entrar en pantalla (solo navegadores con scroll-driven animations) */
+@keyframes reveal-on-scroll {
+  from {
+    opacity: 0;
+    transform: translateY(28px);
+  }
+}
+
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    .reveal-on-scroll {
+      animation: reveal-on-scroll linear both;
+      animation-timeline: view();
+      animation-range: entry 0% entry 45%;
+    }
+  }
+}
+
+/* Con "reducir movimiento": sin elevaciones ni entradas animadas en botones y tarjetas */
+@media (prefers-reduced-motion: reduce) {
+  .btn,
+  .category-card,
+  .indicator-card {
+    transition: none;
+    animation: none;
+  }
+
+  .btn:hover:not(:disabled),
+  .category-card:hover,
+  .indicator-card:hover {
+    transform: none;
+  }
+}
+
 /* Hero: figuras flotantes (componente HeroFigures) */
 .hero-float {
   animation: hero-float var(--float-duration, 7s) ease-in-out var(--float-delay, 0s) infinite

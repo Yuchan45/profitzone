@@ -8,8 +8,13 @@ export function errorHandler(err, req, res, next) {
     console.error('[ProfitZone] Error no controlado:', err)
   }
 
+  // En producción se oculta el mensaje de los errores no controlados (sin `status`: pueden traer
+  // detalles internos). Los esperados (httpError, aunque sean 5xx como "te devolvimos el
+  // crédito") se escribieron para el usuario y se muestran.
+  const unexpected = err.status === undefined
   res.status(status).json({
     status: 'error',
-    message: status >= 500 && env.isProduction ? 'Error interno del servidor' : err.message,
+    message: status >= 500 && unexpected && env.isProduction ? 'Error interno del servidor' : err.message,
+    ...(err.appCode ? { code: err.appCode } : {}),
   })
 }

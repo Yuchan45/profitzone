@@ -1,0 +1,12 @@
+# Lo que `vercel deploy` no sube. Las claves van en Settings → Environment Variables de Vercel,
+# nunca en un .env subido: dotenv completaría con ellas las variables que falten.
+.env
+.env.*
+**/.env
+**/.env.*
+/env*
+**/node_modules
+**/dist
+.claude
+# Avisos de Zonaprop: solo los usa el seed, que se corre contra la base desde una PC
+profit-zone-back/src/db/seeders/data/zonaprop_*

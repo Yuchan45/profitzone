@@ -35,7 +35,7 @@ function CriteriaTable({ criteria, hasEvidence, onShowEvidence }) {
         </thead>
         <tbody>
           {criteria.map((criterion) => (
-            <tr key={criterion.code}>
+            <tr key={criterion.code} data-reading={criterion.reading}>
               <th scope="row" className="criteria-table-label">
                 {criterion.label}
                 {onShowEvidence && hasEvidence?.(criterion.code) && (

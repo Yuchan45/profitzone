@@ -46,6 +46,10 @@
   text-underline-offset: 6px;
 }
 
+.navbar-cta-short {
+  display: none;
+}
+
 @media (max-width: 560px) {
   .navbar {
     padding: var(--space-12) var(--space-16);
@@ -53,5 +57,31 @@
 
   .navbar-link {
     padding: 0 var(--space-8);
+  }
+}
+
+/* Celular: logo y acciones en una sola fila (sin partir la barra en dos) y el botón con texto corto */
+@media (max-width: 480px) {
+  .navbar {
+    flex-wrap: nowrap;
+    gap: var(--space-8);
+  }
+
+  .navbar-actions {
+    gap: var(--space-4);
+    min-width: 0;
+  }
+
+  /* "Mis reportes" pasa al menú del usuario: no entra en la fila */
+  .navbar-link--reports {
+    display: none;
+  }
+
+  .navbar-cta-full {
+    display: none;
+  }
+
+  .navbar-cta-short {
+    display: inline;
   }
 }

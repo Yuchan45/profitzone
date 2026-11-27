@@ -4,7 +4,9 @@ import { AuthToken, Role, User } from '../models/index.js'
 import { env } from '../config/env.js'
 import { getDummyPasswordHash, hashPassword, verifyPassword } from '../utils/password.js'
 import { generateOpaqueToken, hashToken, signAccessToken } from '../utils/tokens.js'
+import { runInBackground } from '../utils/background.js'
 import { sendMail } from './mail.service.js'
+import { recordSignupGrant, signupGrantFields } from './credits.service.js'
 
 const REFRESH = 'refresh'
 const RESET_PASSWORD = 'reset_password'
@@ -32,6 +34,12 @@ function toUserDto(user) {
     firstName: user.firstName,
     lastName: user.lastName,
     role: user.role?.name ?? null,
+    // Saldo de créditos: gratis (análisis básicos) y pagos (análisis completos)
+    credits: {
+      free: user.freeCredits ?? 0,
+      paid: user.paidCredits ?? 0,
+      total: (user.freeCredits ?? 0) + (user.paidCredits ?? 0),
+    },
     createdAt: user.createdAt,
   }
 }
@@ -90,15 +98,142 @@ export async function register({ firstName, lastName, email, password }, meta) {
   try {
     return await sequelize.transaction(async (transaction) => {
       const user = await User.create(
-        { firstName, lastName, email, passwordHash, roleId: defaultRole.id, lastLoginAt: new Date() },
+        {
+          firstName,
+          lastName,
+          email,
+          passwordHash,
+          roleId: defaultRole.id,
+          lastLoginAt: new Date(),
+          // Regalo de bienvenida: créditos gratis, por única vez, en la misma transacción
+          ...signupGrantFields(),
+        },
         { transaction },
       )
+      await recordSignupGrant(user.id, transaction)
       user.role = defaultRole
       return issueSession(user, meta, transaction)
     })
   } catch (error) {
     if (error instanceof UniqueConstraintError) {
       throw httpError(409, 'Ya existe una cuenta con ese correo.')
+    }
+    throw error
+  }
+}
+
+const GOOGLE_TOKENINFO_URL = 'https://oauth2.googleapis.com/tokeninfo'
+const GOOGLE_ISSUERS = ['accounts.google.com', 'https://accounts.google.com']
+
+/** Valida el ID token de Google con Google (firma, vencimiento) y que sea para esta app. */
+async function verifyGoogleIdToken(idToken) {
+  if (!env.googleClientId) throw httpError(503, 'El ingreso con Google no está configurado.')
+
+  let info
+  try {
+    const response = await fetch(`${GOOGLE_TOKENINFO_URL}?id_token=${encodeURIComponent(idToken)}`, {
+      signal: AbortSignal.timeout(8000),
+    })
+    if (response.status === 400) throw httpError(401, 'No pudimos validar tu cuenta de Google. Probá de nuevo.')
+    if (!response.ok) throw new Error(`tokeninfo respondió ${response.status}`)
+    info = await response.json()
+  } catch (error) {
+    if (error.status) throw error
+    console.warn(`[ProfitZone] Google tokeninfo falló: ${error.message}`)
+    throw httpError(502, 'No pudimos conectar con Google. Probá de nuevo en un momento.')
+  }
+
+  // El token tiene que ser de ESTA app (si no, cualquier app de Google podría entrar acá)
+  if (info.aud !== env.googleClientId || !GOOGLE_ISSUERS.includes(info.iss) || !info.sub) {
+    throw httpError(401, 'No pudimos validar tu cuenta de Google. Probá de nuevo.')
+  }
+  // Sin correo verificado por Google no se puede confiar en él para reconocer una cuenta
+  if (info.email_verified !== 'true' && info.email_verified !== true) {
+    throw httpError(403, 'Tu cuenta de Google no tiene el correo verificado.')
+  }
+  return {
+    sub: String(info.sub),
+    email: String(info.email).trim().toLowerCase(),
+    firstName: String(info.given_name || info.name || 'Usuario').trim().slice(0, 100),
+    lastName: String(info.family_name || '-').trim().slice(0, 100) || '-',
+  }
+}
+
+/**
+ * Primera vez que una cuenta existente entra con Google: el registro no verifica el correo, así
+ * que la contraseña y las sesiones abiertas pudieron ser de otra persona que se registró antes
+ * con ese correo. Google sí lo verificó: se cambia la contraseña por una aleatoria y se cierran
+ * todas las sesiones y los links de recuperación pendientes. Si la contraseña era de la dueña,
+ * la vuelve a poner con "¿Olvidaste tu contraseña?" (el correo le llega a ella).
+ */
+async function linkGoogleAccount(user, googleSub, meta) {
+  const passwordHash = await hashPassword(generateOpaqueToken())
+  return sequelize.transaction(async (transaction) => {
+    await lockUserRow(user.id, transaction)
+    user.googleSub = googleSub
+    user.passwordHash = passwordHash
+    user.lastLoginAt = new Date()
+    await user.save({ fields: ['googleSub', 'passwordHash', 'lastLoginAt'], transaction })
+    await revokeAllRefreshTokens(user.id, transaction)
+    await AuthToken.update(
+      { revokedAt: new Date() },
+      { where: { userId: user.id, type: RESET_PASSWORD, usedAt: null, revokedAt: null }, transaction },
+    )
+    return issueSession(user, meta, transaction)
+  })
+}
+
+/**
+ * "Continuar con Google": entra con la cuenta de Google. Si ya hay una cuenta con ese correo la
+ * vincula (Google verificó el correo; ver linkGoogleAccount); si no, crea una nueva con el regalo
+ * de bienvenida. Las cuentas creadas así tienen una contraseña aleatoria que nadie conoce: para
+ * poner una propia, usan "¿Olvidaste tu contraseña?".
+ */
+export async function loginWithGoogle(idToken, meta) {
+  const google = await verifyGoogleIdToken(idToken)
+
+  let user =
+    (await User.findOne({ where: { googleSub: google.sub }, include: [withRole] })) ??
+    (await User.findOne({ where: { email: google.email }, include: [withRole] }))
+
+  if (user) {
+    if (!user.isActive) throw httpError(403, 'Tu cuenta está desactivada.')
+    if (user.googleSub && user.googleSub !== google.sub) {
+      throw httpError(409, 'Ese correo ya está vinculado a otra cuenta de Google.')
+    }
+    if (!user.googleSub) return linkGoogleAccount(user, google.sub, meta)
+    user.lastLoginAt = new Date()
+    await user.save({ fields: ['lastLoginAt'] })
+    await cleanupExpiredTokens(user.id, REFRESH)
+    return issueSession(user, meta)
+  }
+
+  const defaultRole = await Role.findOne({ where: { isDefault: true } })
+  if (!defaultRole) throw httpError(500, 'No hay un rol por defecto configurado para usuarios nuevos.')
+  const passwordHash = await hashPassword(generateOpaqueToken())
+
+  try {
+    return await sequelize.transaction(async (transaction) => {
+      user = await User.create(
+        {
+          firstName: google.firstName,
+          lastName: google.lastName,
+          email: google.email,
+          googleSub: google.sub,
+          passwordHash,
+          roleId: defaultRole.id,
+          lastLoginAt: new Date(),
+          ...signupGrantFields(),
+        },
+        { transaction },
+      )
+      await recordSignupGrant(user.id, transaction)
+      user.role = defaultRole
+      return issueSession(user, meta, transaction)
+    })
+  } catch (error) {
+    if (error instanceof UniqueConstraintError) {
+      throw httpError(409, 'No pudimos crear tu cuenta. Probá de nuevo.')
     }
     throw error
   }
@@ -258,10 +393,11 @@ async function issuePasswordReset(email, meta) {
 /**
  * Pide restablecer la contraseña: si el correo es de una cuenta activa, invalida
  * los links anteriores y manda uno nuevo. No espera a que termine: la respuesta
- * tarda lo mismo exista o no el correo, así no revela qué cuentas hay.
+ * tarda lo mismo exista o no el correo, así no revela qué cuentas hay. runInBackground
+ * evita que Vercel corte el envío al responder.
  */
 export function requestPasswordReset(email, meta) {
-  issuePasswordReset(email, meta).catch((error) => {
+  const pending = issuePasswordReset(email, meta).catch((error) => {
     // Sin await en el controller: este log es el único rastro si falla la DB o el SMTP.
     // Solo nombre, código y mensaje: el error entero trae el SQL con sus parámetros o el correo
     console.error(
@@ -270,6 +406,7 @@ export function requestPasswordReset(email, meta) {
       }: ${error.message}`,
     )
   })
+  runInBackground(pending)
 }
 
 /**

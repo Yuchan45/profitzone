@@ -1,4 +1,5 @@
 import { Sequelize } from 'sequelize'
+import tedious from 'tedious'
 import { env } from '../config/env.js'
 
 /**
@@ -9,16 +10,29 @@ import { env } from '../config/env.js'
 export function createSequelize(database = env.db.name) {
   return new Sequelize(database, env.db.user, env.db.password, {
     dialect: 'mssql',
+    // Import estático: Sequelize carga el driver con un require dinámico que el empaquetado de
+    // Vercel no detecta, y sin esto la función falla con "Please install tedious package manually".
+    dialectModule: tedious,
     host: env.db.host,
     port: env.db.port,
     timezone: '+00:00',
     logging: env.db.logging ? (sql) => console.log(`[ProfitZone][SQL] ${sql}`) : false,
     dialectOptions: {
       options: {
-        // Contenedor local con certificado autofirmado. Revisar antes de apuntar a una DB remota.
-        encrypt: false,
-        trustServerCertificate: true,
+        // Local: contenedor con certificado autofirmado. Azure SQL (DB_ENCRYPT=true): cifrado con certificado válido
+        encrypt: env.db.encrypt,
+        trustServerCertificate: !env.db.encrypt,
       },
+    },
+    // La base gratis de Azure SQL se pausa sola si no se usa y tarda hasta un minuto en reanudarse:
+    // mientras tanto rechaza las conexiones (error 40613), así que se reintenta en vez de fallar.
+    pool: { acquire: 60000 },
+    retry: {
+      max: 5,
+      backoffBase: 3000,
+      backoffExponent: 1.4,
+      // Solo errores de conexión: reintentar una consulta que ya se ejecutó a medias podría duplicarla
+      match: [/40613/, /not currently available/i, /Failed to connect/i],
     },
     define: {
       underscored: true,

@@ -1,0 +1,17 @@
+.creditos-resultado {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-20);
+}
+
+.creditos-resultado-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-12);
+}
+
+@media (max-width: 480px) {
+  .creditos-resultado-actions > .btn {
+    width: 100%;
+  }
+}

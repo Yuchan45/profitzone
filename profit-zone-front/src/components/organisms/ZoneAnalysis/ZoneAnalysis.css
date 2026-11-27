@@ -435,6 +435,11 @@
   .zone-analysis-kpis {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
+
+  /* Con cantidad impar de datos, el último ocupa todo el ancho y no queda solo a medias */
+  .zone-analysis-kpis > :last-child:nth-child(odd) {
+    grid-column: 1 / -1;
+  }
 }
 
 /* Pantallas táctiles: controles de al menos 44 px de alto */

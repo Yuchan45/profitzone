@@ -7,6 +7,7 @@ import {
   postAnalysis,
   putAnalysisAnswers,
   patchAnalysisLocation,
+  postAnalysisUpgrade,
   patchAnalysis,
   deleteAnalysis,
 } from '../controllers/analyses.controller.js'
@@ -21,6 +22,7 @@ router.get('/:id', requireAuth, getAnalysisById)
 router.get('/:id/report', requireAuth, getAnalysisReport)
 router.put('/:id/answers', requireAuth, putAnalysisAnswers)
 router.patch('/:id/location', requireAuth, patchAnalysisLocation)
+router.post('/:id/upgrade', requireAuth, postAnalysisUpgrade)
 router.patch('/:id', requireAuth, patchAnalysis)
 router.delete('/:id', requireAuth, deleteAnalysis)
 

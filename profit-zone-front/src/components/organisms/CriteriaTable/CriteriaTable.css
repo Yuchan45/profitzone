@@ -9,22 +9,33 @@
 
 /* "Ver datos": lleva a la tarjeta con el detalle del criterio */
 .criteria-table-evidence {
-  display: block;
-  min-height: 24px;
-  padding: var(--space-4) 0 0;
-  border: 0;
-  background: none;
+  display: flex;
+  width: fit-content;
+  align-items: center;
+  min-height: 28px;
+  margin-top: var(--space-6);
+  padding: 0 var(--space-10);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-full);
+  background-color: var(--color-surface);
   color: var(--color-text);
   font-family: inherit;
   font-size: var(--text-12);
   font-weight: 600;
-  text-decoration: underline;
-  text-underline-offset: 3px;
   cursor: pointer;
+  transition:
+    border-color 0.2s ease,
+    color 0.2s ease,
+    transform 0.2s var(--ease-out);
 }
 
 .criteria-table-evidence:hover {
-  color: var(--color-text);
+  border-color: var(--color-primary);
+  color: var(--color-primary-ink);
+}
+
+.criteria-table-evidence:active {
+  transform: scale(0.96);
 }
 
 .criteria-table-header {
@@ -111,16 +122,43 @@
     display: none;
   }
 
+  .criteria-table-grid tbody {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-10);
+  }
+
+  /* Cada criterio es una tarjeta con una barra de color según la lectura */
   .criteria-table-grid tr {
+    position: relative;
     display: grid;
     grid-template-columns: 1fr auto;
     gap: var(--space-4) var(--space-12);
-    padding: var(--space-14) 0;
-    border-bottom: 1px solid var(--color-border);
+    padding: var(--space-14) var(--space-16) var(--space-14) var(--space-20);
+    overflow: hidden;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    background-color: var(--color-surface-soft);
   }
 
-  .criteria-table-grid tbody tr:last-child {
-    border-bottom: 0;
+  .criteria-table-grid tr::before {
+    content: '';
+    position: absolute;
+    inset: 0 auto 0 0;
+    width: 4px;
+    background-color: var(--color-border-strong);
+  }
+
+  .criteria-table-grid tr[data-reading='strength']::before {
+    background-color: var(--color-success);
+  }
+
+  .criteria-table-grid tr[data-reading='alert']::before {
+    background-color: var(--color-warning);
+  }
+
+  .criteria-table-grid tr[data-reading='weakness']::before {
+    background-color: var(--color-error);
   }
 
   .criteria-table-grid th,

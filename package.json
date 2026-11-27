@@ -1,0 +1,6 @@
+{
+  "name": "profitzone",
+  "private": true,
+  "description": "Solo para el deploy en Vercel (api/index.js). Cada app tiene su propio package.json: ver README.md",
+  "type": "module"
+}

@@ -2,6 +2,7 @@ import { env } from '../config/env.js'
 import {
   getMe,
   login,
+  loginWithGoogle,
   logout,
   refresh,
   register,
@@ -125,4 +126,15 @@ export async function postResetPassword(req, res) {
 
 export async function getCurrentUser(req, res) {
   res.json({ user: await getMe(req.user.id) })
+}
+
+/** Client ID público de Google (el front lo necesita para mostrar el botón); vacío si no está configurado. */
+export function getGoogleConfig(_req, res) {
+  res.json({ clientId: env.googleClientId || null })
+}
+
+export async function postGoogleLogin(req, res) {
+  const idToken = typeof req.body?.idToken === 'string' ? req.body.idToken : ''
+  if (!idToken || idToken.length > 4096) throw badRequest('Falta el token de Google.')
+  sendSession(res, 200, await loginWithGoogle(idToken, requestMeta(req)))
 }

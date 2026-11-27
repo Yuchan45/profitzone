@@ -7,7 +7,7 @@ import { AUTH_TABS } from '../../utils/authTabs.js'
 import { getApiErrorMessage } from '../../utils/apiErrors.js'
 
 function Login() {
-  const { status, login } = useAuth()
+  const { status, login, loginWithGoogle } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
   // A dónde volver después de iniciar sesión (lo deja ProtectedRoute)
@@ -26,6 +26,15 @@ function Login() {
     }
   }
 
+  const handleGoogle = async (idToken) => {
+    try {
+      await loginWithGoogle(idToken)
+      navigate(from, { replace: true })
+    } catch (error) {
+      throw new Error(getApiErrorMessage(error))
+    }
+  }
+
   return (
     <>
       <StepHeading
@@ -33,7 +42,7 @@ function Login() {
         subtitle="Ingresá para ver tus análisis guardados en Mis reportes."
       />
       <SegmentedNav items={AUTH_TABS} label="Registro o inicio de sesión" />
-      <LoginForm onSubmit={handleSubmit} />
+      <LoginForm onSubmit={handleSubmit} onGoogle={handleGoogle} />
     </>
   )
 }

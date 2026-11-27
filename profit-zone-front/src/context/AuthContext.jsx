@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { AuthContext } from './authContextValue.js'
 import * as authService from '../services/auth.service.js'
 import { onSessionEnded } from '../services/authToken.js'
@@ -34,9 +34,25 @@ export function AuthProvider({ children }) {
     [],
   )
 
+  // Estables (no cambian con el estado): los hooks los usan como dependencia de efectos
+  // Saldo de créditos: se actualiza con lo que devuelve la API (compra, análisis, reporte)
+  const setCredits = useCallback(
+    (credits) =>
+      setState((prev) => (prev.user ? { ...prev, user: { ...prev.user, credits } } : prev)),
+    [],
+  )
+  // Vuelve a pedir el usuario (ej. después de analizar, para ver el saldo nuevo)
+  const refreshUser = useCallback(async () => {
+    const user = await authService.fetchMe()
+    setState((prev) => (prev.status === 'authenticated' ? { ...prev, user } : prev))
+    return user
+  }, [])
+
   const value = useMemo(
     () => ({
       ...state,
+      setCredits,
+      refreshUser,
       register: async (payload) => {
         const { user } = await authService.register(payload)
         setState({ status: 'authenticated', user })
@@ -44,6 +60,11 @@ export function AuthProvider({ children }) {
       },
       login: async (credentials) => {
         const { user } = await authService.login(credentials)
+        setState({ status: 'authenticated', user })
+        return user
+      },
+      loginWithGoogle: async (idToken) => {
+        const { user } = await authService.googleLogin(idToken)
         setState({ status: 'authenticated', user })
         return user
       },
@@ -55,7 +76,7 @@ export function AuthProvider({ children }) {
         }
       },
     }),
-    [state],
+    [state, setCredits, refreshUser],
   )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

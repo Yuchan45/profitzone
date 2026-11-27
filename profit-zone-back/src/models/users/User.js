@@ -10,9 +10,16 @@ export const User = sequelize.define(
     passwordHash: { type: DataTypes.STRING(255), allowNull: false },
     firstName: { type: DataTypes.STRING(100), allowNull: false },
     lastName: { type: DataTypes.STRING(100), allowNull: false },
+    // Identificador estable de la cuenta de Google (claim `sub`): permite entrar con Google
+    googleSub: { type: DataTypes.STRING(64), allowNull: true, unique: true },
     roleId: { type: DataTypes.INTEGER, allowNull: false },
     isActive: { type: DataTypes.BOOLEAN, allowNull: false, defaultValue: true },
     lastLoginAt: { type: DataTypes.DATE, allowNull: true },
+    // Créditos: los gratis (3 al registrarse) alcanzan para análisis básicos y los pagos
+    // (se compran en packs) para análisis completos. Nunca se tocan a mano: ver credits.service.js
+    freeCredits: { type: DataTypes.INTEGER, allowNull: false, defaultValue: 0 },
+    paidCredits: { type: DataTypes.INTEGER, allowNull: false, defaultValue: 0 },
+    freeCreditsGrantedAt: { type: DataTypes.DATE, allowNull: true },
   },
   {
     schema: 'users',

@@ -6,6 +6,25 @@
   border: 1px solid var(--color-border);
   border-radius: var(--radius-xl);
   background-color: var(--color-surface);
+  box-shadow: var(--shadow-sm);
+  transition:
+    box-shadow 0.25s var(--ease-out),
+    transform 0.25s var(--ease-out),
+    border-color 0.15s ease;
+  animation: indicator-card-in 0.5s var(--ease-out) both;
+}
+
+.indicator-card:hover {
+  border-color: var(--color-border-strong);
+  box-shadow: var(--shadow-card-hover);
+  transform: translateY(-2px);
+}
+
+@keyframes indicator-card-in {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
 }
 
 .indicator-card-header {

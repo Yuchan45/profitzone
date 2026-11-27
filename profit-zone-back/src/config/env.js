@@ -63,7 +63,25 @@ const schema = {
     default: 'false',
     parse: (value) => value === 'true',
   },
+  DB_ENCRYPT: {
+    // true para una base en la nube (Azure SQL exige conexión cifrada con certificado válido);
+    // false para el contenedor local, que usa un certificado autofirmado
+    required: false,
+    default: 'false',
+    validate: (value) => ['true', 'false'].includes(value),
+    message: 'debe ser true o false',
+  },
   GOOGLE_PLACES_API_KEY: {
+    required: false,
+    default: '',
+  },
+  // Asistente de IA (Zoni): Azure OpenAI. Sin estas variables responde con un modo local de referencia
+  AZURE_OPENAI_ENDPOINT: { required: false, default: '' },
+  AZURE_OPENAI_API_KEY: { required: false, default: '' },
+  AZURE_OPENAI_DEPLOYMENT_NAME: { required: false, default: '' },
+  AZURE_OPENAI_API_VERSION: { required: false, default: '2024-10-21' },
+  // Client ID de OAuth de Google ("Continuar con Google"). Sin él el botón queda deshabilitado
+  GOOGLE_CLIENT_ID: {
     required: false,
     default: '',
   },
@@ -129,6 +147,37 @@ const schema = {
     required: false,
     default: 'ProfitZone <no-reply@profitzone.local>',
   },
+  // Créditos y pagos (modelo de negocio: ver docs/modelo-de-negocio.md)
+  FREE_CREDITS_ON_SIGNUP: {
+    required: false,
+    default: '3',
+    parse: Number,
+    validate: (value) => Number.isInteger(value) && value >= 0 && value <= 50,
+    message: 'debe ser un entero entre 0 y 50',
+  },
+  // 'mock': compra simulada, acredita sin cobrar (demo y desarrollo). 'mercadopago': cobro real
+  PAYMENT_PROVIDER: {
+    required: false,
+    default: 'mock',
+    validate: (value) => ['mock', 'mercadopago'].includes(value),
+    message: 'debe ser "mock" o "mercadopago"',
+  },
+  MP_ACCESS_TOKEN: {
+    required: false,
+    default: '',
+  },
+  // Cotización del dólar: se consulta a FX_API_URL y, si falla, se usa este valor
+  FX_API_URL: {
+    required: false,
+    default: 'https://dolarapi.com/v1/dolares/oficial',
+  },
+  USD_ARS_FALLBACK: {
+    required: false,
+    default: '1200',
+    parse: Number,
+    validate: (value) => Number.isFinite(value) && value > 0,
+    message: 'debe ser un número mayor a 0',
+  },
 }
 
 function loadEnv() {
@@ -167,6 +216,13 @@ function loadEnv() {
     corsOrigins: config.CORS_ORIGINS,
     isProduction: config.NODE_ENV === 'production',
     googlePlacesApiKey: config.GOOGLE_PLACES_API_KEY ?? '',
+    assistant: Object.freeze({
+      endpoint: (config.AZURE_OPENAI_ENDPOINT ?? '').trim().replace(/\/+$/, ''),
+      apiKey: config.AZURE_OPENAI_API_KEY ?? '',
+      deployment: (config.AZURE_OPENAI_DEPLOYMENT_NAME ?? '').trim(),
+      apiVersion: config.AZURE_OPENAI_API_VERSION,
+    }),
+    googleClientId: (config.GOOGLE_CLIENT_ID ?? '').trim(),
     bestTimeApiKey: config.BESTTIME_API_KEY ?? '',
     frontendUrl: config.FRONTEND_URL,
     mail: Object.freeze({
@@ -175,6 +231,13 @@ function loadEnv() {
       user: config.SMTP_USER ?? '',
       password: config.SMTP_PASSWORD ?? '',
       from: config.SMTP_FROM,
+    }),
+    billing: Object.freeze({
+      freeCreditsOnSignup: config.FREE_CREDITS_ON_SIGNUP,
+      provider: config.PAYMENT_PROVIDER,
+      mercadoPagoAccessToken: config.MP_ACCESS_TOKEN ?? '',
+      fxApiUrl: config.FX_API_URL,
+      usdArsFallback: config.USD_ARS_FALLBACK,
     }),
     auth: Object.freeze({
       jwtAccessSecret: config.JWT_ACCESS_SECRET,
@@ -192,6 +255,7 @@ function loadEnv() {
       user: config.DB_USER,
       password: config.DB_PASSWORD,
       logging: config.DB_LOGGING,
+      encrypt: config.DB_ENCRYPT === 'true',
     }),
   })
 }

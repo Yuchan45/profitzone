@@ -4,10 +4,11 @@ import {
   createAnalysis,
   replaceAnalysisAnswers,
   updateAnalysisLocation,
+  upgradeAnalysis,
   deleteUserAnalysis,
   renameAnalysis,
 } from '../services/analyses.service.js'
-import { buildAnalysisReport } from '../services/report.service.js'
+import { openAnalysisReport } from '../services/analysisReport.service.js'
 import { httpError } from '../utils/httpErrors.js'
 
 function badRequest(message) {
@@ -47,7 +48,7 @@ function parseCoordinate(value, name, limit) {
 
 // Sin ?status= lista los reportes guardados: es lo que muestra "Mis reportes" por defecto
 export async function getMyAnalyses(req, res) {
-  res.json(await listUserAnalyses(req.user.id, req.query.status ?? 'saved'))
+  res.json(await listUserAnalyses(req.user.id, req.query.status ?? 'saved', req.user.role))
 }
 
 // `name`: texto o null (null o vacío vuelve a mostrar el rubro). El largo lo valida el service
@@ -69,7 +70,12 @@ export async function getAnalysisById(req, res) {
 }
 
 export async function getAnalysisReport(req, res) {
-  res.json(await buildAnalysisReport(req.params.id, req.user.id))
+  res.json(await openAnalysisReport(req.params.id, req.user))
+}
+
+// Mejora un análisis básico a completo con un crédito pago (sin repetir la encuesta ni el punto)
+export async function postAnalysisUpgrade(req, res) {
+  res.json(await upgradeAnalysis(req.params.id, req.user))
 }
 
 export async function postAnalysis(req, res) {
@@ -89,11 +95,15 @@ export async function putAnalysisAnswers(req, res) {
 
 export async function patchAnalysisLocation(req, res) {
   const body = req.body ?? {}
-  // El rango del radio es regla de negocio: lo valida el service
+  if (body.tier !== undefined && typeof body.tier !== 'string') {
+    throw badRequest('El campo "tier" debe ser un texto ("basic" o "complete").')
+  }
+  // El rango del radio y el nivel son reglas de negocio: las valida el service
   const analysis = await updateAnalysisLocation(req.params.id, {
     lat: parseCoordinate(body.lat, 'lat', 90),
     lng: parseCoordinate(body.lng, 'lng', 180),
     radius: body.radius,
+    tier: body.tier,
   }, req.user)
   res.json(analysis)
 }

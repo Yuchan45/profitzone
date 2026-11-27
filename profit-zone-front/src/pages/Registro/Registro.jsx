@@ -7,7 +7,7 @@ import { AUTH_TABS } from '../../utils/authTabs.js'
 import { toAuthFormError } from '../../utils/apiErrors.js'
 
 function Registro() {
-  const { status, register } = useAuth()
+  const { status, register, loginWithGoogle } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
   // A dónde volver después de registrarse (lo deja ProtectedRoute)
@@ -27,6 +27,15 @@ function Registro() {
     }
   }
 
+  const handleGoogle = async (idToken) => {
+    try {
+      await loginWithGoogle(idToken)
+      navigate(from, { replace: true })
+    } catch (error) {
+      throw toAuthFormError(error)
+    }
+  }
+
   return (
     <>
       <StepHeading
@@ -34,7 +43,7 @@ function Registro() {
         subtitle="Creá tu cuenta para guardar tus análisis y volver a verlos en Mis reportes."
       />
       <SegmentedNav items={AUTH_TABS} label="Registro o inicio de sesión" />
-      <RegisterForm onSubmit={handleSubmit} />
+      <RegisterForm onSubmit={handleSubmit} onGoogle={handleGoogle} />
     </>
   )
 }

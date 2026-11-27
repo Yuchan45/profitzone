@@ -19,3 +19,22 @@
 .reporte-guardado-back:hover {
   color: var(--color-text);
 }
+
+.reporte-guardado-locked {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-16);
+  max-width: 640px;
+}
+
+.reporte-guardado-locked-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-12);
+}
+
+@media (max-width: 480px) {
+  .reporte-guardado-locked-actions > .btn {
+    width: 100%;
+  }
+}

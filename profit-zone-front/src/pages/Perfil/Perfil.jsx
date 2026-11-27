@@ -468,6 +468,26 @@ function Perfil() {
 
         {/* Columna derecha: Tu actividad y Eliminar cuenta */}
         <div className="profile-col">
+          {/* Card: Créditos */}
+          {authUser?.credits && (
+            <section className="profile-card">
+              <h2 className="profile-card__title">Tus créditos</h2>
+              <div className="profile-activity-list">
+                <div className="profile-activity-row">
+                  <span className="profile-activity-label">Gratis (análisis básico)</span>
+                  <strong className="profile-activity-value">{authUser.credits.free}</strong>
+                </div>
+                <div className="profile-activity-row">
+                  <span className="profile-activity-label">Pagos (análisis completo)</span>
+                  <strong className="profile-activity-value">{authUser.credits.paid}</strong>
+                </div>
+              </div>
+              <Link to="/creditos" className="profile-btn-primary profile-btn-block">
+                Comprar créditos
+              </Link>
+            </section>
+          )}
+
           {/* Card: Tu actividad */}
           <section className="profile-card">
             <h2 className="profile-card__title">Tu actividad</h2>
