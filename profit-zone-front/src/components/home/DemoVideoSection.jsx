@@ -32,10 +32,7 @@ function DemoVideoSection() {
       className="reveal-on-scroll mx-auto max-w-5xl scroll-mt-8 px-6 py-16 lg:py-24"
     >
       <div className="text-center">
-        <span className="inline-flex rounded-full bg-primary/15 px-3 py-1 text-xs font-semibold text-brand-text">
-          Demo
-        </span>
-        <h2 className="mt-4 font-heading text-3xl font-bold text-foreground sm:text-4xl">
+        <h2 className="font-heading text-3xl font-bold text-foreground sm:text-4xl">
           Miralo en acción
         </h2>
         <p className="mx-auto mt-3 max-w-md text-sm leading-relaxed text-muted-foreground sm:text-base">
