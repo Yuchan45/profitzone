@@ -14,8 +14,18 @@
   pointer-events: auto;
 }
 
+.zoni-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
 /* Botón flotante */
 .zoni-fab {
+  position: relative;
   display: inline-flex;
   align-items: center;
   gap: var(--space-8);
@@ -24,27 +34,43 @@
   border: 0;
   border-radius: var(--radius-full);
   background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-ink) 100%);
-  color: var(--color-surface);
-  font-family: inherit;
-  font-size: var(--text-14);
+  color: var(--color-white);
+  font-family: var(--font-heading);
+  font-size: var(--text-15);
   font-weight: 700;
   box-shadow: var(--shadow-primary), var(--shadow-md);
   cursor: pointer;
   transition:
-    transform 0.2s var(--ease-out),
-    box-shadow 0.2s var(--ease-out);
+    transform 0.25s var(--ease-out),
+    box-shadow 0.25s var(--ease-out);
+}
+
+/* Halo suave que invita a abrirlo */
+.zoni-fab:not(.zoni-fab--open)::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  background: var(--color-primary);
+  animation: zoni-halo 2.8s var(--ease-out) infinite;
+}
+
+@keyframes zoni-halo {
+  0% {
+    opacity: 0.45;
+    transform: scale(1);
+  }
+
+  70%,
+  100% {
+    opacity: 0;
+    transform: scale(1.25);
+  }
 }
 
 .zoni-fab:hover {
   transform: translateY(-2px);
-}
-
-.zoni-fab:focus-visible,
-.zoni-close:focus-visible,
-.zoni-send:focus-visible,
-.zoni-suggestions button:focus-visible {
-  outline: 3px solid var(--color-primary-ink);
-  outline-offset: 2px;
 }
 
 .zoni-fab--open {
@@ -53,49 +79,123 @@
   justify-content: center;
 }
 
-/* Panel */
+.zoni-fab:focus-visible,
+.zoni-icon-button:focus-visible,
+.zoni-send:focus-visible,
+.zoni-suggestions button:focus-visible,
+.zoni-resize:focus-visible,
+.zoni-error-retry:focus-visible {
+  outline: 3px solid var(--color-primary-ink);
+  outline-offset: 2px;
+}
+
+/* Panel: el tamaño lo define useResizablePanel con --zoni-width y --zoni-height */
 .zoni-panel {
+  position: relative;
   display: flex;
   flex-direction: column;
-  width: min(380px, calc(100vw - 2 * var(--space-16)));
-  height: min(560px, calc(100dvh - 120px));
+  width: var(--zoni-width, 400px);
+  height: var(--zoni-height, 600px);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-2xl);
   background-color: var(--color-surface);
-  box-shadow: var(--shadow-md);
+  box-shadow: var(--shadow-lg);
   overflow: hidden;
-  animation: zoni-in 0.22s var(--ease-out);
+  transform-origin: bottom right;
+  transition:
+    width 0.3s var(--ease-out),
+    height 0.3s var(--ease-out);
+  animation: zoni-in 0.3s var(--ease-out);
+}
+
+/* Mientras se arrastra la esquina, el tamaño sigue al puntero sin animación */
+.zoni-resizing {
+  cursor: nwse-resize;
+  user-select: none;
+}
+
+.zoni-resizing .zoni-panel {
+  transition: none;
 }
 
 @keyframes zoni-in {
   from {
     opacity: 0;
-    transform: translateY(12px) scale(0.98);
+    transform: translateY(16px) scale(0.96);
   }
 }
 
+/* Esquina para arrastrar (arriba a la izquierda: el panel está anclado abajo a la derecha) */
+.zoni-resize {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 2;
+  width: 22px;
+  height: 22px;
+  border-top-left-radius: var(--radius-2xl);
+  cursor: nwse-resize;
+  touch-action: none;
+}
+
+.zoni-resize::before {
+  content: '';
+  position: absolute;
+  top: 7px;
+  left: 7px;
+  width: 9px;
+  height: 9px;
+  border-top: 2px solid var(--color-white-65);
+  border-left: 2px solid var(--color-white-65);
+  border-top-left-radius: 3px;
+  transition: border-color 0.15s ease;
+}
+
+.zoni-resize:hover::before,
+.zoni-resize:focus-visible::before {
+  border-color: var(--color-white);
+}
+
+/* Cabecera */
 .zoni-header {
   display: flex;
   align-items: center;
   gap: var(--space-12);
-  padding: var(--space-14) var(--space-16);
-  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-ink) 100%);
-  color: var(--color-surface);
+  padding: var(--space-14) var(--space-12) var(--space-14) var(--space-20);
+  background:
+    radial-gradient(120% 140% at 0% 0%, var(--color-white-18) 0%, transparent 55%),
+    linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-ink) 100%);
+  color: var(--color-white);
 }
 
 .zoni-avatar {
+  position: relative;
   display: grid;
+  flex-shrink: 0;
   place-items: center;
-  width: 36px;
-  height: 36px;
+  width: 40px;
+  height: 40px;
+  border: 1px solid var(--color-white-35);
   border-radius: var(--radius-full);
-  background-color: rgb(255 255 255 / 0.2);
+  background-color: var(--color-white-18);
+}
+
+.zoni-avatar-status {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  width: 11px;
+  height: 11px;
+  border: 2px solid var(--color-primary-ink);
+  border-radius: var(--radius-full);
+  background-color: var(--color-success);
 }
 
 .zoni-title {
   display: flex;
   flex-direction: column;
   flex: 1;
+  min-width: 0;
   font-family: var(--font-heading);
   font-size: var(--text-18);
   font-weight: 800;
@@ -103,99 +203,170 @@
 }
 
 .zoni-title small {
-  margin-top: 2px;
-  font-family: inherit;
+  margin-top: 3px;
+  overflow: hidden;
+  font-family: var(--font-body);
   font-size: var(--text-12);
   font-weight: 500;
+  text-overflow: ellipsis;
+  white-space: nowrap;
   opacity: 0.9;
 }
 
-.zoni-close {
+.zoni-header-actions {
+  display: flex;
+  gap: var(--space-4);
+}
+
+.zoni-icon-button {
   display: grid;
   place-items: center;
-  width: 36px;
-  height: 36px;
+  width: 34px;
+  height: 34px;
   border: 0;
   border-radius: var(--radius-full);
   background: transparent;
   color: inherit;
   cursor: pointer;
+  transition: background-color 0.15s ease;
 }
 
-.zoni-close:hover {
-  background-color: rgb(255 255 255 / 0.18);
+.zoni-icon-button:hover {
+  background-color: var(--color-white-18);
 }
 
 /* Mensajes */
 .zoni-messages {
   display: flex;
   flex-direction: column;
-  gap: var(--space-10);
+  gap: var(--space-14);
   flex: 1;
-  padding: var(--space-16);
+  padding: var(--space-20) var(--space-16);
   overflow-y: auto;
-  background-color: var(--color-surface-subtle);
+  overscroll-behavior: contain;
+  background:
+    radial-gradient(90% 50% at 100% 0%, var(--color-primary-10) 0%, transparent 70%),
+    var(--color-surface-soft);
+  scroll-behavior: smooth;
 }
 
-.zoni-bubble {
-  max-width: 88%;
-  padding: var(--space-10) var(--space-14);
-  border-radius: var(--radius-xl);
-  font-size: var(--text-14);
-  line-height: 1.5;
-  overflow-wrap: anywhere;
-}
-
-.zoni-bubble p,
-.zoni-bubble ul {
-  margin: 0;
-  list-style: disc;
-}
-
-.zoni-bubble p + p,
-.zoni-bubble p + ul,
-.zoni-bubble ul + p {
-  margin-top: var(--space-8);
-}
-
-.zoni-bubble ul {
-  padding-left: var(--space-20);
-}
-
-.zoni-bubble--assistant {
-  align-self: flex-start;
+/* Guía de bienvenida: cómo funciona en tres pasos */
+.zoni-guide {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-12);
+  margin-left: 36px;
+  padding: var(--space-14) var(--space-16);
   border: 1px solid var(--color-border);
-  border-bottom-left-radius: var(--radius-xs);
+  border-radius: var(--radius-xl);
   background-color: var(--color-surface);
+  box-shadow: var(--shadow-sm);
+  animation: zoni-guide-in 0.4s var(--ease-out) 0.1s both;
+}
+
+@keyframes zoni-guide-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+
+.zoni-guide-title {
+  margin: 0;
+  color: var(--color-text-secondary);
+  font-size: var(--text-11);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.zoni-guide-steps {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-10);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.zoni-guide-step {
+  display: flex;
+  gap: var(--space-10);
+  color: var(--color-text-secondary);
+  font-size: var(--text-13);
+  line-height: 1.45;
+}
+
+.zoni-guide-step strong {
+  display: block;
   color: var(--color-text);
+  font-size: var(--text-14);
 }
 
-.zoni-bubble--user {
-  align-self: flex-end;
-  border-bottom-right-radius: var(--radius-xs);
-  background-color: var(--color-primary-ink);
-  color: var(--color-surface);
-}
-
-.zoni-typing {
-  display: inline-flex;
-  gap: 5px;
-  padding: var(--space-14);
-}
-
-.zoni-typing span {
-  width: 7px;
-  height: 7px;
+.zoni-guide-number {
+  display: grid;
+  flex-shrink: 0;
+  place-items: center;
+  width: 24px;
+  height: 24px;
   border-radius: var(--radius-full);
-  background-color: var(--color-text-secondary);
+  background-color: var(--color-primary-12);
+  color: var(--color-primary-ink);
+  font-family: var(--font-heading);
+  font-size: var(--text-12);
+  font-weight: 800;
+}
+
+.zoni-guide-where {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-6);
+  margin: 0;
+  padding-top: var(--space-10);
+  border-top: 1px dashed var(--color-border-strong);
+  color: var(--color-primary-ink);
+  font-size: var(--text-13);
+  font-weight: 600;
+}
+
+.zoni-guide-where svg {
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+/* Zoni está pensando (antes de que llegue la respuesta) */
+.zoni-thinking {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-10);
+  margin-left: 36px;
+  color: var(--color-text-secondary);
+  font-size: var(--text-13);
+}
+
+.zoni-thinking-dots {
+  display: inline-flex;
+  gap: 4px;
+  padding: var(--space-10) var(--space-12);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-xl);
+  border-top-left-radius: var(--radius-xs);
+  background-color: var(--color-surface);
+}
+
+.zoni-thinking-dots span {
+  width: 6px;
+  height: 6px;
+  border-radius: var(--radius-full);
+  background-color: var(--color-primary);
   animation: zoni-dot 1.1s infinite ease-in-out;
 }
 
-.zoni-typing span:nth-child(2) {
+.zoni-thinking-dots span:nth-child(2) {
   animation-delay: 0.15s;
 }
 
-.zoni-typing span:nth-child(3) {
+.zoni-thinking-dots span:nth-child(3) {
   animation-delay: 0.3s;
 }
 
@@ -203,7 +374,7 @@
   0%,
   80%,
   100% {
-    opacity: 0.3;
+    opacity: 0.35;
     transform: translateY(0);
   }
 
@@ -214,8 +385,10 @@
 }
 
 .zoni-error {
-  align-self: stretch;
-  margin: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-12);
   padding: var(--space-10) var(--space-14);
   border-radius: var(--radius-lg);
   background-color: var(--color-error-12);
@@ -223,91 +396,171 @@
   font-size: var(--text-13);
 }
 
+.zoni-error-retry {
+  flex-shrink: 0;
+  padding: var(--space-4) var(--space-10);
+  border: 1px solid currentColor;
+  border-radius: var(--radius-full);
+  background: transparent;
+  color: inherit;
+  font-family: inherit;
+  font-size: var(--text-12);
+  font-weight: 700;
+  cursor: pointer;
+}
+
+/* Preguntas sugeridas: arriba del campo de texto */
 .zoni-suggestions {
   display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: var(--space-8);
-  margin: var(--space-4) 0 0;
+  flex-wrap: wrap;
+  gap: var(--space-6);
+  margin: 0;
   padding: 0;
   list-style: none;
 }
 
+/* Sin conversación: debajo de la guía, alineadas con los mensajes */
+.zoni-suggestions--inline {
+  margin-left: 36px;
+}
+
+/* Con conversación: una sola fila arriba del campo que se desliza de costado */
+.zoni-suggestions--compact {
+  flex-wrap: nowrap;
+  padding: var(--space-10) var(--space-12) 0;
+  border-top: 1px solid var(--color-border);
+  background-color: var(--color-surface);
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.zoni-suggestions--compact::-webkit-scrollbar {
+  display: none;
+}
+
+.zoni-suggestions li {
+  flex-shrink: 0;
+}
+
 .zoni-suggestions button {
-  padding: var(--space-8) var(--space-14);
-  border: 1px solid var(--color-primary);
+  padding: var(--space-6) var(--space-12);
+  border: 1px solid var(--color-border-strong);
   border-radius: var(--radius-full);
   background-color: var(--color-surface);
-  color: var(--color-primary-ink);
+  color: var(--color-text);
   font-family: inherit;
   font-size: var(--text-13);
-  font-weight: 600;
-  text-align: left;
+  font-weight: 500;
+  white-space: nowrap;
   cursor: pointer;
-  transition: background-color 0.15s ease;
+  transition:
+    border-color 0.15s ease,
+    background-color 0.15s ease,
+    color 0.15s ease;
 }
 
-.zoni-suggestions button:hover:not(:disabled) {
+.zoni-suggestions button:hover {
+  border-color: var(--color-primary);
   background-color: var(--color-primary-10);
+  color: var(--color-primary-ink);
 }
 
-/* Entrada */
+/* Campo de texto */
 .zoni-form {
-  display: flex;
-  gap: var(--space-8);
-  padding: var(--space-12) var(--space-12) var(--space-8);
+  padding: var(--space-10) var(--space-12) var(--space-8);
   border-top: 1px solid var(--color-border);
+  background-color: var(--color-surface);
+}
+
+.zoni-suggestions--compact + .zoni-form {
+  padding-top: var(--space-8);
+  border-top: 0;
+}
+
+.zoni-composer {
+  display: flex;
+  align-items: flex-end;
+  gap: var(--space-8);
+  padding: var(--space-6) var(--space-6) var(--space-6) var(--space-14);
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-xl);
+  background-color: var(--color-surface);
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+.zoni-composer:focus-within {
+  border-color: var(--color-primary);
+  box-shadow: var(--focus-ring);
 }
 
 .zoni-input {
   flex: 1;
   min-width: 0;
-  min-height: 44px;
-  padding: 0 var(--space-14);
-  border: 1px solid var(--color-border-strong);
-  border-radius: var(--radius-full);
-  background-color: var(--color-surface);
+  max-height: 140px;
+  padding: var(--space-8) 0;
+  border: 0;
+  background: transparent;
   color: var(--color-text);
   /* 16px evita el zoom automático de iOS al enfocar */
   font-family: inherit;
   font-size: 16px;
+  line-height: 1.4;
+  resize: none;
 }
 
-.zoni-input:focus-visible {
-  outline: 2px solid var(--color-primary-ink);
-  outline-offset: 1px;
+.zoni-input:focus {
+  outline: none;
 }
 
 .zoni-send {
   display: grid;
+  flex-shrink: 0;
   place-items: center;
-  width: 44px;
-  height: 44px;
+  width: 38px;
+  height: 38px;
   border: 0;
-  border-radius: var(--radius-full);
-  background-color: var(--color-primary-ink);
-  color: var(--color-surface);
+  border-radius: var(--radius-lg);
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-ink) 100%);
+  color: var(--color-white);
   cursor: pointer;
+  transition:
+    transform 0.15s ease,
+    opacity 0.15s ease;
+}
+
+.zoni-send:hover:not(:disabled) {
+  transform: translateY(-1px);
 }
 
 .zoni-send:disabled {
-  opacity: 0.45;
+  background: var(--color-border-strong);
   cursor: not-allowed;
 }
 
+.zoni-send--stop {
+  background: var(--color-text);
+}
+
 .zoni-disclaimer {
-  margin: 0;
-  padding: 0 var(--space-16) var(--space-10);
-  color: var(--color-text-secondary);
-  font-size: var(--text-11, 11px);
+  margin: var(--space-6) 0 0;
+  color: var(--color-text-tertiary);
+  font-size: var(--text-11);
   text-align: center;
 }
 
-/* Celular: el panel ocupa casi toda la pantalla y el botón queda solo el ícono */
+/* Celular: el panel ocupa casi toda la pantalla y no se cambia de tamaño */
 @media (max-width: 640px) {
   .zoni-panel {
     width: calc(100vw - 2 * var(--space-12));
     height: calc(100dvh - 96px);
+  }
+
+  .zoni-resize,
+  .zoni-icon-button--expand,
+  .zoni-disclaimer-keys {
+    display: none;
   }
 
   .zoni-fab:not(.zoni-fab--open) {
@@ -318,6 +571,10 @@
 
   .zoni-fab-label {
     display: none;
+  }
+
+  .zoni-header {
+    padding-left: var(--space-16);
   }
 }
 
@@ -330,11 +587,16 @@
 
 @media (prefers-reduced-motion: reduce) {
   .zoni-panel,
-  .zoni-typing span {
+  .zoni-guide,
+  .zoni-thinking-dots span,
+  .zoni-fab::before {
     animation: none;
   }
 
-  .zoni-fab {
+  .zoni-fab,
+  .zoni-panel,
+  .zoni-messages {
     transition: none;
+    scroll-behavior: auto;
   }
 }
