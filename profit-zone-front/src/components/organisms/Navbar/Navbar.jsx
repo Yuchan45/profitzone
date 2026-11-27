@@ -22,12 +22,13 @@ function Navbar() {
           </Button>
         )}
         {status === 'authenticated' && (
-          <NavLink to="/mis-reportes" className={({ isActive }) => `navbar-link${isActive ? ' navbar-link--active' : ''}`}>
+          <NavLink to="/mis-reportes" className={({ isActive }) => `navbar-link navbar-link--reports${isActive ? ' navbar-link--active' : ''}`}>
             Mis reportes
           </NavLink>
         )}
         <Button variant="primary" size="m" {...NEW_ANALYSIS_LINK}>
-          Analizar una zona
+          <span className="navbar-cta-full">Analizar una zona</span>
+          <span className="navbar-cta-short">Analizar</span>
         </Button>
         {status === 'authenticated' && (
           <UserMenu initials={getInitials(user)} name={user.firstName} onLogout={logout} />

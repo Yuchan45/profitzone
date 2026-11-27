@@ -67,6 +67,12 @@ function UserMenu({ initials, name, onLogout }) {
             Mi perfil
           </NavLink>
         </li>
+        <li>
+          <NavLink to="/mis-reportes" className="user-menu-item" onClick={close}>
+            <Icon name="chart-column" size={16} />
+            Mis reportes
+          </NavLink>
+        </li>
         <li className="user-menu-list-footer">
           <button type="button" className="user-menu-item user-menu-item--danger" onClick={handleLogout}>
             <Icon name="log-out" size={16} />

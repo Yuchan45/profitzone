@@ -46,7 +46,7 @@ function HowItWorksSection() {
     <section
       id="como-funciona"
       ref={sectionRef}
-      className="mx-auto grid max-w-7xl scroll-mt-8 items-center gap-12 px-6 py-16 lg:grid-cols-2 lg:gap-16 lg:py-24"
+      className="reveal-on-scroll mx-auto grid max-w-7xl scroll-mt-8 grid-cols-[minmax(0,1fr)] items-center gap-12 px-6 py-16 lg:grid-cols-2 lg:gap-16 lg:py-24"
     >
       <div>
         <h2 className="font-heading text-3xl font-bold text-foreground sm:text-4xl">

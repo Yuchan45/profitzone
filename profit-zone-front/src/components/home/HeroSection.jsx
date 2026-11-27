@@ -19,7 +19,7 @@ function HeroSection() {
   return (
     <section className="relative flex min-h-[calc(100svh-5rem)] items-center overflow-hidden bg-linear-to-t from-primary/15 via-primary/5 to-background px-6 py-16">
       <div className="relative z-10 mx-auto grid w-full max-w-7xl items-center gap-10 lg:grid-cols-[1.25fr_1fr] lg:gap-12">
-        <div className="order-2 lg:order-1">
+        <div className="order-2 duration-700 animate-in fade-in slide-in-from-bottom-6 delay-200 fill-mode-backwards motion-reduce:animate-none lg:order-1">
           <video
             className="aspect-video w-full rounded-2xl border border-border bg-card object-cover shadow-xl shadow-navy/10"
             src={demoVideo}
@@ -34,7 +34,7 @@ function HeroSection() {
           />
         </div>
 
-        <div className="order-1 text-center lg:order-2 lg:text-left">
+        <div className="order-1 text-center duration-700 animate-in fade-in slide-in-from-bottom-4 fill-mode-backwards motion-reduce:animate-none lg:order-2 lg:text-left">
           <h1 className="font-heading text-4xl font-bold leading-[1.1] tracking-tight text-foreground sm:text-5xl lg:text-[2.75rem] xl:text-5xl">
             <span className="block">
               Evaluá <FlipWords words={FLIP_WORDS} />

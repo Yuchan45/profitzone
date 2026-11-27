@@ -51,7 +51,7 @@ function DataSection() {
   return (
     <section
       id="que-analizamos"
-      className="mx-auto max-w-7xl scroll-mt-8 px-6 py-16 lg:py-24"
+      className="reveal-on-scroll mx-auto max-w-7xl scroll-mt-8 px-6 py-16 lg:py-24"
     >
       <div className="max-w-2xl">
         <h2 className="font-heading text-3xl font-bold text-foreground sm:text-4xl">Qué datos te damos</h2>
@@ -63,19 +63,26 @@ function DataSection() {
 
       <div className="mt-10 grid items-start gap-10 lg:grid-cols-2 lg:gap-16">
         <div>
-          <ul className="divide-y divide-border">
+          <ul className="grid gap-3">
             {DATA_POINTS.map(({ icon: DataIcon, title, text, example }) => (
-              <li key={title} className="flex gap-4 py-5 first:pt-0 last:pb-0">
+              <li
+                key={title}
+                className="group flex gap-4 rounded-2xl border border-border bg-card p-4 shadow-sm transition duration-300 ease-out hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-lg hover:shadow-navy/5 motion-reduce:transition-none motion-reduce:hover:translate-y-0 sm:p-5"
+              >
                 <span
-                  className="grid size-10 shrink-0 place-items-center rounded-xl bg-primary/15 text-brand-text"
+                  className="grid size-11 shrink-0 place-items-center rounded-xl bg-linear-to-br from-primary/30 to-primary/10 text-brand-text transition duration-300 group-hover:scale-105 motion-reduce:transition-none"
                   aria-hidden="true"
                 >
                   <DataIcon className="size-5" />
                 </span>
-                <div>
+                <div className="min-w-0">
                   <h3 className="font-heading text-base font-bold text-foreground">{title}</h3>
                   <p className="mt-1 text-sm leading-relaxed text-muted-foreground">{text}</p>
-                  {figures && <p className="mt-1.5 text-sm font-semibold text-brand-text">{example(figures)}</p>}
+                  {figures && (
+                    <p className="mt-2.5 inline-flex max-w-full rounded-full bg-primary/15 px-3 py-1 text-xs font-semibold text-brand-text">
+                      {example(figures)}
+                    </p>
+                  )}
                 </div>
               </li>
             ))}
