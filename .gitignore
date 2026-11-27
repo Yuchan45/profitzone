@@ -1,9 +1,13 @@
 # Dependencias
 node_modules/
 
-# Variables de entorno
+# Variables de entorno (también las de producción, ej. .env.produccion; solo se versiona el ejemplo)
 .env
-.env.local
+.env.*
+!.env.example
+
+# Vercel CLI (vercel link)
+.vercel
 
 # Builds
 dist/

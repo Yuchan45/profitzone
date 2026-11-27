@@ -99,6 +99,7 @@ de su carpeta.
 | `DB_USER`      | No          | `sa`          | Usuario (admin del contenedor, solo desarrollo)    |
 | `DB_PASSWORD`  | Sí          | —             | 8+ caracteres, 3 de 4 tipos (A-Z, a-z, 0-9, símbolo), sin `$` |
 | `DB_LOGGING`   | No          | `false`       | `true` loguea el SQL de Sequelize                  |
+| `DB_ENCRYPT`   | No          | `false`       | `true` cifra la conexión con certificado válido: obligatorio para Azure SQL (producción). `false` para el contenedor local |
 | `GOOGLE_PLACES_API_KEY` | No | —             | Clave de API de Google Places (New) para competidores en el radio |
 | `BESTTIME_API_KEY`      | No | —             | Reservada para integrar BestTime más adelante. **Todavía no se usa**: la afluencia es un perfil horario fijo por rubro |
 | `JWT_ACCESS_SECRET`     | Sí | —             | Secreto para firmar los JWT de acceso (32+ caracteres aleatorios) |
@@ -127,6 +128,17 @@ de su carpeta.
 
 El backend valida sus variables al arrancar: si falta una obligatoria o tiene un
 formato inválido, el proceso no levanta y lista en consola qué corregir.
+
+## Producción
+
+La app está publicada en **Vercel** (la web y la API, en el mismo dominio) con la base
+en **Azure SQL Database** (oferta gratis). La guía completa, con cómo se creó, cómo se
+cargan los datos y cómo se actualiza, está en [`docs/deploy.md`](./docs/deploy.md).
+
+- `vercel.json`, `api/index.js` y el `package.json` de la raíz existen solo para Vercel:
+  `api/index.js` exporta la misma app de Express que en local levanta `src/server.js`.
+- En producción las variables se cargan en Vercel (Settings → Environment Variables),
+  nunca en un archivo subido.
 
 ## Cómo se comunican
 

@@ -15,10 +15,20 @@ export function createSequelize(database = env.db.name) {
     logging: env.db.logging ? (sql) => console.log(`[ProfitZone][SQL] ${sql}`) : false,
     dialectOptions: {
       options: {
-        // Contenedor local con certificado autofirmado. Revisar antes de apuntar a una DB remota.
-        encrypt: false,
-        trustServerCertificate: true,
+        // Local: contenedor con certificado autofirmado. Azure SQL (DB_ENCRYPT=true): cifrado con certificado válido
+        encrypt: env.db.encrypt,
+        trustServerCertificate: !env.db.encrypt,
       },
+    },
+    // La base gratis de Azure SQL se pausa sola si no se usa y tarda hasta un minuto en reanudarse:
+    // mientras tanto rechaza las conexiones (error 40613), así que se reintenta en vez de fallar.
+    pool: { acquire: 60000 },
+    retry: {
+      max: 5,
+      backoffBase: 3000,
+      backoffExponent: 1.4,
+      // Solo errores de conexión: reintentar una consulta que ya se ejecutó a medias podría duplicarla
+      match: [/40613/, /not currently available/i, /Failed to connect/i],
     },
     define: {
       underscored: true,

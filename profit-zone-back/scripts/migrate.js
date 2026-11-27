@@ -19,7 +19,14 @@ async function ensureDatabase() {
   const master = createSequelize('master')
   try {
     // DB_NAME ya viene validado como identificador simple en src/config/env.js.
-    await master.query(`IF DB_ID(N'${env.db.name}') IS NULL CREATE DATABASE [${env.db.name}]`)
+    const [[{ found }]] = await master.query(`SELECT CASE WHEN DB_ID(N'${env.db.name}') IS NULL THEN 0 ELSE 1 END AS found`)
+    if (found) return
+    // En producción (Azure SQL) la base se crea desde el portal con la oferta gratis:
+    // un CREATE DATABASE acá crearía otra base, paga.
+    if (env.isProduction) {
+      throw new Error(`la base ${env.db.name} no existe en ${env.db.host}. Creala desde el portal de Azure (ver docs/deploy.md).`)
+    }
+    await master.query(`CREATE DATABASE [${env.db.name}]`)
   } finally {
     await master.close()
   }

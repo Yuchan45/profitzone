@@ -59,6 +59,7 @@ un formato inválido, el proceso falla con un mensaje explicando qué corregir.
 | `DB_USER`      | No          | `sa`          | Usuario (en desarrollo, el admin del contenedor)       |
 | `DB_PASSWORD`  | Sí          | —             | Clave: 8+ caracteres, 3 de 4 tipos (A-Z, a-z, 0-9, símbolo). Sin `$`. Docker la usa para crear `sa` |
 | `DB_LOGGING`   | No          | `false`       | `true` muestra en consola el SQL de Sequelize          |
+| `DB_ENCRYPT`   | No          | `false`       | `true` cifra la conexión con certificado válido: obligatorio para Azure SQL (producción). `false` para el contenedor local |
 | `GOOGLE_PLACES_API_KEY` | No | —             | Clave de API de Google Places (New) para competidores en el radio |
 | `BESTTIME_API_KEY`      | No | —             | Reservada para integrar BestTime más adelante. **Todavía no se usa**: la afluencia es un perfil horario fijo por rubro, igual en todo Palermo |
 | `JWT_ACCESS_SECRET`     | Sí | —             | Secreto para firmar los JWT de acceso (32+ caracteres aleatorios) |

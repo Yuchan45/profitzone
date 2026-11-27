@@ -63,6 +63,14 @@ const schema = {
     default: 'false',
     parse: (value) => value === 'true',
   },
+  DB_ENCRYPT: {
+    // true para una base en la nube (Azure SQL exige conexión cifrada con certificado válido);
+    // false para el contenedor local, que usa un certificado autofirmado
+    required: false,
+    default: 'false',
+    validate: (value) => ['true', 'false'].includes(value),
+    message: 'debe ser true o false',
+  },
   GOOGLE_PLACES_API_KEY: {
     required: false,
     default: '',
@@ -192,6 +200,7 @@ function loadEnv() {
       user: config.DB_USER,
       password: config.DB_PASSWORD,
       logging: config.DB_LOGGING,
+      encrypt: config.DB_ENCRYPT === 'true',
     }),
   })
 }

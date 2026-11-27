@@ -4,6 +4,7 @@ import { AuthToken, Role, User } from '../models/index.js'
 import { env } from '../config/env.js'
 import { getDummyPasswordHash, hashPassword, verifyPassword } from '../utils/password.js'
 import { generateOpaqueToken, hashToken, signAccessToken } from '../utils/tokens.js'
+import { runInBackground } from '../utils/background.js'
 import { sendMail } from './mail.service.js'
 
 const REFRESH = 'refresh'
@@ -258,10 +259,11 @@ async function issuePasswordReset(email, meta) {
 /**
  * Pide restablecer la contraseña: si el correo es de una cuenta activa, invalida
  * los links anteriores y manda uno nuevo. No espera a que termine: la respuesta
- * tarda lo mismo exista o no el correo, así no revela qué cuentas hay.
+ * tarda lo mismo exista o no el correo, así no revela qué cuentas hay. runInBackground
+ * evita que Vercel corte el envío al responder.
  */
 export function requestPasswordReset(email, meta) {
-  issuePasswordReset(email, meta).catch((error) => {
+  const pending = issuePasswordReset(email, meta).catch((error) => {
     // Sin await en el controller: este log es el único rastro si falla la DB o el SMTP.
     // Solo nombre, código y mensaje: el error entero trae el SQL con sus parámetros o el correo
     console.error(
@@ -270,6 +272,7 @@ export function requestPasswordReset(email, meta) {
       }: ${error.message}`,
     )
   })
+  runInBackground(pending)
 }
 
 /**
